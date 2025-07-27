@@ -1,116 +1,172 @@
-# Development Best Practices & Troubleshooting
+# Development Best Practices
 
-## Code Editing Guidelines
+## Allgemeine Richtlinien
 
-### ✅ DO: Safe Editing Practices
-- Use `edit_file` for precise, targeted changes
-- Make only ONE change at a time
-- Test after each change (dev server or git commit)
-- Use small, incremental modifications
-- Read file context before editing
+### Sichere Code-Bearbeitung
+- **Immer Backup erstellen** vor größeren Änderungen
+- **Kleine, testbare Commits** statt großer Änderungen
+- **TypeScript-Typen** immer korrekt definieren
+- **Kommentare** für komplexe Logik hinzufügen
 
-### ❌ DON'T: Risky Practices
-- Use `search_replace` for large files or complex changes
-- Make multiple changes in one operation
-- Edit files without understanding the context
-- Skip testing after changes
+## Häufige Probleme und Lösungen
 
-## Troubleshooting Guide
+### 1. Tailwind CSS Styling-Probleme
 
-### Styling Issues (Subframe/Tailwind not working)
+#### Problem: "The 'border-border' class does not exist"
+**Symptome:**
+- Build Error beim Development Server
+- Fehlende Styles auf der Webseite
+- CSS-Kompilierungsfehler
+
+**Ursache:**
+- Verwendung von nicht existierenden Tailwind-Klassen
+- Falsche CSS-Konfiguration in `globals.css`
+- Cache-Probleme zwischen Next.js und Tailwind
+
+**Lösung:**
 ```bash
-# 1. Restart dev server
+# 1. Development Server stoppen
 taskkill /f /im node.exe
+
+# 2. Next.js Cache löschen
+rmdir /s /q .next
+
+# 3. Server neu starten
 npm run dev
-
-# 2. If still broken, check Tailwind config
-# Ensure tailwind.config.ts has Subframe presets
 ```
 
-### Destroyed Files (Wrong styling, broken components)
+**Prävention:**
+- Nur Standard-Tailwind-Klassen verwenden
+- Bei Subframe UI: Nur dokumentierte Klassen nutzen
+- CSS-Änderungen in `@layer` Direktiven kapseln
+
+#### Problem: Styling verschwindet nach Code-Änderungen
+**Lösung:**
 ```bash
-# Restore from git
-git checkout HEAD -- src/app/settings/page.tsx
-
-# Or restore entire project
-git checkout HEAD -- .
+# Cache komplett löschen
+rmdir /s /q .next
+rmdir /s /q node_modules\.cache
+npm run dev
 ```
 
-### Supabase Connection Issues
-```bash
-# 1. Check environment variables
-# 2. Verify RLS policies in Supabase dashboard
-# 3. Test direct query at /test-supabase
+### 2. Supabase-Verbindungsprobleme
+
+#### Problem: "Cannot connect to Supabase"
+**Lösung:**
+1. `.env.local` Datei überprüfen
+2. Supabase-Projekt-Status checken
+3. Netzwerkverbindung testen
+
+### 3. TypeScript-Fehler
+
+#### Problem: "Type 'X' is not assignable to type 'Y'"
+**Lösung:**
+1. Interface-Definitionen überprüfen
+2. Type Guards verwenden
+3. Optional Chaining (`?.`) nutzen
+
+## Dateistruktur
+
 ```
-
-## File Structure Guidelines
-
-### Safe to Edit
-- `src/app/settings/page.tsx` - Main settings page
-- `src/hooks/useMaterialCategories.ts` - React hooks
-- `src/lib/material-categories.ts` - API classes
-- `src/types/material-categories.ts` - TypeScript types
-
-### Handle with Care
-- `tailwind.config.ts` - Critical for Subframe styling
-- `src/app/layout.tsx` - Global layout
-- `src/app/globals.css` - Global styles
-
-### Don't Edit (Generated)
-- `src/ui/` - Subframe generated components
-- `node_modules/` - Dependencies
-- `.next/` - Build cache
+src/
+├── app/                 # Next.js App Router
+├── components/          # Wiederverwendbare Komponenten
+├── hooks/              # Custom React Hooks
+├── types/              # TypeScript Typdefinitionen
+├── lib/                # Utility-Funktionen
+└── ui/                 # Subframe UI Komponenten
+```
 
 ## Development Workflow
 
-1. **Before making changes:**
-   - Git commit current state
-   - Read file context
-   - Plan small, incremental changes
-
-2. **During changes:**
-   - Use `edit_file` for precision
-   - Test after each change
-   - Keep changes minimal
-
-3. **After changes:**
-   - Verify functionality
-   - Test in browser
-   - Git commit if working
-
-## Common Issues & Solutions
-
-### Issue: "Subframe styling disappeared"
-**Solution:** Restart dev server, check Tailwind config
-
-### Issue: "File completely broken after edit"
-**Solution:** `git checkout HEAD -- filename`
-
-### Issue: "Supabase data not showing"
-**Solution:** Check RLS policies, test direct query
-
-### Issue: "Dropdown functions not working"
-**Solution:** Verify onClick handlers, check console errors
-
-## Emergency Recovery
-
-If everything is broken:
+### 1. Feature-Entwicklung
 ```bash
-# 1. Stop all processes
-taskkill /f /im node.exe
+# 1. Neuen Branch erstellen
+git checkout -b feature/neue-funktion
 
-# 2. Restore from git
-git checkout HEAD -- .
-
-# 3. Restart dev server
+# 2. Entwicklung
 npm run dev
 
-# 4. Test functionality
-# Go to http://localhost:3000/settings
+# 3. Testen
+npm run build
+npm run lint
+
+# 4. Commit
+git add .
+git commit -m "feat: neue Funktion hinzugefügt"
 ```
 
-## Remember
-- **Small changes are safer than big changes**
-- **Test frequently**
-- **Use git as backup**
-- **When in doubt, restart the dev server** 
+### 2. Debugging
+```bash
+# Development Server mit Debug-Info
+npm run dev -- --debug
+
+# TypeScript-Check
+npx tsc --noEmit
+
+# Linting
+npm run lint
+```
+
+## Subframe UI Integration
+
+### Wichtige Hinweise
+- **Nicht Turbopack verwenden** (Inkompatibilität)
+- **Tailwind CSS v3** verwenden
+- **Manuelle Komponenten-Synchronisation** erforderlich
+
+### Komponenten-Update
+```bash
+# Subframe CLI verwenden
+npx subframe sync
+```
+
+## Deployment
+
+### Vercel Deployment
+1. **Automatisches Deployment** bei Git-Push
+2. **Environment Variables** in Vercel Dashboard setzen
+3. **Build-Logs** überwachen
+
+### Lokales Testing
+```bash
+# Production Build testen
+npm run build
+npm run start
+```
+
+## Performance-Optimierung
+
+### 1. Bundle-Größe
+- **Code Splitting** verwenden
+- **Lazy Loading** für Komponenten
+- **Tree Shaking** aktivieren
+
+### 2. Bilder-Optimierung
+- **Next.js Image Component** verwenden
+- **WebP-Format** bevorzugen
+- **Responsive Images** implementieren
+
+## Sicherheit
+
+### 1. Environment Variables
+- **Sensible Daten** nie im Code committen
+- **`.env.local`** für lokale Entwicklung
+- **Vercel Environment Variables** für Production
+
+### 2. API-Sicherheit
+- **Rate Limiting** implementieren
+- **Input Validation** immer durchführen
+- **CORS** korrekt konfigurieren
+
+## Monitoring und Logging
+
+### 1. Error Tracking
+- **Console-Logs** für Development
+- **Error Boundaries** implementieren
+- **Analytics** für Production
+
+### 2. Performance Monitoring
+- **Core Web Vitals** überwachen
+- **Bundle Analyzer** verwenden
+- **Lighthouse** regelmäßig ausführen 

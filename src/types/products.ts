@@ -46,6 +46,16 @@ export interface Product {
   retailer_url?: string; // NEW
   availability?: string;
   
+  // Alternative Retailer (NEW)
+  alternative_retailer_name?: string;
+  alternative_retailer_url?: string;
+  alternative_retailer_price?: number;
+  alternative_retailer_unit?: string;
+  alternative_retailer_price_per_unit?: number;
+  alternative_retailer_availability?: string;
+  alternative_retailer_ai_research_status?: string;
+  alternative_retailer_ai_research_progress?: number;
+  
   // Documents
   datasheet_url?: string;
   technical_sheet_url?: string;
@@ -64,7 +74,7 @@ export interface Product {
 // Form data will hold string values for all fields,
 // conversion to number/JSON happens in toProductData
 export type ProductFormData = {
-  [K in keyof Omit<Product, 'id' | 'created_at' | 'updated_at' | 'source_type' | 'screenshot_path' | 'thumbnail_path' | 'user_id' | 'ocr_text_raw' | 'parsed_fields' | 'ai_confidence' | 'manual_reviewed'>]: string;
+  [K in keyof Omit<Product, 'id' | 'created_at' | 'updated_at' | 'source_type' | 'screenshot_path' | 'thumbnail_path' | 'user_id' | 'ocr_text_raw' | 'parsed_fields' | 'ai_confidence' | 'manual_reviewed' | 'alternative_retailer_ai_research_progress'>]: string;
 } & {
   // Include fields that are not directly from Product but are part of the form
   // For now, these are handled by the Product interface directly

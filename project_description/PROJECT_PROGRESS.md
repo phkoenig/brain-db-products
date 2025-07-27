@@ -66,20 +66,40 @@
 - **TypeScript** für Typsicherheit
 - **Debug-Logging** für Datenfluss-Tracking
 
+### ✅ **Alternative Supplier Funktionalität implementiert**
+
+#### **Vollständig abgeschlossen:**
+Die **Alternative Supplier Funktionalität** wurde erfolgreich implementiert und ist jetzt vollständig funktionsfähig:
+
+1. **Datenbank-Erweiterung** ✅ - 8 neue Felder in `products` Tabelle
+2. **TypeScript-Typen** ✅ - Product Interface erweitert
+3. **Formular-State-Management** ✅ - useCaptureForm Hook erweitert
+4. **UI-Integration** ✅ - Alle Felder mit Formular verbunden
+5. **Speicherfunktion** ✅ - Daten werden in Datenbank gespeichert
+
+#### **Neue Felder:**
+- `alternative_retailer_name` - Name des alternativen Händlers
+- `alternative_retailer_url` - URL des alternativen Händlers
+- `alternative_retailer_price` - Preis beim alternativen Händler
+- `alternative_retailer_unit` - Einheit beim alternativen Händler
+- `alternative_retailer_price_per_unit` - Preis pro Einheit
+- `alternative_retailer_availability` - Verfügbarkeit
+- `alternative_retailer_ai_research_status` - Status der KI-Recherche
+- `alternative_retailer_ai_research_progress` - Fortschritt der KI-Recherche
+
 ### 🔄 Nächster Schritt:
 
-#### **Capture-Formular mit Products-Tabelle verbinden**
-Die Datenbankstruktur ist jetzt vollständig analysiert und vorbereitet. Der nächste Schritt ist die **Integration des Capture-Formulars** mit der `products` Tabelle:
+#### **KI-Research-Integration für Alternative Suppliers**
+Der nächste Schritt ist die **KI-Integration** für die automatische Suche nach alternativen Händlern:
 
-1. **Formular-State-Management** implementieren
-2. **Datenvalidierung** und -transformation
-3. **Speicherfunktion** in die `products` Tabelle
-4. **Bild-Upload** für Screenshots und Thumbnails
-5. **OCR-Integration** für automatische Texterkennung
+1. **AI-Research Button** implementieren
+2. **Automatische Händler-Suche** basierend auf Produktdaten
+3. **Preisvergleich** zwischen verschiedenen Händlern
+4. **Verfügbarkeits-Check** automatisch durchführen
 
 ### 📊 Technische Details:
 
-#### **Products Table Schema (45 Spalten):**
+#### **Products Table Schema (53 Spalten):**
 ```sql
 -- Primary & Timestamps
 id (UUID, Primary Key), created_at, updated_at
@@ -99,6 +119,12 @@ maintenance (NEW), environment_cert (JSONB)
 
 -- Pricing & Retailer
 price, unit, price_per_unit, retailer, retailer_url (NEW), availability
+
+-- Alternative Retailer (NEW)
+alternative_retailer_name, alternative_retailer_url, alternative_retailer_price,
+alternative_retailer_unit, alternative_retailer_price_per_unit, 
+alternative_retailer_availability, alternative_retailer_ai_research_status,
+alternative_retailer_ai_research_progress
 
 -- Documents
 datasheet_url, technical_sheet_url, product_page_url, 
@@ -126,10 +152,10 @@ manual_reviewed, notes
 
 ### 🎯 Prioritäten für nächste Phase:
 
-1. **Capture-Formular State Management** implementieren
-2. **Formular-Daten** mit `products` Tabelle verbinden
-3. **Speicherfunktion** implementieren
-4. **Datenbank-UI** mit echten Produktdaten befüllen
+1. **KI-Research Button** für Alternative Suppliers implementieren
+2. **Automatische Händler-Suche** basierend auf Produktdaten
+3. **Preisvergleich-Logik** zwischen verschiedenen Händlern
+4. **Verfügbarkeits-Check** automatisch durchführen
 5. **OCR-Pipeline** für automatische Datenextraktion
 
 ### 🚀 **Aktuelle Erfolge:**
@@ -146,5 +172,5 @@ manual_reviewed, notes
 
 ---
 
-**Status**: ✅ Datenbankstruktur vollständig | 🔄 Capture-Formular Integration ausstehend
-**Nächster Meilenstein**: Capture-Formular → Products Table Speicherung 
+**Status**: ✅ Alternative Supplier Funktionalität vollständig | 🔄 KI-Research Integration ausstehend
+**Nächster Meilenstein**: KI-Research → Automatische Händler-Suche 

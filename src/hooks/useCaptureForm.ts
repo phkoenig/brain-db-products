@@ -39,6 +39,15 @@ const initialFormData: ProductFormData = {
   retailer_url: '',
   availability: '',
   
+  // Alternative Retailer (NEW)
+  alternative_retailer_name: '',
+  alternative_retailer_url: '',
+  alternative_retailer_price: '',
+  alternative_retailer_unit: '',
+  alternative_retailer_price_per_unit: '',
+  alternative_retailer_availability: '',
+  alternative_retailer_ai_research_status: 'pending',
+  
   // Documents
   datasheet_url: '',
   technical_sheet_url: '',
@@ -155,6 +164,16 @@ export function useCaptureForm() {
       retailer: formData.retailer || null,
       retailer_url: formData.retailer_url || null,
       availability: formData.availability || null,
+      
+      // Alternative Retailer (NEW)
+      alternative_retailer_name: formData.alternative_retailer_name || null,
+      alternative_retailer_url: formData.alternative_retailer_url || null,
+      alternative_retailer_price: formData.alternative_retailer_price ? parseFloat(formData.alternative_retailer_price) : null,
+      alternative_retailer_unit: formData.alternative_retailer_unit || null,
+      alternative_retailer_price_per_unit: formData.alternative_retailer_price_per_unit ? parseFloat(formData.alternative_retailer_price_per_unit) : null,
+      alternative_retailer_availability: formData.alternative_retailer_availability || null,
+      alternative_retailer_ai_research_status: formData.alternative_retailer_ai_research_status || 'pending',
+      alternative_retailer_ai_research_progress: 0,
       
       // Documents
       datasheet_url: formData.datasheet_url || null,

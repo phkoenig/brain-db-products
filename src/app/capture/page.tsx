@@ -1041,7 +1041,10 @@ function Extractor() {
                     className="h-5 w-5 flex-none"
                     variant="brand-tertiary"
                     icon={<FeatherPlayCircle />}
-                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
+                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                      // TODO: Implement AI research for alternative retailers
+                      console.log('AI research for alternative retailers');
+                    }}
                   />
                 </div>
                 <TextField
@@ -1051,11 +1054,11 @@ function Extractor() {
                   helpText=""
                 >
                   <TextField.Input
-                    placeholder=""
-                    value=""
+                    placeholder="AI research status..."
+                    value={formData.alternative_retailer_ai_research_status}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('alternative_retailer_ai_research_status', event.target.value)}
                   />
                   <Progress value={10} />
                 </TextField>
@@ -1071,11 +1074,11 @@ function Extractor() {
                   helpText=""
                 >
                   <TextField.Input
-                    placeholder=""
-                    value=""
+                    placeholder="Alternative retailer name..."
+                    value={formData.alternative_retailer_name}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('alternative_retailer_name', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -1090,11 +1093,11 @@ function Extractor() {
                   helpText=""
                 >
                   <TextField.Input
-                    placeholder=""
-                    value=""
+                    placeholder="Alternative retailer URL..."
+                    value={formData.alternative_retailer_url}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('alternative_retailer_url', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -1109,11 +1112,11 @@ function Extractor() {
                   helpText=""
                 >
                   <TextField.Input
-                    placeholder=""
-                    value=""
+                    placeholder="Alternative retailer price..."
+                    value={formData.alternative_retailer_price}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('alternative_retailer_price', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -1128,11 +1131,11 @@ function Extractor() {
                   helpText=""
                 >
                   <TextField.Input
-                    placeholder=""
-                    value=""
+                    placeholder="Alternative retailer unit..."
+                    value={formData.alternative_retailer_unit}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('alternative_retailer_unit', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -1147,11 +1150,11 @@ function Extractor() {
                   helpText=""
                 >
                   <TextField.Input
-                    placeholder=""
-                    value=""
+                    placeholder="Alternative retailer price per unit..."
+                    value={formData.alternative_retailer_price_per_unit}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('alternative_retailer_price_per_unit', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -1166,16 +1169,36 @@ function Extractor() {
                   helpText=""
                 >
                   <TextField.Input
-                    placeholder=""
-                    value=""
+                    placeholder="Alternative retailer availability..."
+                    value={formData.alternative_retailer_availability}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('alternative_retailer_availability', event.target.value)}
                   />
                 </TextField>
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="flex w-full justify-center gap-4 py-8">
+          <Button
+            className="px-8 py-3"
+            variant="brand-secondary"
+            onClick={handleReset}
+            disabled={isSaving}
+          >
+            Reset
+          </Button>
+          <Button
+            className="px-8 py-3"
+            variant="brand-primary"
+            onClick={handleSave}
+            disabled={isSaving || !isDirty}
+          >
+            {isSaving ? 'Saving...' : 'Save Product'}
+          </Button>
         </div>
       </div>
     </DefaultPageLayout>
