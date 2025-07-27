@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Button — https://app.subframe.com/library?component=Button_3b777358-b86b-40af-9327-891efc6826fe
+ * Button — https://app.subframe.com/269cf10fcebb/library?component=Button_3b777358-b86b-40af-9327-891efc6826fe
  */
 
 import React from "react";
@@ -62,7 +62,7 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
               variant === "destructive-primary",
             "bg-transparent hover:bg-neutral-100 active:bg-neutral-200":
               variant === "neutral-tertiary",
-            "border-2 border-solid border-neutral-border bg-default-background hover:bg-neutral-50 active:bg-default-background":
+            "border border-solid border-neutral-border bg-default-background hover:bg-neutral-50 active:bg-default-background":
               variant === "neutral-secondary",
             "bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-100":
               variant === "neutral-primary",

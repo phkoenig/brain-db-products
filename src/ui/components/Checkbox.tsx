@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Checkbox — https://app.subframe.com/library?component=Checkbox_3816e3b5-c48c-499b-b45e-0777c6972523
+ * Checkbox — https://app.subframe.com/269cf10fcebb/library?component=Checkbox_3816e3b5-c48c-499b-b45e-0777c6972523
  */
 
 import React from "react";

@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Progress — https://app.subframe.com/library?component=Progress_60964db0-a1bf-428b-b9d5-f34cdf58ea77
+ * Progress — https://app.subframe.com/269cf10fcebb/library?component=Progress_60964db0-a1bf-428b-b9d5-f34cdf58ea77
  */
 
 import React from "react";

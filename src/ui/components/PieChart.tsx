@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Pie Chart — https://app.subframe.com/library?component=Pie+Chart_0654ccc7-054c-4f3a-8e9a-b7c81dd3963c
+ * Pie Chart — https://app.subframe.com/269cf10fcebb/library?component=Pie+Chart_0654ccc7-054c-4f3a-8e9a-b7c81dd3963c
  */
 
 import React from "react";

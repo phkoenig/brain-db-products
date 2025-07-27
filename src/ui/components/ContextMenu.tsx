@@ -1,8 +1,8 @@
 "use client";
 /*
  * Documentation:
- * Context Menu — https://app.subframe.com/library?component=Context+Menu_f8a49f07-fa5b-46c8-9399-cbbf0930cc62
- * Badge — https://app.subframe.com/library?component=Badge_97bdb082-1124-4dd7-a335-b14b822d0157
+ * Context Menu — https://app.subframe.com/269cf10fcebb/library?component=Context+Menu_f8a49f07-fa5b-46c8-9399-cbbf0930cc62
+ * Badge — https://app.subframe.com/269cf10fcebb/library?component=Badge_97bdb082-1124-4dd7-a335-b14b822d0157
  */
 
 import React from "react";
@@ -98,7 +98,7 @@ const ContextMenuRoot = React.forwardRef<HTMLDivElement, ContextMenuRootProps>(
     return children ? (
       <div
         className={SubframeUtils.twClassNames(
-          "flex min-w-[192px] flex-col items-start rounded-md border-2 border-solid border-neutral-border bg-default-background px-1 py-1 shadow-lg",
+          "flex min-w-[192px] flex-col items-start rounded-md border border-solid border-neutral-border bg-default-background px-1 py-1 shadow-lg",
           className
         )}
         ref={ref}

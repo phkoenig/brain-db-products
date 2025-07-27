@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * OAuth Social Button — https://app.subframe.com/library?component=OAuth+Social+Button_f1948f75-65f9-4f21-b3e4-a49511440c26
+ * OAuth Social Button — https://app.subframe.com/269cf10fcebb/library?component=OAuth+Social+Button_f1948f75-65f9-4f21-b3e4-a49511440c26
  */
 
 import React from "react";
@@ -31,7 +31,7 @@ const OAuthSocialButtonRoot = React.forwardRef<
   return (
     <button
       className={SubframeUtils.twClassNames(
-        "group/f1948f75 flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-solid border-neutral-border bg-white px-4 hover:bg-neutral-50 active:bg-white disabled:cursor-default disabled:bg-white hover:disabled:cursor-default hover:disabled:bg-white active:disabled:cursor-default active:disabled:bg-white",
+        "group/f1948f75 flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-solid border-neutral-border bg-white px-4 hover:bg-neutral-50 active:bg-white disabled:cursor-default disabled:bg-white hover:disabled:cursor-default hover:disabled:bg-white active:disabled:cursor-default active:disabled:bg-white",
         className
       )}
       ref={ref}

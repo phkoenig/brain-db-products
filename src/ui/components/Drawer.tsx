@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Drawer — https://app.subframe.com/library?component=Drawer_1e71b2cb-8d72-4e67-b368-8805179e9444
+ * Drawer — https://app.subframe.com/269cf10fcebb/library?component=Drawer_1e71b2cb-8d72-4e67-b368-8805179e9444
  */
 
 import React from "react";
@@ -22,7 +22,7 @@ const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
     <SubframeCore.Drawer.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex h-full min-w-[320px] flex-col items-start gap-2 border-l-2 border-solid border-neutral-border bg-default-background",
+          "flex h-full min-w-[320px] flex-col items-start gap-2 border-l border-solid border-neutral-border bg-default-background",
           className
         )}
         ref={ref}

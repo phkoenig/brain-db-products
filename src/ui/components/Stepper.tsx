@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Stepper — https://app.subframe.com/library?component=Stepper_3c5d47dc-1b1a-45d9-b244-18422d7bfb56
+ * Stepper — https://app.subframe.com/269cf10fcebb/library?component=Stepper_3c5d47dc-1b1a-45d9-b244-18422d7bfb56
  */
 
 import React from "react";

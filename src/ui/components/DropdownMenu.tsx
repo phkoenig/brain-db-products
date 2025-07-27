@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Dropdown Menu — https://app.subframe.com/library?component=Dropdown+Menu_99951515-459b-4286-919e-a89e7549b43b
+ * Dropdown Menu — https://app.subframe.com/269cf10fcebb/library?component=Dropdown+Menu_99951515-459b-4286-919e-a89e7549b43b
  */
 
 import React from "react";
@@ -90,7 +90,7 @@ const DropdownMenuRoot = React.forwardRef<
   return children ? (
     <div
       className={SubframeUtils.twClassNames(
-        "flex min-w-[192px] flex-col items-start rounded-md border-2 border-solid border-neutral-border bg-default-background px-1 py-1 shadow-lg",
+        "flex min-w-[192px] flex-col items-start rounded-md border border-solid border-neutral-border bg-default-background px-1 py-1 shadow-lg",
         className
       )}
       ref={ref}

@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Dialog — https://app.subframe.com/library?component=Dialog_ca59db17-43fb-4247-8094-3c55162e902d
+ * Dialog — https://app.subframe.com/269cf10fcebb/library?component=Dialog_ca59db17-43fb-4247-8094-3c55162e902d
  */
 
 import React from "react";
@@ -22,7 +22,7 @@ const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
     <SubframeCore.Dialog.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex min-w-[320px] flex-col items-start gap-2 rounded-md border-2 border-solid border-neutral-border bg-default-background shadow-lg max-h-[90vh] overflow-auto",
+          "flex min-w-[320px] flex-col items-start gap-2 rounded-md border border-solid border-neutral-border bg-default-background shadow-lg max-h-[90vh] overflow-auto",
           className
         )}
         ref={ref}

@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Icon with background — https://app.subframe.com/library?component=Icon+with+background_c5d68c0e-4c0c-4cff-8d8c-6ff334859b3a
+ * Icon with background — https://app.subframe.com/269cf10fcebb/library?component=Icon+with+background_c5d68c0e-4c0c-4cff-8d8c-6ff334859b3a
  */
 
 import React from "react";
@@ -60,7 +60,7 @@ const IconWithBackgroundRoot = React.forwardRef<
               "text-caption font-caption": size === "small",
               "text-body font-body": size === "medium",
               "text-heading-2 font-heading-2": size === "large",
-              "text-heading-1 font-heading-1": size === "x-large",
+              "text-title font-title": size === "x-large",
               "text-warning-800": variant === "warning",
               "text-success-800": variant === "success",
               "text-error-800": variant === "error",

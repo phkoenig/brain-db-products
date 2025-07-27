@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Select — https://app.subframe.com/library?component=Select_bb88f90b-8c43-4b73-9c2f-3558ce7838f3
+ * Select — https://app.subframe.com/269cf10fcebb/library?component=Select_bb88f90b-8c43-4b73-9c2f-3558ce7838f3
  */
 
 import React from "react";
@@ -85,7 +85,7 @@ const Content = React.forwardRef<HTMLDivElement, ContentProps>(function Content(
     <SubframeCore.Select.Content asChild={true} {...otherProps}>
       <div
         className={SubframeUtils.twClassNames(
-          "flex w-full flex-col items-start overflow-hidden rounded-md border-2 border-solid border-neutral-border bg-white px-1 py-1 shadow-lg",
+          "flex w-full flex-col items-start overflow-hidden rounded-md border border-solid border-neutral-border bg-white px-1 py-1 shadow-lg",
           className
         )}
         ref={ref}
@@ -230,7 +230,7 @@ const SelectRoot = React.forwardRef<HTMLDivElement, SelectRootProps>(
           ) : null}
           <div
             className={SubframeUtils.twClassNames(
-              "flex h-8 w-full flex-none flex-col items-start rounded-md border-2 border-solid border-neutral-border bg-default-background group-focus-within/bb88f90b:border-2 group-focus-within/bb88f90b:border-solid group-focus-within/bb88f90b:border-brand-primary",
+              "flex h-8 w-full flex-none flex-col items-start rounded-md border border-solid border-neutral-border bg-default-background group-focus-within/bb88f90b:border group-focus-within/bb88f90b:border-solid group-focus-within/bb88f90b:border-brand-primary",
               {
                 "border border-solid border-neutral-100 bg-neutral-100 group-hover/bb88f90b:border group-hover/bb88f90b:border-solid group-hover/bb88f90b:border-neutral-border group-hover/bb88f90b:bg-neutral-100":
                   variant === "filled",

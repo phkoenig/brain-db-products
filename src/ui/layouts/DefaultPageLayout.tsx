@@ -1,22 +1,17 @@
 "use client";
 /*
  * Documentation:
- * Default Page Layout — https://app.subframe.com/library?component=Default+Page+Layout_a57b1c43-310a-493f-b807-8cc88e2452cf
- * Sidebar rail with labels — https://app.subframe.com/library?component=Sidebar+rail+with+labels_3296372a-ba83-4ca9-b291-10dc2aa86fdd
+ * Default Page Layout — https://app.subframe.com/269cf10fcebb/library?component=Default+Page+Layout_a57b1c43-310a-493f-b807-8cc88e2452cf
+ * Sidebar rail with labels — https://app.subframe.com/269cf10fcebb/library?component=Sidebar+rail+with+labels_3296372a-ba83-4ca9-b291-10dc2aa86fdd
  */
 
 import React from "react";
 import * as SubframeUtils from "../utils";
 import { SidebarRailWithLabels } from "../components/SidebarRailWithLabels";
-import { FeatherCalendarDays } from "@subframe/core";
-import { FeatherBox } from "@subframe/core";
-import { FeatherMap } from "@subframe/core";
-import { FeatherArmchair } from "@subframe/core";
-import { FeatherDoorClosed } from "@subframe/core";
-import { FeatherCamera } from "@subframe/core";
-import { FeatherUsers } from "@subframe/core";
-import { FeatherStamp } from "@subframe/core";
+import { FeatherDatabase } from "@subframe/core";
+import { FeatherPlus } from "@subframe/core";
 import { FeatherSettings } from "@subframe/core";
+import { FeatherUserCircle } from "@subframe/core";
 
 interface DefaultPageLayoutRootProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -41,44 +36,32 @@ const DefaultPageLayoutRoot = React.forwardRef<
       {...otherProps}
     >
       <SidebarRailWithLabels
+        className="overflow-auto"
         header={
           <div className="flex flex-col items-center justify-center gap-2 px-1 py-1">
-            <span className="text-heading-1 font-heading-1 text-default-font">
-              F16
-            </span>
+            <span className="text-title font-title text-default-font">M</span>
           </div>
         }
-        footer={<SidebarRailWithLabels.NavItem icon={<FeatherSettings />} />}
+        footer={
+          <>
+            <SidebarRailWithLabels.NavItem icon={<FeatherSettings />}>
+              Settings
+            </SidebarRailWithLabels.NavItem>
+            <SidebarRailWithLabels.NavItem icon={<FeatherUserCircle />}>
+              User
+            </SidebarRailWithLabels.NavItem>
+          </>
+        }
       >
-        <div className="flex w-full grow shrink-0 basis-0 flex-col items-start justify-center">
-          <SidebarRailWithLabels.NavItem
-            icon={<FeatherCalendarDays />}
-            selected={true}
-          >
-            Logbuch
-          </SidebarRailWithLabels.NavItem>
-          <SidebarRailWithLabels.NavItem icon={<FeatherBox />}>
-            3D
-          </SidebarRailWithLabels.NavItem>
-          <SidebarRailWithLabels.NavItem icon={<FeatherMap />}>
-            Pläne
-          </SidebarRailWithLabels.NavItem>
-          <SidebarRailWithLabels.NavItem icon={<FeatherArmchair />}>
-            Muster
-          </SidebarRailWithLabels.NavItem>
-          <SidebarRailWithLabels.NavItem icon={<FeatherDoorClosed />}>
-            Raum
-          </SidebarRailWithLabels.NavItem>
-          <SidebarRailWithLabels.NavItem icon={<FeatherCamera />}>
-            Foto
-          </SidebarRailWithLabels.NavItem>
-          <SidebarRailWithLabels.NavItem icon={<FeatherUsers />}>
-            Team
-          </SidebarRailWithLabels.NavItem>
-          <SidebarRailWithLabels.NavItem icon={<FeatherStamp />}>
-            Doks
-          </SidebarRailWithLabels.NavItem>
-        </div>
+        <SidebarRailWithLabels.NavItem
+          icon={<FeatherDatabase />}
+          selected={true}
+        >
+          DB
+        </SidebarRailWithLabels.NavItem>
+        <SidebarRailWithLabels.NavItem icon={<FeatherPlus />}>
+          New
+        </SidebarRailWithLabels.NavItem>
       </SidebarRailWithLabels>
       {children ? (
         <div className="flex grow shrink-0 basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background">
