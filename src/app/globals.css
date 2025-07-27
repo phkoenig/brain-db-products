@@ -12,3 +12,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Globale Styles für Textfelder */
+@layer components {
+  .form-input {
+    @apply text-sm text-gray-600;
+  }
+  
+  .form-text {
+    @apply text-sm text-gray-600;
+  }
+  
+  /* Für Subframe TextField Komponenten */
+  .subframe-textfield input {
+    @apply text-sm text-gray-600;
+  }
+  
+  .subframe-textarea textarea {
+    @apply text-sm text-gray-600;
+  }
+}

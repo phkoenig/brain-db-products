@@ -26,7 +26,7 @@ const Input = React.forwardRef<HTMLTextAreaElement, InputProps>(function Input(
   return (
     <textarea
       className={SubframeUtils.twClassNames(
-        "min-h-[96px] w-full border-none bg-transparent px-2 py-1.5 text-body font-body text-default-font outline-none placeholder:text-neutral-400",
+        "min-h-[96px] w-full border-none bg-transparent px-2 py-1.5 text-body font-body text-gray-600 outline-none placeholder:text-neutral-400",
         className
       )}
       placeholder={placeholder as string}

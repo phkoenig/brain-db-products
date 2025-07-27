@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { Button } from "@/ui/components/Button";
 import { TextField } from "@/ui/components/TextField";
@@ -13,9 +15,34 @@ import { TextArea } from "@/ui/components/TextArea";
 import { ToggleGroup } from "@/ui/components/ToggleGroup";
 
 function Extractor() {
+  const searchParams = useSearchParams();
+  const captureId = searchParams.get("capture_id");
+  const [capture, setCapture] = useState<null | { url: string; screenshot_url: string; thumbnail_url: string; created_at: string }>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!captureId) return;
+    setLoading(true);
+    setError(null);
+    supabase
+      .from("captures")
+      .select("url, screenshot_url, thumbnail_url, created_at")
+      .eq("id", captureId)
+      .single()
+      .then(({ data, error }) => {
+        if (error) setError(error.message);
+        else setCapture(data);
+        setLoading(false);
+      });
+  }, [captureId]);
+
   return (
     <DefaultPageLayout>
       <div className="flex h-full w-full flex-col items-start gap-4 bg-default-background px-4 py-4">
+        {loading && <div className="w-full text-center py-8">Lade Capture-Daten...</div>}
+        {error && <div className="w-full text-center text-red-500 py-8">Fehler: {error}</div>}
+        
         <div className="flex w-full grow shrink-0 basis-0 items-start gap-4">
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
@@ -50,45 +77,32 @@ function Extractor() {
                   {"Screenshot\n"}
                 </span>
               </div>
-              <img
-                className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md"
-                src="https://res.cloudinary.com/subframe/image/upload/v1753484734/uploads/15448/no0kzv8niw6m1rilbcoq.png"
-              />
+                             <img
+                 className="w-full h-auto object-contain rounded-md border border-solid border-neutral-border shadow-md"
+                 src={capture ? capture.screenshot_url : "https://res.cloudinary.com/subframe/image/upload/v1753484734/uploads/15448/no0kzv8niw6m1rilbcoq.png"}
+               />
             </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"URL\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value=""
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
-                />
-              </TextField>
-            </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Date / Time\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value=""
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
-                />
-              </TextField>
-            </div>
+                         <div className="flex w-full flex-col items-start gap-1 pt-4">
+               <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                 {"URL\n"}
+               </span>
+                               <a
+                  href={capture ? capture.url : ""}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full break-all bg-neutral-100 rounded p-2 underline hover:no-underline cursor-pointer text-sm text-gray-600"
+                >
+                  {capture ? capture.url : ""}
+                </a>
+             </div>
+                           <div className="flex w-full flex-col items-start gap-1 pt-4">
+                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                   {"Date / Time\n"}
+                 </span>
+                                   <div className="w-full break-all bg-neutral-100 rounded p-2 text-sm text-gray-600">
+                    {capture ? new Date(capture.created_at).toLocaleString('de-DE') : ""}
+                  </div>
+               </div>
             <div className="flex w-full flex-col items-start gap-1 pt-4">
               <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                 {"Title HTML\n"}
@@ -215,10 +229,11 @@ function Extractor() {
                       {"Product Image\n"}
                     </span>
                   </div>
-                  <img
-                    className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md"
-                    src="https://res.cloudinary.com/subframe/image/upload/v1753521965/uploads/15448/ozygn2coie8oufamcrqo.png"
-                  />
+                                     <img
+                     className="w-full h-auto object-contain rounded-md border border-solid border-neutral-border shadow-md"
+                     src={capture ? capture.thumbnail_url : "https://res.cloudinary.com/subframe/image/upload/v1753521965/uploads/15448/ozygn2coie8oufamcrqo.png"}
+                     alt="Product Image"
+                   />
                   <div className="flex w-full flex-col items-start gap-1 pt-4">
                     <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                       {"Category\n"}
