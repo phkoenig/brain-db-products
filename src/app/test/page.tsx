@@ -23,7 +23,6 @@ interface DebugInfo {
   userAgent: string
 }
 
-// Force dynamic rendering to avoid static generation issues
 export const dynamic = 'force-dynamic'
 
 export default function TestPage() {
@@ -45,11 +44,9 @@ export default function TestPage() {
   useEffect(() => {
     async function fetchCaptures() {
       try {
-        // First, let's check environment variables
         const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         
-        // Try to import supabase dynamically
         let supabase = null
         let supabaseType = 'unknown'
         let supabaseKeys: string[] = []
@@ -63,7 +60,6 @@ export default function TestPage() {
           console.error('Failed to import supabase:', importError)
         }
 
-        // Debug information
         const debug: DebugInfo = {
           hasSupabase: !!supabase,
           supabaseType: supabaseType,
@@ -110,7 +106,6 @@ export default function TestPage() {
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">BRAIN DB - Test Page</h1>
         
-        {/* Debug Information - Always show this first */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-yellow-800 mb-4">Debug Information</h2>
           <div className="space-y-2 text-sm">
