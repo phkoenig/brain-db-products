@@ -13,6 +13,8 @@ import { Select } from "@/ui/components/Select";
 import { FeatherSearch } from "@subframe/core";
 import { TextArea } from "@/ui/components/TextArea";
 import { ToggleGroup } from "@/ui/components/ToggleGroup";
+import { useCaptureForm } from "@/hooks/useCaptureForm";
+import { useProducts } from "@/hooks/useProducts";
 
 function Extractor() {
   const searchParams = useSearchParams();
@@ -20,6 +22,24 @@ function Extractor() {
   const [capture, setCapture] = useState<null | { url: string; screenshot_url: string; thumbnail_url: string; created_at: string }>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Form state management
+  const {
+    formData,
+    isDirty,
+    isSaving,
+    updateField,
+    updateFields,
+    resetForm,
+    loadFromCapture,
+    validateForm,
+    toProductData,
+    setIsSaving,
+  } = useCaptureForm();
+
+  // Products hook for saving
+  const { createProduct } = useProducts();
 
   useEffect(() => {
     if (!captureId) return;
@@ -32,17 +52,61 @@ function Extractor() {
       .single()
       .then(({ data, error }) => {
         if (error) setError(error.message);
-        else setCapture(data);
+        else {
+          setCapture(data);
+          // Load capture data into form
+          loadFromCapture(data);
+        }
         setLoading(false);
       });
-  }, [captureId]);
+  }, [captureId, loadFromCapture]);
+
+  // Handle form save
+  const handleSave = async () => {
+    const validation = validateForm();
+    if (!validation.isValid) {
+      setError(`Validation errors: ${validation.errors.join(', ')}`);
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setSaveSuccess(false);
+
+    try {
+      const productData = toProductData();
+      const savedProduct = await createProduct(productData);
+      
+      if (savedProduct) {
+        setSaveSuccess(true);
+        // Reset form after successful save
+        setTimeout(() => {
+          resetForm();
+          setSaveSuccess(false);
+        }, 2000);
+      } else {
+        setError('Failed to save product');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle form reset
+  const handleReset = () => {
+    resetForm();
+    setError(null);
+    setSaveSuccess(false);
+  };
 
   return (
     <DefaultPageLayout>
       <div className="flex h-full w-full flex-col items-start gap-4 bg-default-background px-4 py-4">
-        {loading && <div className="w-full text-center py-8">Lade Capture-Daten...</div>}
         {error && <div className="w-full text-center text-red-500 py-8">Fehler: {error}</div>}
-        
+        {saveSuccess && <div className="w-full text-center text-green-500 py-8">✅ Produkt erfolgreich gespeichert!</div>}
+
         <div className="flex w-full grow shrink-0 basis-0 items-start gap-4">
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
@@ -115,8 +179,8 @@ function Extractor() {
               >
                 <TextField.Input
                   placeholder=""
-                  value=""
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
+                  value={formData.product_name}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('product_name', event.target.value)}
                 />
               </TextField>
             </div>
@@ -132,8 +196,8 @@ function Extractor() {
               >
                 <TextField.Input
                   placeholder=""
-                  value=""
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
+                  value={formData.product_code}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('product_code', event.target.value)}
                 />
               </TextField>
             </div>
@@ -149,8 +213,8 @@ function Extractor() {
               >
                 <TextField.Input
                   placeholder=""
-                  value=""
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
+                  value={formData.description}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('description', event.target.value)}
                 />
               </TextField>
             </div>
@@ -245,8 +309,8 @@ function Extractor() {
                       placeholder="Select options"
                       helpText=""
                       icon={<FeatherSearch />}
-                      value={undefined}
-                      onValueChange={(value: string) => {}}
+                      value={formData.category}
+                      onValueChange={(value: string) => updateField('category', value)}
                     >
                       <Select.Item value="option1">option1</Select.Item>
                       <Select.Item value="option2">option2</Select.Item>
@@ -269,10 +333,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.manufacturer}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('manufacturer', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -288,10 +352,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.product_name}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('product_name', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -307,10 +371,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.series}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('series', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -326,10 +390,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.product_code}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('product_code', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -345,10 +409,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.application_area}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('application_area', event.target.value)}
                   />
                 </TextField>
                 <div className="flex w-full flex-col items-start gap-1 pt-4">
@@ -364,10 +428,10 @@ function Extractor() {
                     <TextArea.Input
                       className="h-28 w-full flex-none"
                       placeholder="..."
-                      value=""
+                      value={formData.description}
                       onChange={(
                         event: React.ChangeEvent<HTMLTextAreaElement>
-                      ) => {}}
+                      ) => updateField('description', event.target.value)}
                     />
                   </TextArea>
                 </div>
@@ -391,10 +455,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.dimensions}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('dimensions', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -410,10 +474,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.color}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('color', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -429,10 +493,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.material_type}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('material_type', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -448,10 +512,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.surface}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('surface', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -467,10 +531,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.weight_per_unit}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('weight_per_unit', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -486,10 +550,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.fire_resistance}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('fire_resistance', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -505,10 +569,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.thermal_conductivity}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('thermal_conductivity', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -524,10 +588,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.u_value}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('u_value', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -543,10 +607,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.sound_insulation}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('sound_insulation', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -562,10 +626,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.water_resistance}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('water_resistance', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -581,10 +645,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.vapor_diffusion}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('vapor_diffusion', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -600,10 +664,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.installation_type}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('installation_type', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -619,10 +683,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.maintenance}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('maintenance', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -638,10 +702,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.environment_cert}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('environment_cert', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -664,10 +728,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.datasheet_url}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('datasheet_url', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -683,10 +747,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.technical_sheet_url}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('technical_sheet_url', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -702,10 +766,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.product_page_url}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('product_page_url', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -721,10 +785,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.additional_documents}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('additional_documents', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -740,10 +804,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.catalog_path}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('catalog_path', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -838,10 +902,10 @@ function Extractor() {
                   <TextArea.Input
                     className="h-28 w-full flex-none"
                     placeholder="..."
-                    value=""
+                    value={formData.notes}
                     onChange={(
                       event: React.ChangeEvent<HTMLTextAreaElement>
-                    ) => {}}
+                    ) => updateField('notes', event.target.value)}
                   />
                 </TextArea>
               </div>
@@ -864,10 +928,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.retailer}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('retailer', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -883,10 +947,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.retailer_url}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('retailer_url', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -902,10 +966,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.price}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('price', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -921,10 +985,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.unit}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('unit', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -940,10 +1004,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.price_per_unit}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('price_per_unit', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -959,10 +1023,10 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value=""
+                    value={formData.availability}
                     onChange={(
                       event: React.ChangeEvent<HTMLInputElement>
-                    ) => {}}
+                    ) => updateField('availability', event.target.value)}
                   />
                 </TextField>
               </div>
