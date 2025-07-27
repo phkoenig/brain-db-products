@@ -1,0 +1,111 @@
+{
+  "FB": {
+    "label": "Fußbodenbeläge",
+    "children": {
+      "FB.FL": "Fliesen",
+      "FB.TE": "Teppiche",
+      "FB.GU": "Gussböden",
+      "FB.NS": "Naturstein",
+      "FB.PA": "Parkett",
+      "FB.LA": "Laminat"
+    }
+  },
+  "WB": {
+    "label": "Wandbeläge",
+    "children": {
+      "WB.FL": "Fliesen",
+      "WB.PU": "Putzsysteme",
+      "WB.PV": "Paneele & Verkleidungen",
+      "WB.TA": "Tapeten",
+      "WB.AN": "Anstriche"
+    }
+  },
+  "DV": {
+    "label": "Deckenverkleidungen",
+    "children": {
+      "DV.AD": "Abgehängte Decken",
+      "DV.HV": "Holzverkleidungen",
+      "DV.PA": "Putz & Anstrich"
+    }
+  },
+  "SA": {
+    "label": "Sanitärobjekte",
+    "children": {
+      "SA.AR": "Armaturen",
+      "SA.WC": "WC",
+      "SA.BW": "Badewannen",
+      "SA.WB": "Waschbecken",
+      "SA.DU": "Duschen",
+      "SA.WE": "Weitere"
+    }
+  },
+  "MO": {
+    "label": "Möbel",
+    "children": {
+      "MO.ES": "Esstische",
+      "MO.ST": "Stühle",
+      "MO.BE": "Betten",
+      "MO.SO": "Sofas & Sessel",
+      "MO.RE": "Regalsysteme",
+      "MO.WE": "Weitere"
+    }
+  },
+  "KG": {
+    "label": "Küchengeräte",
+    "children": {
+      "KG.BA": "Backöfen",
+      "KG.KO": "Kochfelder",
+      "KG.KH": "Kühlschränke",
+      "KG.WK": "Weinkühlschränke",
+      "KG.KM": "Kaffeemaschinen",
+      "KG.WE": "Weitere"
+    }
+  },
+  "LE": {
+    "label": "Leuchten",
+    "children": {
+      "LE.DE": "Deckenleuchten",
+      "LE.WA": "Wandleuchten",
+      "LE.ST": "Steh- & Tischleuchten"
+    }
+  },
+  "TF": {
+    "label": "Türen & Fenster",
+    "children": {
+      "TF.TU": "Türen",
+      "TF.FE": "Fenster",
+      "TF.BE": "Beschläge"
+    }
+  },
+  "HT": {
+    "label": "Haustechnik",
+    "children": {
+      "HT.HE": "Heizung",
+      "HT.LU": "Lüftung",
+      "HT.EL": "Elektro"
+    }
+  },
+  "FA": {
+    "label": "Fassadenmaterialien",
+    "children": {
+      "FA.PU": "Putz",
+      "FA.VE": "Verkleidung"
+    }
+  },
+  "DS": {
+    "label": "Dämmstoffe",
+    "children": {
+      "DS.MI": "Mineralisch",
+      "DS.NA": "Natur",
+      "DS.SY": "Synthetisch"
+    }
+  },
+  "GA": {
+    "label": "Gartenelemente",
+    "children": {
+      "GA.BE": "Beläge",
+      "GA.BG": "Begrünung",
+      "GA.BA": "Bauwerke"
+    }
+  }
+}
