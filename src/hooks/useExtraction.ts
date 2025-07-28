@@ -1,195 +1,144 @@
 import { useState } from 'react';
-import { FusedResult } from '@/lib/types/extraction';
+import { FusedResult, WebScrapingResult } from '@/lib/types/extraction';
+
+// Define the detailed states of the extraction process
+export type ExtractionState =
+  | 'idle'
+  | 'scraping_primary'
+  | 'analyzing_primary'
+  | 'finding_manufacturer'
+  | 'finding_retailers'
+  | 'fusing_data'
+  | 'complete'
+  | 'error';
 
 export function useExtraction() {
-  const [extractionState, setExtractionState] = useState<'idle' | 'researching' | 'scraping' | 'analyzing' | 'fusing' | 'complete' | 'error'>('idle');
+  const [extractionState, setExtractionState] = useState<ExtractionState>('idle');
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<FusedResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fieldsNeedingReview, setFieldsNeedingReview] = useState<string[]>([]);
-  const [overallConfidence, setOverallConfidence] = useState(0);
-  const [researchResults, setResearchResults] = useState<any>(null);
 
-  const startExtraction = async (url: string, screenshotBase64: string, sourceType?: 'manufacturer' | 'reseller', productName?: string, resellerName?: string) => {
-    setExtractionState('scraping');
-    setProgress(10);
-    setError(null);
-    setResults(null);
-    setFieldsNeedingReview([]);
-    setOverallConfidence(0);
-    setResearchResults(null);
-
-    try {
-      let currentUrl = url;
-      let currentScreenshot = screenshotBase64;
-
-      // 1. Internet Research (if reseller source type) (10-25%)
-      if (sourceType === 'reseller') {
-        setExtractionState('researching');
-        setProgress(15);
-        
-        const researchResponse = await fetch('/api/extraction/internet-research', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            url, 
-            screenshotBase64, 
-            productName, 
-            resellerName 
-          })
-        });
-
-        if (!researchResponse.ok) {
-          throw new Error('Internet research failed');
-        }
-
-        const researchData = await researchResponse.json();
-        setResearchResults(researchData.data);
-        setProgress(25);
-
-        // If manufacturer found, update URL for further processing
-        if (researchData.data?.manufacturer?.website) {
-          currentUrl = researchData.data.manufacturer.website;
-          // Note: We would need a new screenshot for the manufacturer website
-          // For now, we'll continue with the original screenshot
-        }
-      }
-
-      // 2. Web Scraping (25-45%)
-      setExtractionState('scraping');
-      setProgress(30);
-      
-      const webScrapingResponse = await fetch('/api/extraction/web-scraping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: currentUrl, sourceType })
-      });
-
-      if (!webScrapingResponse.ok) {
-        throw new Error('Web scraping failed');
-      }
-
-      const webData = await webScrapingResponse.json();
-      setProgress(45);
-
-      // 3. AI Analysis (45-75%)
-      setExtractionState('analyzing');
-      setProgress(50);
-
-      const aiAnalysisResponse = await fetch('/api/extraction/ai-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          url: currentUrl, 
-          screenshotBase64: currentScreenshot,
-          sourceType
-        })
-      });
-
-      if (!aiAnalysisResponse.ok) {
-        throw new Error('AI analysis failed');
-      }
-
-      const aiData = await aiAnalysisResponse.json();
-      setProgress(75);
-
-      // 4. Data Fusion (75-95%)
-      setExtractionState('fusing');
-      setProgress(80);
-
-      const fusionResponse = await fetch('/api/extraction/data-fusion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          webData, 
-          aiData 
-        })
-      });
-
-      if (!fusionResponse.ok) {
-        throw new Error('Data fusion failed');
-      }
-
-      const fusedData = await fusionResponse.json();
-      setProgress(95);
-
-      // 5. Validation and final processing
-      setProgress(100);
-      setResults(fusedData.results);
-      setFieldsNeedingReview(fusedData.fieldsNeedingReview || []);
-      setOverallConfidence(fusedData.overallConfidence || 0);
-      setExtractionState('complete');
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      setExtractionState('error');
-      setProgress(0);
-    }
-  };
+  // State to hold data from each step
+  const [primaryScrapeData, setPrimaryScrapeData] = useState<WebScrapingResult | null>(null);
+  const [counterpartData, setCounterpartData] = useState<any | null>(null); // Can be manufacturer info or retailer list
+  const [fusedData, setFusedData] = useState<FusedResult | null>(null);
 
   const resetExtraction = () => {
     setExtractionState('idle');
     setProgress(0);
-    setResults(null);
     setError(null);
-    setFieldsNeedingReview([]);
-    setOverallConfidence(0);
+    setPrimaryScrapeData(null);
+    setCounterpartData(null);
+    setFusedData(null);
   };
 
-  const getProgressMessage = (): string => {
-    switch (extractionState) {
-      case 'researching':
-        return 'Internet-Recherche läuft...';
-      case 'scraping':
-        return 'Web Scraping läuft...';
-      case 'analyzing':
-        return 'AI-Analyse läuft...';
-      case 'fusing':
-        return 'Daten werden kombiniert...';
-      case 'complete':
-        return 'Extraktion abgeschlossen';
-      case 'error':
-        return 'Fehler bei der Extraktion';
-      default:
-        return 'Bereit für Extraktion';
+  const startExtraction = async (
+    primaryUrl: string,
+    screenshotBase64: string,
+    sourceType: 'manufacturer' | 'reseller',
+    country: string
+  ) => {
+    resetExtraction(); // Start fresh
+
+    try {
+      // Step 1: Scrape the primary source URL
+      setExtractionState('scraping_primary');
+      setProgress(10);
+      const scrapeResponse = await fetch('/api/extraction/web-scraping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: primaryUrl, sourceType }),
+      });
+      if (!scrapeResponse.ok) throw new Error('Primary scraping failed');
+      const scrapedData: WebScrapingResult = (await scrapeResponse.json()).data;
+      setPrimaryScrapeData(scrapedData);
+      
+      // Step 2: Analyze the primary source screenshot
+      setExtractionState('analyzing_primary');
+      setProgress(30);
+      const analyzeResponse = await fetch('/api/extraction/ai-analysis', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: primaryUrl, screenshotBase64, sourceType }),
+      });
+      if (!analyzeResponse.ok) throw new Error('Primary AI analysis failed');
+      const analyzedData = (await analyzeResponse.json()).data;
+
+      // TODO: Fuse scrapedData and analyzedData before the next step to get a more robust product name
+      const productName = scrapedData.product_name.value || analyzedData.product_name.value;
+      const manufacturerName = scrapedData.manufacturer.value || analyzedData.manufacturer.value;
+      const retailerName = scrapedData.retailer?.value; // Assumes web scraper can find this
+
+      // Step 3: Find the counterpart based on source type
+      if (sourceType === 'reseller') {
+        setExtractionState('finding_manufacturer');
+        setProgress(50);
+        if (productName && retailerName) {
+            const findManufacturerResponse = await fetch('/api/extraction/find-manufacturer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productName, retailerName }),
+            });
+            if (findManufacturerResponse.ok) {
+                const manufacturerInfo = await findManufacturerResponse.json();
+                setCounterpartData(manufacturerInfo);
+            }
+        }
+      } else { // sourceType is 'manufacturer'
+        setExtractionState('finding_retailers');
+        setProgress(50);
+        if (productName && manufacturerName) {
+            const findRetailersResponse = await fetch('/api/extraction/find-retailers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productName, manufacturerName, country }),
+            });
+            if (findRetailersResponse.ok) {
+                const retailersData = await findRetailersResponse.json();
+                setCounterpartData(retailersData.retailers);
+            }
+        }
+      }
+
+      // Step 4: Fuse all collected data
+      setExtractionState('fusing_data');
+      setProgress(80);
+      // TODO: Implement the final data fusion logic here or in a separate API route
+      // This will combine primaryScrapeData, analyzedData, and counterpartData
+      // For now, just marking as complete
+      
+      setProgress(100);
+      setExtractionState('complete');
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setExtractionState('error');
+      setProgress(0);
     }
   };
-
-  const getConfidenceColor = (confidence: number): string => {
-    if (confidence >= 0.8) return 'text-green-600';
-    if (confidence >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getConfidenceLabel = (confidence: number): string => {
-    if (confidence >= 0.8) return 'Hoch';
-    if (confidence >= 0.6) return 'Mittel';
-    return 'Niedrig';
-  };
+  
+  const getProgressMessage = (): string => {
+    switch (extractionState) {
+        case 'scraping_primary': return 'Scraping primary source...';
+        case 'analyzing_primary': return 'Analyzing screenshot...';
+        case 'finding_manufacturer': return 'Finding manufacturer...';
+        case 'finding_retailers': return 'Finding retailers...';
+        case 'fusing_data': return 'Fusing all data...';
+        case 'complete': return 'Extraction complete!';
+        case 'error': return `Error: ${error}`;
+        default: return 'Ready to start.';
+    }
+  }
 
   return {
-    // State
     extractionState,
     progress,
-    results,
     error,
-    fieldsNeedingReview,
-    overallConfidence,
-    researchResults,
-    
-    // Actions
+    primaryScrapeData,
+    counterpartData,
+    fusedData,
     startExtraction,
     resetExtraction,
-    
-    // Utilities
     getProgressMessage,
-    getConfidenceColor,
-    getConfidenceLabel,
-    
-    // Computed
-    isExtracting: extractionState === 'researching' || extractionState === 'scraping' || extractionState === 'analyzing' || extractionState === 'fusing',
-    hasResults: results !== null,
-    hasErrors: error !== null,
-    needsManualReview: fieldsNeedingReview.length > 0
+    isExtracting: extractionState !== 'idle' && extractionState !== 'complete' && extractionState !== 'error',
   };
 } 

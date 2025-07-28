@@ -15,6 +15,7 @@
     "cheerio": "^1.1.2",
     "next": "15.4.4",
     "openai": "^5.10.2",
+    "perplexity-sdk": "^1.0.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "zod": "^3.25.76"

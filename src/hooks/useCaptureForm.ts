@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { ProductFormData } from '@/types/products';
 
 // Initial empty form data
@@ -65,37 +65,38 @@ export function useCaptureForm() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Update a single field
-  const updateField = (field: keyof ProductFormData, value: string) => {
+  const updateField = useCallback((field: keyof ProductFormData, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
     setIsDirty(true);
-  };
+  }, []);
 
   // Update multiple fields at once
-  const updateFields = (updates: Partial<ProductFormData>) => {
+  const updateFields = useCallback((updates: Partial<ProductFormData>) => {
     setFormData(prev => ({
       ...prev,
       ...updates
     }));
     setIsDirty(true);
-  };
+  }, []);
 
   // Reset form to initial state
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData(initialFormData);
     setIsDirty(false);
-  };
+  }, []);
 
   // Load data from capture (when capture_id is provided)
-  const loadFromCapture = (captureData: { url: string; screenshot_url: string; thumbnail_url: string; created_at: string }) => {
+  const loadFromCapture = useCallback((captureData: { url: string; screenshot_url: string; thumbnail_url: string; created_at: string }) => {
     updateFields({
       product_page_url: captureData.url,
+      source_url: captureData.url,
       // We could also set screenshot_path and thumbnail_path here
       // when we implement image upload functionality
     });
-  };
+  }, []); // Empty dependency array means this function is created only once
 
   // Validate form data
   const validateForm = (): { isValid: boolean; errors: string[] } => {

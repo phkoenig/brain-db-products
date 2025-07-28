@@ -23,7 +23,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <input
       className={SubframeUtils.twClassNames(
-        "h-full w-full border-none bg-transparent text-body font-body text-gray-600 outline-none placeholder:text-neutral-400",
+        "h-full w-full border-none bg-transparent text-body font-body text-default-font outline-none placeholder:text-neutral-400",
         className
       )}
       placeholder={placeholder as string}
