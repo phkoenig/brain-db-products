@@ -14,7 +14,8 @@ import { FeatherSearch } from "@subframe/core";
 import { TextArea } from "@/ui/components/TextArea";
 import { ToggleGroup } from "@/ui/components/ToggleGroup";
 import { useCaptureForm } from "@/hooks/useCaptureForm";
-import { useProducts } from "@/hooks/useProducts";
+import { useExtraction } from "@/hooks/useExtraction";
+
 
 function Extractor() {
   const searchParams = useSearchParams();
@@ -22,7 +23,7 @@ function Extractor() {
   const [capture, setCapture] = useState<null | { url: string; screenshot_url: string; thumbnail_url: string; created_at: string }>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [sourceType, setSourceType] = useState<'manufacturer' | 'reseller' | null>(null);
 
   // Form state management
   const {
@@ -38,8 +39,27 @@ function Extractor() {
     setIsSaving,
   } = useCaptureForm();
 
-  // Products hook for saving
-  const { createProduct } = useProducts();
+  // Extraction state management
+  const {
+    extractionState,
+    progress,
+    results,
+    error: extractionError,
+    fieldsNeedingReview,
+    overallConfidence,
+    researchResults,
+    startExtraction,
+    resetExtraction,
+    getProgressMessage,
+    getConfidenceColor,
+    getConfidenceLabel,
+    isExtracting,
+    hasResults,
+    hasErrors,
+    needsManualReview
+  } = useExtraction();
+
+
 
   useEffect(() => {
     if (!captureId) return;
@@ -61,51 +81,104 @@ function Extractor() {
       });
   }, [captureId, loadFromCapture]);
 
-  // Handle form save
-  const handleSave = async () => {
-    const validation = validateForm();
-    if (!validation.isValid) {
-      setError(`Validation errors: ${validation.errors.join(', ')}`);
+  // Helper function to get field mappings based on source type
+  const getFieldMappings = () => {
+    if (sourceType === 'manufacturer') {
+      return {
+        // For manufacturer sites, focus on product details and specifications
+        product_name: ['h1.product-title', 'h1.product-name', '.product-name h1', 'h1'],
+        manufacturer: ['.manufacturer', '.brand', '[data-testid="manufacturer"]', '.product-brand'],
+        description: ['.product-description', '.description', '[data-testid="description"]', '.product-details'],
+        specifications: ['.specifications', '.product-specs', '[data-testid="specifications"]', '.tech-specs'],
+        // Price might not be available on manufacturer sites
+        price: ['.price', '.product-price', '[data-testid="price"]', '.current-price']
+      };
+    } else if (sourceType === 'reseller') {
+      return {
+        // For reseller sites, focus on pricing and availability
+        product_name: ['h1.product-title', 'h1.product-name', '.product-name h1', 'h1'],
+        manufacturer: ['.manufacturer', '.brand', '[data-testid="manufacturer"]', '.product-brand'],
+        price: ['.price', '.product-price', '[data-testid="price"]', '.current-price', '.sale-price'],
+        availability: ['.availability', '.stock', '[data-testid="availability"]', '.in-stock'],
+        retailer: ['.retailer', '.seller', '[data-testid="retailer"]', '.store-name'],
+        description: ['.product-description', '.description', '[data-testid="description"]', '.product-details']
+      };
+    }
+    return {};
+  };
+
+  // Helper function to get AI prompt context based on source type
+  const getAIPromptContext = () => {
+    if (sourceType === 'manufacturer') {
+      return "Dies ist eine Hersteller-Website. Fokussiere dich auf Produktdetails, technische Spezifikationen und Produktbeschreibungen. Preise sind möglicherweise nicht verfügbar.";
+    } else if (sourceType === 'reseller') {
+      return "Dies ist eine Händler-Website. Fokussiere dich auf Preise, Verfügbarkeit, Händlerinformationen und Produktdetails.";
+    }
+    return "Analysiere die Produktinformationen auf der Website.";
+  };
+
+  // Validation function to check if source type is selected
+  const validateSourceType = () => {
+    if (!sourceType) {
+      setError('Bitte wähle zuerst eine Quelle aus (Manufacturer oder Reseller)');
+      return false;
+    }
+    setError(null);
+    return true;
+  };
+
+  // Helper function to convert image URL to base64
+  const imageUrlToBase64 = async (imageUrl: string): Promise<string> => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          // Remove data:image/png;base64, prefix
+          resolve(base64.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      throw error;
+    }
+  };
+
+  // Function to handle extraction start
+  const handleStartExtraction = async () => {
+    if (!validateSourceType() || !capture) {
       return;
     }
 
-    setIsSaving(true);
-    setError(null);
-    setSaveSuccess(false);
-
     try {
-      const productData = toProductData();
-      const savedProduct = await createProduct(productData);
+      const screenshotBase64 = await imageUrlToBase64(capture.screenshot_url);
       
-      if (savedProduct) {
-        setSaveSuccess(true);
-        // Reset form after successful save
-        setTimeout(() => {
-          resetForm();
-          setSaveSuccess(false);
-        }, 2000);
-      } else {
-        setError('Failed to save product');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsSaving(false);
+      await startExtraction(
+        capture.url,
+        screenshotBase64,
+        sourceType,
+        formData.product_name,
+        formData.retailer
+      );
+    } catch (error) {
+      setError('Fehler beim Starten der Extraktion: ' + (error instanceof Error ? error.message : 'Unbekannter Fehler'));
     }
   };
 
-  // Handle form reset
-  const handleReset = () => {
-    resetForm();
-    setError(null);
-    setSaveSuccess(false);
-  };
+
 
   return (
     <DefaultPageLayout>
       <div className="flex h-full w-full flex-col items-start gap-4 bg-default-background px-4 py-4">
-        {error && <div className="w-full text-center text-red-500 py-8">Fehler: {error}</div>}
-        {saveSuccess && <div className="w-full text-center text-green-500 py-8">✅ Produkt erfolgreich gespeichert!</div>}
+        {(error || extractionError) && (
+          <div className="w-full text-center text-red-500 py-8">
+            Fehler: {error || extractionError}
+          </div>
+        )}
 
         <div className="flex w-full grow shrink-0 basis-0 items-start gap-4">
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
@@ -119,20 +192,54 @@ function Extractor() {
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Import As"}
                 </span>
-                <div className="flex w-full items-center gap-2">
-                  <Button
-                    className="h-8 grow shrink-0 basis-0"
-                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-                  >
-                    Manucaturer
-                  </Button>
-                  <Button
-                    className="h-8 grow shrink-0 basis-0"
-                    onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-                  >
-                    Reseller
-                  </Button>
-                </div>
+                                 <div className="flex w-full items-center gap-2">
+                   <Button
+                     className={`h-8 grow shrink-0 basis-0 ${sourceType === 'manufacturer' ? 'bg-blue-500 text-white' : ''}`}
+                     onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                       setSourceType('manufacturer');
+                       // Update form data to indicate this is from manufacturer
+                       updateField('source_type', 'manufacturer');
+                     }}
+                   >
+                     Manufacturer
+                   </Button>
+                   <Button
+                     className={`h-8 grow shrink-0 basis-0 ${sourceType === 'reseller' ? 'bg-blue-500 text-white' : ''}`}
+                     onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
+                       setSourceType('reseller');
+                       // Update form data to indicate this is from reseller
+                       updateField('source_type', 'reseller');
+                     }}
+                   >
+                     Reseller
+                   </Button>
+                 </div>
+                 {sourceType && (
+                   <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                     <strong>Quelle ausgewählt:</strong> {sourceType === 'manufacturer' ? 'Hersteller-Website' : 'Händler-Website'}
+                     <br />
+                     <span className="text-xs">
+                       {sourceType === 'manufacturer' 
+                         ? 'Fokus auf Produktdetails und Spezifikationen' 
+                         : 'Fokus auf Preise und Verfügbarkeit'
+                       }
+                     </span>
+                   </div>
+                 )}
+                 
+                 {researchResults && (
+                   <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                     <strong>Research-Ergebnisse:</strong>
+                     <br />
+                     <span className="text-xs">
+                       <strong>Hersteller:</strong> {researchResults.manufacturer?.name || 'Nicht gefunden'}
+                       <br />
+                       <strong>Website:</strong> {researchResults.manufacturer?.website || 'Nicht gefunden'}
+                       <br />
+                       <strong>Confidence:</strong> {researchResults.manufacturer?.confidence ? `${(researchResults.manufacturer.confidence * 100).toFixed(1)}%` : 'N/A'}
+                     </span>
+                   </div>
+                 )}
               </div>
             </div>
             <div className="flex w-full flex-col items-start gap-1">
@@ -229,11 +336,12 @@ function Extractor() {
                 helpText=""
               >
                 <TextField.Input
-                  placeholder=""
+                  placeholder={extractionState === 'scraping' ? getProgressMessage() : 'Bereit für Scraping'}
                   value=""
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
+                  disabled={isExtracting}
                 />
-                <Progress value={10} />
+                <Progress value={extractionState === 'scraping' ? progress : 0} />
               </TextField>
             </div>
             <div className="flex w-full flex-col items-start gap-1 pt-4">
@@ -247,11 +355,12 @@ function Extractor() {
                 helpText=""
               >
                 <TextField.Input
-                  placeholder=""
+                  placeholder={extractionState === 'analyzing' ? getProgressMessage() : 'Bereit für AI-Analyse'}
                   value=""
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
+                  disabled={isExtracting}
                 />
-                <Progress value={10} />
+                <Progress value={extractionState === 'analyzing' ? progress : 0} />
               </TextField>
             </div>
             <div className="flex w-full flex-col items-start gap-1 pt-4">
@@ -263,7 +372,8 @@ function Extractor() {
                   className="h-5 w-5 flex-none"
                   variant="brand-tertiary"
                   icon={<FeatherPlayCircle />}
-                  onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
+                  onClick={handleStartExtraction}
+                  disabled={isExtracting || !sourceType}
                 />
               </div>
               <TextField
@@ -273,11 +383,12 @@ function Extractor() {
                 helpText=""
               >
                 <TextField.Input
-                  placeholder=""
+                  placeholder={extractionState === 'researching' ? getProgressMessage() : 'Bereit für AI-Research'}
                   value=""
                   onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
+                  disabled={isExtracting}
                 />
-                <Progress value={10} />
+                <Progress value={extractionState === 'researching' ? progress : 0} />
               </TextField>
             </div>
           </div>
@@ -1181,25 +1292,7 @@ function Extractor() {
           </div>
         </div>
         
-        {/* Action Buttons */}
-        <div className="flex w-full justify-center gap-4 py-8">
-          <Button
-            className="px-8 py-3"
-            variant="brand-secondary"
-            onClick={handleReset}
-            disabled={isSaving}
-          >
-            Reset
-          </Button>
-          <Button
-            className="px-8 py-3"
-            variant="brand-primary"
-            onClick={handleSave}
-            disabled={isSaving || !isDirty}
-          >
-            {isSaving ? 'Saving...' : 'Save Product'}
-          </Button>
-        </div>
+
       </div>
     </DefaultPageLayout>
   );
