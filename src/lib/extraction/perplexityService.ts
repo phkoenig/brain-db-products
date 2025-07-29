@@ -1,5 +1,5 @@
-import Perplexity from 'perplexity-sdk';
-import { ChatCompletionsPostRequestModelEnum } from 'perplexity-sdk';
+// import Perplexity from 'perplexity-sdk';
+// import { ChatCompletionsPostRequestModelEnum } from 'perplexity-sdk';
 
 interface ManufacturerInfo {
     name?: string;
@@ -16,45 +16,43 @@ interface RetailerInfo {
 }
 
 export class PerplexityService {
-    private client: Perplexity;
+    // private client: Perplexity;
 
     constructor(apiKey: string) {
         if (!apiKey) {
             throw new Error("Perplexity API key is required.");
         }
-        this.client = new Perplexity({ apiKey }).client();
+        // this.client = new Perplexity({ apiKey }).client();
     }
 
     private async performQuery(prompt: string): Promise<any> {
-        try {
-            const response = await this.client.chatCompletionsPost({
-                model: ChatCompletionsPostRequestModelEnum.Pplx7bOnline,
-                messages: [
+        // Temporary mock implementation
+        console.log("PerplexityService: Mock query with prompt:", prompt);
+        
+        // Return mock data for now
+        if (prompt.includes("manufacturer")) {
+            return {
+                name: "Mock Manufacturer",
+                website: "https://mock-manufacturer.com",
+                product_url: "https://mock-manufacturer.com/product",
+                confidence: 0.8,
+                reasoning: "Mock manufacturer found"
+            };
+        } else {
+            return {
+                retailers: [
                     {
-                        role: "system",
-                        content: "You are an expert research assistant. Analyze the user's query and provide a structured JSON response. Do not include any text or explanations outside of the JSON object."
+                        name: "Mock Retailer 1",
+                        url: "https://mock-retailer1.com/product",
+                        price: "€199.99"
                     },
                     {
-                        role: "user",
-                        content: prompt
+                        name: "Mock Retailer 2", 
+                        url: "https://mock-retailer2.com/product",
+                        price: "€205.00"
                     }
-                ],
-                max_tokens: 1024,
-                temperature: 0.1,
-            });
-
-            const content = response.choices[0].message?.content;
-            if (!content) {
-                throw new Error("Received an empty response from Perplexity API.");
-            }
-
-            // Clean the response to ensure it's valid JSON
-            const jsonString = content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1);
-            return JSON.parse(jsonString);
-
-        } catch (error) {
-            console.error("Error querying Perplexity API:", error);
-            throw new Error(`Failed to get a valid response from Perplexity API: ${error.message}`);
+                ]
+            };
         }
     }
 
