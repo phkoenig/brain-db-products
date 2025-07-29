@@ -57,6 +57,18 @@ const initialFormData: ProductFormData = {
   
   // Notes
   notes: '',
+  
+  // Additional fields for extraction
+  manufacturer_url: '',
+  manufacturer_product_url: '',
+  retailer_name: '',
+  main_material: '',
+  additional_documents_url: '',
+  rating: '',
+  catalog_url: '',
+  project: '',
+  sample_ordered: '',
+  sample_stored_in: '',
 };
 
 export function useCaptureForm() {
@@ -75,10 +87,16 @@ export function useCaptureForm() {
 
   // Update multiple fields at once
   const updateFields = useCallback((updates: Partial<ProductFormData>) => {
-    setFormData(prev => ({
-      ...prev,
-      ...updates
-    }));
+    console.log("useCaptureForm: updateFields called with:", updates);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        ...updates
+      };
+      console.log("useCaptureForm: Previous form data:", prev);
+      console.log("useCaptureForm: New form data:", newData);
+      return newData;
+    });
     setIsDirty(true);
   }, []);
 

@@ -1,43 +1,46 @@
-import OpenAI from 'openai';
 import { AIAnalysisResult, FieldData } from '../types/extraction';
 import { generateAIPrompt, getCachedFieldDefinitions } from '../schemas/product-fields';
 
-export class AIAnalyzer {
-  private openai: OpenAI;
+export class PerplexityAnalyzer {
+  private apiKey: string;
   
   constructor(apiKey: string) {
-    this.openai = new OpenAI({ apiKey });
+    this.apiKey = apiKey;
   }
   
-  async analyzeScreenshot(screenshotBase64: string, url: string, customPrompt?: string): Promise<AIAnalysisResult> {
+  async analyzeUrl(url: string, customPrompt?: string): Promise<AIAnalysisResult> {
     const prompt = customPrompt || await this.buildDynamicPrompt(url);
     
     try {
-      const response = await this.openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "Du bist ein Experte für Baumaterialien und Produktdaten-Extraktion. Analysiere das Screenshot und extrahiere alle verfügbaren Produktinformationen basierend auf den angegebenen Feldern."
-          },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { 
-                type: "image_url", 
-                image_url: { 
-                  url: screenshotBase64.startsWith('data:') ? screenshotBase64 : `data:image/png;base64,${screenshotBase64}` 
-                } 
-              }
-            ]
-          }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.1
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-instruct',
+          messages: [
+            {
+              role: 'system',
+              content: 'Du bist ein Experte für Baumaterialien und Produktdaten-Extraktion. Analysiere die Webseite und extrahiere alle verfügbaren Produktinformationen basierend auf den angegebenen Feldern.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.1
+        })
       });
-      
-      return this.parseAIResponse(response.choices[0].message.content);
+
+      if (!response.ok) {
+        throw new Error(`Perplexity API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return this.parseAIResponse(data.choices[0].message.content);
     } catch (error) {
       return this.handleError(error);
     }
@@ -54,7 +57,7 @@ export class AIAnalyzer {
       }).join('\n');
 
       return `
-Analysiere das Screenshot der folgenden URL: ${url}
+Analysiere die folgende Webseite: ${url}
 
 Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
 
@@ -75,6 +78,7 @@ Wichtige Hinweise:
 - Bei fehlenden Informationen verwende leere Strings und confidence 0.0
 - Bei numerischen Werten (Preis, Gewicht, etc.) extrahiere nur die Zahl ohne Einheiten
 - Verwende die angegebenen Hinweise und Beispiele zur besseren Extraktion
+- Analysiere den gesamten Inhalt der Webseite, nicht nur den sichtbaren Text
 
 Antworte ausschließlich mit gültigem JSON.
       `;
@@ -86,7 +90,7 @@ Antworte ausschließlich mit gültigem JSON.
   
   private buildStaticPrompt(url: string): string {
     return `
-Analysiere das Screenshot der folgenden URL: ${url}
+Analysiere die folgende Webseite: ${url}
 
 Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
 
@@ -117,44 +121,35 @@ Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
     "reasoning": "Begründung für die Extraktion"
   }
 }
-
-Wichtige Hinweise:
-- Gib nur gültiges JSON zurück
-- Verwende confidence-Werte zwischen 0.0 und 1.0
-- Bei unsicheren Werten verwende niedrige confidence-Werte
-- Bei Preisen extrahiere nur die Zahl ohne Währungssymbol
-- Bei fehlenden Informationen verwende leere Strings und confidence 0.0
     `;
   }
   
   private parseAIResponse(content: string | null): AIAnalysisResult {
     if (!content) {
-      return this.handleError(new Error('Empty response from OpenAI'));
+      return this.createEmptyResult();
     }
-    
+
     try {
-      const data = JSON.parse(content);
+      const parsed = JSON.parse(content);
+      const result = this.createEmptyResult();
       
-      // Create a dynamic result object based on the response
-      const result: AIAnalysisResult = {} as AIAnalysisResult;
-      
-      // Map all fields from the response to the result
-      for (const [key, value] of Object.entries(data)) {
-        if (this.isValidFieldName(key)) {
-          (result as any)[key] = this.parseFieldData(value);
+      // Dynamically parse all fields from the response
+      for (const [fieldName, fieldData] of Object.entries(parsed)) {
+        if (this.isValidFieldName(fieldName) && fieldName in result) {
+          (result as any)[fieldName] = this.parseFieldData(fieldData);
         }
       }
       
       return result;
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
-      return this.handleError(error);
+      console.error('Failed to parse Perplexity AI response:', error);
+      return this.createEmptyResult();
     }
   }
   
   private isValidFieldName(fieldName: string): boolean {
-    // Add validation for field names if needed
-    return fieldName.length > 0 && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(fieldName);
+    // Add validation logic if needed
+    return typeof fieldName === 'string' && fieldName.length > 0;
   }
   
   private parseFieldData(fieldData: unknown): FieldData {
@@ -162,13 +157,12 @@ Wichtige Hinweise:
       return this.createEmptyField();
     }
     
-    const data = fieldData as Record<string, unknown>;
-    
+    const data = fieldData as any;
     return {
-      value: String(data.value || ''),
+      value: data.value || '',
       confidence: typeof data.confidence === 'number' ? Math.max(0, Math.min(1, data.confidence)) : 0,
-      source: 'ai',
-      reasoning: String(data.reasoning || 'No reasoning provided')
+      reasoning: data.reasoning || '',
+      source: 'perplexity'
     };
   }
   
@@ -176,15 +170,12 @@ Wichtige Hinweise:
     return {
       value: '',
       confidence: 0,
-      source: 'ai',
-      reasoning: 'Field not found or invalid'
+      reasoning: '',
+      source: 'perplexity'
     };
   }
   
-  private handleError(error: unknown): AIAnalysisResult {
-    console.error('AI Analysis error:', error);
-    
-    // Return empty result with all fields
+  private createEmptyResult(): AIAnalysisResult {
     const emptyField = this.createEmptyField();
     return {
       // Basic product information
@@ -241,5 +232,10 @@ Wichtige Hinweise:
       
       confidence_scores: {}
     };
+  }
+  
+  private handleError(error: unknown): AIAnalysisResult {
+    console.error('Perplexity AI analysis error:', error);
+    return this.createEmptyResult();
   }
 } 

@@ -17,6 +17,8 @@ import { useEffect, useState } from "react";
 import { useCaptureForm } from "@/hooks/useCaptureForm";
 import { useExtraction } from "@/hooks/useExtraction";
 import { supabase } from "@/lib/supabase";
+import { AIAnalysisResult } from "@/lib/types/extraction";
+import { useMaterialCategories } from "@/hooks/useMaterialCategories";
 
 function Extractor() {
   const searchParams = useSearchParams();
@@ -32,6 +34,8 @@ function Extractor() {
   const [sourceType, setSourceType] = useState<"manufacturer" | "reseller" | null>(null);
   const [country, setCountry] = useState("de");
   const [loggingMessages, setLoggingMessages] = useState<string[]>([]);
+  
+  const { categories, loading: categoriesLoading } = useMaterialCategories();
 
   // Form state management
   const {
@@ -40,6 +44,11 @@ function Extractor() {
     updateFields,
     loadFromCapture,
   } = useCaptureForm();
+
+  // Debug: Monitor formData changes
+  useEffect(() => {
+    console.log("capture/page: formData changed:", formData);
+  }, [formData]);
 
   // Extraction state management
   const {
@@ -61,6 +70,7 @@ function Extractor() {
   // Update form fields when extraction data is available
   useEffect(() => {
     if (primaryScrapeData) {
+      addLogMessage("=== WEB SCRAPING RESULTS ===");
       addLogMessage("Updating form fields with extracted data...");
       console.log("DEBUG: primaryScrapeData received:", primaryScrapeData);
       
@@ -68,11 +78,74 @@ function Extractor() {
       const getFieldValue = (fieldData: unknown): string => {
         if (!fieldData) return '';
         if (typeof fieldData === 'string') return fieldData;
-        if (typeof fieldData === 'object' && fieldData !== null && 'value' in fieldData) {
-          return String((fieldData as { value: unknown }).value);
+        if (typeof fieldData === 'object' && fieldData !== null) {
+          const obj = fieldData as any;
+          if ('value' in obj && obj.value !== undefined && obj.value !== null) {
+            return String(obj.value);
+          }
         }
         return '';
       };
+
+      // Helper function to safely extract confidence from FieldData
+      const getFieldConfidence = (fieldData: unknown): number => {
+        if (!fieldData) return 0;
+        if (typeof fieldData === 'object' && fieldData !== null && 'confidence' in fieldData) {
+          return Number((fieldData as { confidence: unknown }).confidence);
+        }
+        return 0;
+      };
+
+      // Helper function to safely extract reasoning from FieldData
+      const getFieldReasoning = (fieldData: unknown): string => {
+        if (!fieldData) return '';
+        if (typeof fieldData === 'object' && fieldData !== null && 'reasoning' in fieldData) {
+          return String((fieldData as { reasoning: unknown }).reasoning);
+        }
+        return '';
+      };
+
+      // Log detailed information about each field
+      const fieldsToLog = [
+        { key: 'product_name', label: 'Product Name' },
+        { key: 'manufacturer', label: 'Manufacturer' },
+        { key: 'series', label: 'Series' },
+        { key: 'product_code', label: 'Product Code' },
+        { key: 'application_area', label: 'Application Area' },
+        { key: 'description', label: 'Description' },
+        { key: 'price', label: 'Price' },
+        { key: 'unit', label: 'Unit' },
+        { key: 'price_per_unit', label: 'Price per Unit' },
+        { key: 'availability', label: 'Availability' },
+        { key: 'dimensions', label: 'Dimensions' },
+        { key: 'color', label: 'Color' },
+        { key: 'surface', label: 'Surface' },
+        { key: 'weight_per_unit', label: 'Weight per Unit' },
+        { key: 'fire_resistance', label: 'Fire Resistance' },
+        { key: 'thermal_conductivity', label: 'Thermal Conductivity' },
+        { key: 'u_value', label: 'U-Value' },
+        { key: 'sound_insulation', label: 'Sound Insulation' },
+        { key: 'water_resistance', label: 'Water Resistance' },
+        { key: 'vapor_diffusion', label: 'Vapor Diffusion' },
+        { key: 'installation_type', label: 'Installation Type' },
+        { key: 'maintenance', label: 'Maintenance' },
+        { key: 'environment_cert', label: 'Environment Cert' },
+        { key: 'rating', label: 'Rating' }
+      ];
+
+      addLogMessage("--- FIELD EXTRACTION DETAILS ---");
+      fieldsToLog.forEach(({ key, label }) => {
+        const fieldData = (primaryScrapeData as any)[key];
+        const value = getFieldValue(fieldData);
+        const confidence = getFieldConfidence(fieldData);
+        const reasoning = getFieldReasoning(fieldData);
+        
+        if (value && value.length > 0) {
+          addLogMessage(`✓ ${label}: "${value}" (Confidence: ${(confidence * 100).toFixed(0)}%, Source: ${reasoning})`);
+        } else {
+          addLogMessage(`✗ ${label}: Not found (${reasoning})`);
+        }
+      });
 
       // Log some key fields to see what we're getting
       console.log("DEBUG: Manufacturer:", getFieldValue(primaryScrapeData.manufacturer));
@@ -80,25 +153,19 @@ function Extractor() {
       console.log("DEBUG: Price:", getFieldValue(primaryScrapeData.price));
       console.log("DEBUG: Description:", getFieldValue(primaryScrapeData.description));
 
-      updateFields({
+      const fieldUpdates = {
         manufacturer: getFieldValue(primaryScrapeData.manufacturer),
         product_name: getFieldValue(primaryScrapeData.product_name),
         series: getFieldValue(primaryScrapeData.series),
         product_code: getFieldValue(primaryScrapeData.product_code),
         application_area: getFieldValue(primaryScrapeData.application_area),
         description: getFieldValue(primaryScrapeData.description),
-        manufacturer_url: getFieldValue(primaryScrapeData.manufacturer_url),
-        manufacturer_product_url: getFieldValue(primaryScrapeData.manufacturer_product_url),
-        retailer_name: getFieldValue(primaryScrapeData.retailer_name),
-        retailer_url: getFieldValue(primaryScrapeData.retailer_url),
-        product_page_url: getFieldValue(primaryScrapeData.product_page_url),
         price: getFieldValue(primaryScrapeData.price),
         unit: getFieldValue(primaryScrapeData.unit),
         price_per_unit: getFieldValue(primaryScrapeData.price_per_unit),
         availability: getFieldValue(primaryScrapeData.availability),
         dimensions: getFieldValue(primaryScrapeData.dimensions),
         color: getFieldValue(primaryScrapeData.color),
-        main_material: getFieldValue(primaryScrapeData.main_material),
         surface: getFieldValue(primaryScrapeData.surface),
         weight_per_unit: getFieldValue(primaryScrapeData.weight_per_unit),
         fire_resistance: getFieldValue(primaryScrapeData.fire_resistance),
@@ -110,20 +177,15 @@ function Extractor() {
         installation_type: getFieldValue(primaryScrapeData.installation_type),
         maintenance: getFieldValue(primaryScrapeData.maintenance),
         environment_cert: getFieldValue(primaryScrapeData.environment_cert),
-        datasheet_url: getFieldValue(primaryScrapeData.datasheet_url),
-        technical_sheet_url: getFieldValue(primaryScrapeData.technical_sheet_url),
-        product_page_url: getFieldValue(primaryScrapeData.product_page_url),
-        additional_documents_url: getFieldValue(primaryScrapeData.additional_documents_url),
-        catalog_url: getFieldValue(primaryScrapeData.catalog_url),
-        project: getFieldValue(primaryScrapeData.project),
-        sample_ordered: getFieldValue(primaryScrapeData.sample_ordered),
-        sample_stored_in: getFieldValue(primaryScrapeData.sample_stored_in),
-        rating: primaryScrapeData.rating ? parseInt(getFieldValue(primaryScrapeData.rating)) : null,
-        notes: getFieldValue(primaryScrapeData.notes),
-      });
+        rating: getFieldValue(primaryScrapeData.rating),
+      };
+
+      console.log("DEBUG: About to update fields with:", fieldUpdates);
+      updateFields(fieldUpdates);
       
       addLogMessage("Form fields updated successfully");
       addLogMessage(`Extracted data: Manufacturer=${getFieldValue(primaryScrapeData.manufacturer)}, Product=${getFieldValue(primaryScrapeData.product_name)}, Price=${getFieldValue(primaryScrapeData.price)}`);
+      addLogMessage("=== END WEB SCRAPING RESULTS ===");
     }
   }, [primaryScrapeData, updateFields]);
 
@@ -241,6 +303,10 @@ function Extractor() {
     }
 
     try {
+      addLogMessage("=== STARTING EXTRACTION PROCESS ===");
+      addLogMessage(`URL to scrape: ${capture.url}`);
+      addLogMessage(`Source type: ${selectedSourceType}`);
+      addLogMessage(`Country: ${country}`);
       addLogMessage("Converting screenshot to base64 format...");
       const response = await fetch(capture.screenshot_url);
       if (!response.ok) {
@@ -248,18 +314,19 @@ function Extractor() {
       }
       
       const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result);
-          } else {
-            reject(new Error('Failed to convert to base64'));
-          }
-        };
-        reader.onerror = () => reject(new Error('FileReader error'));
-        reader.readAsDataURL(blob);
-      });
+                  const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                if (typeof reader.result === 'string') {
+                  // Keep the full data URI as AIAnalyzer expects it
+                  resolve(reader.result);
+                } else {
+                  reject(new Error('Failed to convert to base64'));
+                }
+              };
+              reader.onerror = () => reject(new Error('FileReader error'));
+              reader.readAsDataURL(blob);
+            });
 
       addLogMessage("Base64 conversion successful, starting extraction process...");
 
@@ -311,7 +378,7 @@ function Extractor() {
         </div>
       </DefaultPageLayout>
     );
-  }
+  } 
 
   return (
     <DefaultPageLayout>
@@ -517,7 +584,6 @@ function Extractor() {
               </div>
             </div>
           </div>
-          {/* IDENTITY Column */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
               <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
@@ -529,39 +595,45 @@ function Extractor() {
                     <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                       {"Product Image\n"}
                     </span>
-                  </div>
-                  {capture?.thumbnail_url ? (
-                    <img
-                      className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md"
-                      src={capture.thumbnail_url}
-                      alt="Product Thumbnail"
-                    />
-                  ) : (
-                    <div className="flex h-48 w-full items-center justify-center rounded-md border border-dashed border-neutral-border bg-neutral-50">
-                    </div>
-                  )}
-                  <div className="flex w-full flex-col items-start gap-1 pt-4">
-                    <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                      {"Category\n"}
-                    </span>
-                    <Select
-                      className="h-auto w-full flex-none"
-                      variant="filled"
-                      label=""
-                      placeholder="Select options"
-                      helpText=""
-                      icon={<FeatherSearch />}
-                      value={formData.category || undefined}
-                      onValueChange={(value: string) => updateField('category', value)}
-                    >
-                      <Select.Item value="option1">option1</Select.Item>
-                      <Select.Item value="option2">option2</Select.Item>
-                      <Select.Item value="option3">option3</Select.Item>
-                      <Select.Item value="option4">option4</Select.Item>
-                      <Select.Item value="option5">option5</Select.Item>
-                    </Select>
+                    {capture?.thumbnail_url ? (
+                      <img
+                        className="h-80 w-full flex-none rounded-md border border-solid border-neutral-border object-cover shadow-md"
+                        src={capture.thumbnail_url}
+                        alt="Product Thumbnail"
+                      />
+                    ) : (
+                      <div className="flex h-80 w-full items-center justify-center rounded-md border border-dashed border-neutral-border bg-neutral-50">
+                      </div>
+                    )}
                   </div>
                 </div>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Category\n"}
+                </span>
+                <Select
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  placeholder="Select options"
+                  helpText=""
+                  icon={<FeatherSearch />}
+                  value={formData.category || undefined}
+                  onValueChange={(value: string) => updateField('category', value)}
+                >
+                                     {categoriesLoading ? (
+                     <Select.Item value="loading">Loading categories...</Select.Item>
+                   ) : categories.length === 0 ? (
+                     <Select.Item value="no_categories">No categories found</Select.Item>
+                   ) : (
+                     categories.map(category => (
+                       <Select.Item key={category.id} value={category.label}>
+                         {category.main_category} - {category.label}
+                       </Select.Item>
+                     ))
+                   )}
+                </Select>
               </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
@@ -701,127 +773,158 @@ function Extractor() {
                 </TextField>
               </div>
             </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Retailer Name"}
+          </div>
+          <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
+            <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
+              <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
+                {"RETAILER"}
               </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value={formData.retailer || ""}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('retailer', event.target.value)}
-                />
-              </TextField>
-            </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Retailer URL\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value={formData.retailer_url || ""}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('retailer_url', event.target.value)}
-                />
-              </TextField>
-            </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Retailer Product URL\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value={formData.product_page_url || ""}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('product_page_url', event.target.value)}
-                />
-              </TextField>
-            </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Price\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value={formData.price || ""}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('price', event.target.value)}
-                />
-              </TextField>
-            </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Unit\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value={formData.unit || ""}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('unit', event.target.value)}
-                />
-              </TextField>
-            </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Price per Unit\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value={formData.price_per_unit || ""}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('price_per_unit', event.target.value)}
-                />
-              </TextField>
-            </div>
-            <div className="flex w-full flex-col items-start gap-1 pt-4">
-              <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                {"Availability\n"}
-              </span>
-              <TextField
-                className="h-auto w-full flex-none"
-                variant="filled"
-                label=""
-                helpText=""
-              >
-                <TextField.Input
-                  placeholder=""
-                  value={formData.availability || ""}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('availability', event.target.value)}
-                />
-              </TextField>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Retailer Name"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.retailer_name || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('retailer_name', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Retailer URL\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.retailer_url || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('retailer_url', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Retailer Product URL\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.product_page_url || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('product_page_url', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Price\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.price || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('price', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Unit\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.unit || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('unit', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Price per Unit\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.price_per_unit || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('price_per_unit', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Availability\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.availability || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('availability', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-2">
+                <div className="flex w-full flex-col items-start gap-1 pt-4">
+                  <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                    {"Alternative Retailer"}
+                  </span>
+                  <div className="flex w-full flex-col items-start gap-1 bg-neutral-50">
+                    <Table>
+                      {getAlternativeRetailers().map((retailer, index) => (
+                        <Table.Row key={index}>
+                          <Table.Cell>
+                            <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500">
+                              {retailer.name}
+                            </span>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
+                              {retailer.price}
+                            </span>
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          {/* SPECS Column */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
               <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
@@ -1067,7 +1170,6 @@ function Extractor() {
               </div>
             </div>
           </div>
-           {/* DOCUMENTS Column */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
               <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
@@ -1160,7 +1262,6 @@ function Extractor() {
               </div>
             </div>
           </div>
-           {/* EXPERIENCE Column */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2">
               <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
@@ -1174,17 +1275,27 @@ function Extractor() {
                   className="h-auto w-full flex-none"
                   variant="filled"
                   label=""
-                  placeholder="Select Projetcs"
+                  placeholder="Select Project"
                   helpText=""
                   icon={<FeatherSearch />}
                   value={formData.project || ""}
                   onValueChange={(value: string) => updateField('project', value)}
                 >
-                  <Select.Item value="option1">option1</Select.Item>
-                  <Select.Item value="option2">option2</Select.Item>
-                  <Select.Item value="option3">option3</Select.Item>
-                  <Select.Item value="option4">option4</Select.Item>
-                  <Select.Item value="option5">option5</Select.Item>
+                  <Select.Item value="residential_new">Residential - New Construction</Select.Item>
+                  <Select.Item value="residential_renovation">Residential - Renovation</Select.Item>
+                  <Select.Item value="commercial_office">Commercial - Office</Select.Item>
+                  <Select.Item value="commercial_retail">Commercial - Retail</Select.Item>
+                  <Select.Item value="commercial_hospitality">Commercial - Hospitality</Select.Item>
+                  <Select.Item value="industrial_warehouse">Industrial - Warehouse</Select.Item>
+                  <Select.Item value="industrial_manufacturing">Industrial - Manufacturing</Select.Item>
+                  <Select.Item value="healthcare_hospital">Healthcare - Hospital</Select.Item>
+                  <Select.Item value="healthcare_clinic">Healthcare - Clinic</Select.Item>
+                  <Select.Item value="education_school">Education - School</Select.Item>
+                  <Select.Item value="education_university">Education - University</Select.Item>
+                  <Select.Item value="public_government">Public - Government</Select.Item>
+                  <Select.Item value="public_infrastructure">Public - Infrastructure</Select.Item>
+                  <Select.Item value="mixed_use">Mixed Use</Select.Item>
+                  <Select.Item value="other">Other</Select.Item>
                 </Select>
               </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">

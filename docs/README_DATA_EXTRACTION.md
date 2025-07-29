@@ -1,206 +1,209 @@
-# Data Extraction Strategy - BRAIN DB
+# AI-Powered Data Extraction Pipeline - BRAIN DB
 
 ## 🎯 Übersicht
 
-Die **Data Extraction** ist das Herzstück der BRAIN DB Anwendung. Wir kombinieren **Web Scraping** (Beautiful Soup/Cheerio) mit **AI-basierter Analyse** (OpenAI GPT-4o) für maximale Genauigkeit und Zuverlässigkeit bei der automatischen Extraktion von Produktdaten aus URLs und Screenshots.
+Die **Data Extraction** ist das Herzstück der BRAIN DB Anwendung. Wir verwenden eine **AI-basierte Pipeline** mit **OpenAI GPT-4o** für Screenshot-Analyse und **Perplexity AI** für URL-Analyse, kombiniert mit **dynamischen Felddefinitionen** aus Supabase für maximale Flexibilität und Genauigkeit.
 
 ## 🏗️ Architektur-Ansatz
 
-### Hybrid-Strategie: Web Scraping + AI Analysis
+### AI-First Strategy: Screenshot + URL Analysis
 ```
-URL + Screenshot → [Web Scraping] + [AI Analysis] → [Data Fusion] → [Validation] → Database
+URL + Screenshot → [OpenAI GPT-4o Screenshot Analysis] + [Perplexity AI URL Analysis] → [Data Fusion] → [Validation] → Database
 ```
 
 ### Technologie-Stack
-- **Web Scraping**: Beautiful Soup 4 (Python) + Cheerio (Node.js)
-- **AI Analysis**: OpenAI GPT-4o (Multimodal)
-- **Data Fusion**: Custom Confidence-Based Algorithm
-- **Validation**: Field-Specific Validators
-- **Caching**: Redis/Supabase Cache
+- **Screenshot Analysis**: OpenAI GPT-4o (Multimodal)
+- **URL Analysis**: Perplexity AI (llama-3.1-70b-instruct)
+- **Dynamic Field Definitions**: Supabase `product_field_definitions` table
+- **Data Fusion**: Confidence-based algorithm
+- **Validation**: Field-specific validators
+- **UI Management**: React hooks with real-time progress tracking
 
-## 📋 Implementierungs-Phasen
+## 📋 Implementierte Pipeline
 
-### **Phase 1: Grundlagen & Setup** (Woche 1)
+### **1. Dynamic Field Definitions (Supabase)**
+- **Table**: `product_field_definitions`
+- **Fields**: 42+ product fields with descriptions, examples, and extraction hints
+- **Management**: Web UI in `/settings` page for editing field definitions
+- **Usage**: Central template for all AI extraction prompts
 
-#### 1.1 Projektstruktur erweitern
-- src/lib/extraction/webScraper.ts
-- src/lib/extraction/aiAnalyzer.ts
-- src/lib/extraction/dataFusion.ts
-- src/lib/extraction/validators.ts
-- src/hooks/useExtraction.ts
-- src/components/ExtractionProgress.tsx
+### **2. AI Analysis Components**
 
-#### 1.2 Dependencies installieren
-```bash
-npm install cheerio axios openai zod
-```
+#### **2.1 OpenAI GPT-4o Screenshot Analysis**
+- **File**: `src/lib/extraction/aiAnalyzer.ts`
+- **API Route**: `/api/extraction/ai-analysis`
+- **Features**:
+  - Full-resolution screenshot analysis
+  - Dynamic prompt generation using field definitions
+  - Structured JSON response parsing
+  - Confidence scoring for each field
 
-#### 1.3 TypeScript Types definieren
-- FieldData Interface
-- WebScrapingResult Interface
-- AIAnalysisResult Interface
-- FusedResult Interface
+#### **2.2 Perplexity AI URL Analysis**
+- **File**: `src/lib/extraction/perplexityAnalyzer.ts`
+- **API Route**: `/api/extraction/perplexity-analysis`
+- **Features**:
+  - URL-based product information extraction
+  - Dynamic prompt generation using field definitions
+  - Structured JSON response parsing
+  - Confidence scoring for each field
 
-### **Phase 2: Core Implementation** (Woche 2)
+#### **2.3 Combined Analysis Orchestrator**
+- **File**: `src/app/api/extraction/combined-analysis/route.ts`
+- **Features**:
+  - Parallel execution of both AI analyzers
+  - Data fusion based on confidence scores
+  - Comprehensive error handling
+  - Detailed logging for debugging
 
-#### 2.1 Web Scraping Implementation
-- Cheerio-basierte HTML-Parsing
-- CSS-Selector Strategien für verschiedene Websites
-- Confidence-Score Berechnung
-- Error Handling für verschiedene Website-Typen
+#### **2.4 Simplified Analysis (Debugging)**
+- **File**: `src/app/api/extraction/simple-ai-analysis/route.ts`
+- **Features**:
+  - OpenAI-only analysis for focused debugging
+  - Streamlined response handling
+  - Enhanced error reporting
 
-#### 2.2 AI Analysis Implementation
-- OpenAI GPT-4o API Integration
-- Multimodal Analysis (Text + Screenshot)
-- Structured JSON Response Parsing
-- Prompt Engineering für Baumaterialien
+### **3. Data Fusion Engine**
+- **File**: `src/lib/extraction/dataFusion.ts`
+- **Strategy**: Confidence-based field selection
+- **Logic**: Higher confidence wins in case of conflicts
+- **Output**: Single fused result with source attribution
 
-#### 2.3 Data Fusion Engine
-- Confidence-basierte Entscheidungslogik
-- Field-specific Gewichtungen
-- Konflikt-Erkennung und -Lösung
-- Manual Review Flags
-
-### **Phase 3: Integration** (Woche 3)
-
-#### 3.1 Extraction Hook
-- State Management für Extraction-Prozess
-- Progress Tracking
-- Error Handling
-- Results Integration in Formular
-
-#### 3.2 API Routes
-- /api/extraction/web-scraping
-- /api/extraction/ai-analysis
-- /api/extraction/data-fusion
-
-#### 3.3 UI Integration
-- Progress Indicators in Capture Page
-- Manual Review Alerts
-- Confidence Score Anzeige
-- Alternative Values bei Konflikten
-
-### **Phase 4: Validation & Error Handling** (Woche 4)
-
-#### 4.1 Field Validators
-- Produktname Validierung
-- Preis Validierung und Normalisierung
-- Hersteller Validierung
-- Technische Spezifikationen Validierung
-
-#### 4.2 Error Handling
-- Web Scraping Fallbacks
-- AI Analysis Fallbacks
-- Graceful Degradation
-- Benutzerfreundliche Fehlermeldungen
+### **4. Client-Side Integration**
+- **Hook**: `src/hooks/useExtraction.ts`
+- **Features**:
+  - State management for extraction process
+  - Progress tracking with detailed messages
+  - Error handling and recovery
+  - Integration with form data updates
 
 ## 🎯 Field-Specific Strategies
 
-### Confidence Weights
-- **Produktname**: AI (80%) > Web (20%)
-- **Hersteller**: AI (70%) > Web (30%)
-- **Preis**: Web (70%) > AI (30%)
-- **Beschreibung**: AI (60%) > Web (40%)
-- **Spezifikationen**: Web (60%) > AI (40%)
+### Dynamic Field Loading
+- **Source**: Supabase `product_field_definitions` table
+- **Fields**: 42+ fields including:
+  - Basic info: product_name, manufacturer, series, product_code
+  - Pricing: price, currency, price_per_unit
+  - Specifications: dimensions, weight, material, color
+  - Documentation: datasheet_url, catalog_url, additional_documents_url
+  - Project info: project, category, sample_ordered, sample_stored_in
 
-### Validation Rules
-- **Produktname**: 2-200 Zeichen, keine Sonderzeichen
-- **Preis**: Numerisch, > 0, < 100.000
-- **Hersteller**: 2+ Zeichen, nur Buchstaben und Leerzeichen
+### Confidence-Based Fusion
+- **Strategy**: Compare confidence scores from both AI sources
+- **Decision**: Higher confidence wins
+- **Fallback**: Empty field if both sources have low confidence
 
 ## 🔧 Konfiguration
 
 ### Environment Variables
 ```bash
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o
-EXTRACTION_TIMEOUT=30000
-CACHE_TTL=3600000
+PERPLEXITY_API_KEY=pplx-...
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
 ```
 
-### Rate Limiting
-- OpenAI API: 10 requests/minute
-- Web Scraping: 5 requests/minute
-- Cache TTL: 1 Stunde für Web Scraping
+### API Endpoints
+- `/api/extraction/simple-ai-analysis` - OpenAI-only analysis
+- `/api/extraction/combined-analysis` - Full AI pipeline
+- `/api/extraction/ai-analysis` - OpenAI screenshot analysis
+- `/api/extraction/perplexity-analysis` - Perplexity URL analysis
 
-## 📊 Monitoring & Analytics
+## 📊 Current Implementation Status
+
+### ✅ Implemented Features
+1. **Dynamic Field Definitions**: Supabase table with 42+ fields
+2. **OpenAI GPT-4o Integration**: Screenshot analysis with full resolution
+3. **Perplexity AI Integration**: URL analysis with structured prompts
+4. **Data Fusion**: Confidence-based field selection
+5. **Progress Tracking**: Real-time UI updates
+6. **Error Handling**: Comprehensive error management
+7. **Settings UI**: Web interface for field definition management
+8. **Category Integration**: Dynamic material categories from Supabase
+9. **Project Field**: Predefined project type selection
+
+### 🔄 Current Pipeline Flow
+1. **User Input**: URL + Screenshot + Source Type (Manufacturer/Reseller)
+2. **AI Analysis**: OpenAI screenshot analysis (primary method)
+3. **Data Population**: Results populate form fields
+4. **Optional Enhancement**: Manufacturer/retailer search based on source type
+
+### 🚧 Areas for Improvement
+1. **Perplexity Integration**: Currently disabled, focusing on OpenAI
+2. **Data Fusion**: Simplified to single AI source
+3. **Validation**: Basic field validation implemented
+4. **Error Recovery**: Enhanced error handling needed
+
+## 🧪 Testing & Debugging
+
+### Current Debugging Approach
+- **Console Logging**: Comprehensive logging throughout pipeline
+- **Simple Analysis**: Focused on OpenAI-only for isolation
+- **Field-by-Field Tracking**: Monitor each field extraction
+- **UI State Monitoring**: Track form data updates
 
 ### Success Metrics
-- Total Extractions
-- Success Rate (Web Scraping vs AI)
-- Average Confidence Scores
-- Manual Review Rate
-- Average Extraction Time
-
-### Performance Tracking
-- Extraction Time per Method
-- Confidence Distribution
-- Error Rate Analysis
-- User Feedback Integration
+- **Field Population Rate**: Percentage of fields successfully populated
+- **Confidence Scores**: Average confidence across extracted fields
+- **Error Rate**: Frequency of extraction failures
+- **User Feedback**: Manual corrections needed
 
 ## 🚀 Deployment Strategy
 
-### Staging Environment
-- Test mit verschiedenen URLs
-- A/B Testing der Fusion-Algorithmen
-- Performance-Optimierung
+### Current Status
+- **Development**: Active development with frequent testing
+- **Staging**: Ready for testing with real URLs
+- **Production**: Requires error handling improvements
 
-### Production Rollout
-- Graduelle Einführung
-- Monitoring der Erfolgsraten
-- Automatische Anpassung der Gewichtungen
-
-## 🧪 Testing
-
-### Unit Tests
-- Web Scraper Tests
-- AI Analyzer Tests
-- Data Fusion Tests
-- Validator Tests
-
-### Integration Tests
-- End-to-End Extraction Tests
-- API Route Tests
-- UI Integration Tests
+### Next Steps
+1. **Enable Perplexity**: Re-integrate dual AI analysis
+2. **Enhance Validation**: Implement field-specific validators
+3. **Performance Optimization**: Caching and rate limiting
+4. **User Experience**: Better error messages and recovery
 
 ## 📈 Best Practices
 
-### 1. **Fehlerbehandlung**
-- Robuste Fehlerbehandlung für beide Quellen
-- Graceful Degradation bei API-Fehlern
-- Benutzerfreundliche Fehlermeldungen
+### 1. **AI Prompt Engineering**
+- Dynamic prompts using field definitions from Supabase
+- Structured JSON response requirements
+- Confidence scoring for each field
+- German language support in prompts
 
-### 2. **Performance**
-- Caching für Web Scraping Ergebnisse
-- Rate Limiting für OpenAI API
-- Asynchrone Verarbeitung
+### 2. **Error Handling**
+- Graceful degradation when AI analysis fails
+- Detailed error logging for debugging
+- User-friendly error messages
+- Fallback to manual entry
 
-### 3. **Qualität**
-- Confidence-basierte Entscheidungen
-- Field-specific Validierung
-- Manual Review Flags bei Konflikten
+### 3. **Performance**
+- Parallel AI analysis where possible
+- Efficient screenshot handling
+- Minimal API calls
+- Responsive UI updates
 
-### 4. **Monitoring**
-- Erfolgsraten tracken
-- Performance-Metriken sammeln
-- Benutzer-Feedback einholen
+### 4. **Data Quality**
+- Confidence-based field selection
+- Source attribution for transparency
+- Validation of extracted data
+- Manual review flags for low confidence
 
 ## 🎯 Nächste Schritte
 
-### Sofortige Aktionen:
-1. ✅ **Phase 1 Setup** - Projektstruktur erweitern
-2. ✅ **Dependencies installieren** - Cheerio, OpenAI, etc.
-3. ✅ **TypeScript Types** definieren
-4. ✅ **Web Scraping Implementation** starten
+### Immediate Actions:
+1. ✅ **AI Pipeline**: OpenAI GPT-4o integration complete
+2. ✅ **Dynamic Fields**: Supabase integration complete
+3. ✅ **UI Integration**: Form population working
+4. 🔄 **Perplexity Integration**: Re-enable dual AI analysis
+5. 🔄 **Validation**: Enhance field-specific validation
 
-### Langfristige Ziele:
-- **KI-Research Integration** für Alternative Suppliers
-- **Erweiterte Validierung** für spezifische Baumaterialien
-- **Performance-Optimierung** basierend auf Metriken
-- **Automatische Prompt-Optimierung**
+### Long-term Goals:
+- **Multi-Source Analysis**: Integrate additional AI providers
+- **Learning System**: Improve prompts based on success rates
+- **Batch Processing**: Handle multiple products simultaneously
+- **Export Features**: Structured data export capabilities
 
 ---
 
 **Erstellt:** Dezember 2024  
-**Status:** 🚧 In Entwicklung  
-**Nächster Meilenstein:** Phase 1 Implementation
+**Status:** 🚧 Active Development  
+**Letzte Aktualisierung:** Dezember 2024  
+**Nächster Meilenstein:** Re-enable Perplexity AI integration

@@ -76,7 +76,15 @@ export interface Product {
 export type ProductFormData = {
   [K in keyof Omit<Product, 'id' | 'created_at' | 'updated_at' | 'source_type' | 'screenshot_path' | 'thumbnail_path' | 'user_id' | 'ocr_text_raw' | 'parsed_fields' | 'ai_confidence' | 'manual_reviewed' | 'alternative_retailer_ai_research_progress'>]: string;
 } & {
-  // Include fields that are not directly from Product but are part of the form
-  // For now, these are handled by the Product interface directly
-  // If there were form-specific fields not directly mapping to DB, they'd go here
+  // Additional fields for form data that are not in the Product interface
+  manufacturer_url?: string;
+  manufacturer_product_url?: string;
+  retailer_name?: string;
+  main_material?: string;
+  additional_documents_url?: string;
+  rating?: string;
+  catalog_url?: string;
+  project?: string;
+  sample_ordered?: string;
+  sample_stored_in?: string;
 }; 
