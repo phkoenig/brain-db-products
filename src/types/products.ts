@@ -44,6 +44,8 @@ export interface Product {
   price_per_unit?: number;
   retailer?: string;
   retailer_url?: string; // NEW
+  retailer_product_url?: string; // NEW
+  retailer_main_url?: string; // NEW
   availability?: string;
   
   // Alternative Retailer (NEW)
@@ -60,6 +62,8 @@ export interface Product {
   datasheet_url?: string;
   technical_sheet_url?: string;
   product_page_url?: string;
+  manufacturer_product_url?: string; // NEW
+  manufacturer_main_url?: string; // NEW
   additional_documents?: any; // JSONB
   catalog_path?: string;
   
@@ -77,8 +81,7 @@ export type ProductFormData = {
   [K in keyof Omit<Product, 'id' | 'created_at' | 'updated_at' | 'source_type' | 'screenshot_path' | 'thumbnail_path' | 'user_id' | 'ocr_text_raw' | 'parsed_fields' | 'ai_confidence' | 'manual_reviewed' | 'alternative_retailer_ai_research_progress'>]: string;
 } & {
   // Additional fields for form data that are not in the Product interface
-  manufacturer_url?: string;
-  manufacturer_product_url?: string;
+  manufacturer_url?: string; // Legacy field - maps to manufacturer_main_url
   retailer_name?: string;
   main_material?: string;
   additional_documents_url?: string;

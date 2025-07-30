@@ -37,6 +37,8 @@ const initialFormData: ProductFormData = {
   price_per_unit: '',
   retailer: '',
   retailer_url: '',
+  retailer_product_url: '',
+  retailer_main_url: '',
   availability: '',
   
   // Alternative Retailer (NEW)
@@ -52,6 +54,8 @@ const initialFormData: ProductFormData = {
   datasheet_url: '',
   technical_sheet_url: '',
   product_page_url: '',
+  manufacturer_product_url: '',
+  manufacturer_main_url: '',
   additional_documents: '',
   catalog_path: '',
   
@@ -59,8 +63,7 @@ const initialFormData: ProductFormData = {
   notes: '',
   
   // Additional fields for extraction
-  manufacturer_url: '',
-  manufacturer_product_url: '',
+  manufacturer_url: '', // Legacy field - maps to manufacturer_main_url
   retailer_name: '',
   main_material: '',
   additional_documents_url: '',

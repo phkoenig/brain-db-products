@@ -740,7 +740,7 @@ function Extractor() {
               </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                  {"Manufacturer URL\n"}
+                  {"Manufacturer Main URL\n"}
                 </span>
                 <TextField
                   className="h-auto w-full flex-none"
@@ -750,8 +750,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.manufacturer_url || ""}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('manufacturer_url', event.target.value)}
+                    value={formData.manufacturer_main_url || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('manufacturer_main_url', event.target.value)}
                   />
                 </TextField>
               </div>
@@ -825,8 +825,25 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.product_page_url || ""}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('product_page_url', event.target.value)}
+                    value={formData.retailer_product_url || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('retailer_product_url', event.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Retailer Main URL\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.retailer_main_url || ""}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => updateField('retailer_main_url', event.target.value)}
                   />
                 </TextField>
               </div>
