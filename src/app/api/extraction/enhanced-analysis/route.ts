@@ -1,0 +1,137 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { loadProductFieldDefinitions } from '@/lib/schemas/product-fields';
+import { analyzeWithOpenAI } from '@/lib/extraction/aiAnalyzer';
+import { analyzeWithPerplexity } from '@/lib/extraction/perplexityAnalyzer';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { url, screenshotBase64, sourceType } = await request.json();
+
+    console.log('Enhanced Analysis: Starting analysis for', { url, sourceType });
+
+    // Step 1: Load field definitions for dynamic prompts
+    const fieldDefinitions = await loadProductFieldDefinitions();
+    console.log('Enhanced Analysis: Loaded', fieldDefinitions.fields.length, 'field definitions');
+
+    // Step 2: GPT-4o Vision Analysis
+    console.log('Enhanced Analysis: Starting GPT-4o Vision analysis...');
+    const openAIResult = await analyzeWithOpenAI(screenshotBase64, fieldDefinitions);
+    console.log('Enhanced Analysis: GPT-4o analysis complete');
+
+    // Step 3: Perplexity AI Analysis for enhancement
+    console.log('Enhanced Analysis: Starting Perplexity AI analysis...');
+    const perplexityResult = await analyzeWithPerplexity(url, fieldDefinitions);
+    console.log('Enhanced Analysis: Perplexity analysis complete');
+
+    // Step 4: Confidence-based data fusion
+    console.log('Enhanced Analysis: Starting confidence-based fusion...');
+    const fusedResult = fuseWithConfidence(openAIResult, perplexityResult);
+    console.log('Enhanced Analysis: Fusion complete');
+
+    return NextResponse.json({
+      success: true,
+      data: fusedResult,
+      sources: {
+        openai: openAIResult,
+        perplexity: perplexityResult
+      }
+    });
+
+  } catch (error) {
+    console.error('Enhanced Analysis: Error:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+function fuseWithConfidence(openAIResult: any, perplexityResult: any) {
+  const fusedData: any = {};
+  
+  // Get all unique field names from both results
+  const allFields = new Set([
+    ...Object.keys(openAIResult),
+    ...Object.keys(perplexityResult)
+  ]);
+
+  for (const fieldName of allFields) {
+    const openAIData = openAIResult[fieldName];
+    const perplexityData = perplexityResult[fieldName];
+
+    // Extract values and confidence scores
+    const openAIValue = extractValue(openAIData);
+    const openAIConfidence = extractConfidence(openAIData);
+    const perplexityValue = extractValue(perplexityData);
+    const perplexityConfidence = extractConfidence(perplexityData);
+
+    // Decision logic based on confidence
+    if (!openAIValue && !perplexityValue) {
+      // Both empty - skip this field
+      continue;
+    } else if (!openAIValue && perplexityValue) {
+      // Only Perplexity has data
+      fusedData[fieldName] = {
+        value: perplexityValue,
+        confidence: perplexityConfidence,
+        source: 'perplexity',
+        reasoning: extractReasoning(perplexityData)
+      };
+    } else if (openAIValue && !perplexityValue) {
+      // Only OpenAI has data
+      fusedData[fieldName] = {
+        value: openAIValue,
+        confidence: openAIConfidence,
+        source: 'openai',
+        reasoning: extractReasoning(openAIData)
+      };
+    } else {
+      // Both have data - compare confidence
+      if (openAIConfidence >= perplexityConfidence) {
+        fusedData[fieldName] = {
+          value: openAIValue,
+          confidence: openAIConfidence,
+          source: 'openai',
+          reasoning: extractReasoning(openAIData),
+          conflict_resolved: true
+        };
+      } else {
+        fusedData[fieldName] = {
+          value: perplexityValue,
+          confidence: perplexityConfidence,
+          source: 'perplexity',
+          reasoning: extractReasoning(perplexityData),
+          conflict_resolved: true
+        };
+      }
+    }
+  }
+
+  return fusedData;
+}
+
+function extractValue(fieldData: any): string {
+  if (!fieldData) return '';
+  if (typeof fieldData === 'string') return fieldData;
+  if (fieldData.value !== undefined) return String(fieldData.value);
+  return '';
+}
+
+function extractConfidence(fieldData: any): number {
+  if (!fieldData) return 0;
+  if (typeof fieldData === 'object' && fieldData.confidence !== undefined) {
+    return Number(fieldData.confidence);
+  }
+  return 0;
+}
+
+function extractReasoning(fieldData: any): string {
+  if (!fieldData) return '';
+  if (typeof fieldData === 'object' && fieldData.reasoning) {
+    return String(fieldData.reasoning);
+  }
+  return '';
+} 

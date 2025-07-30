@@ -177,6 +177,47 @@ This document tracks all the changes made to the data extraction pipeline during
 - **Badge**: Replaced with CSS-styled spans
 - **Button**: Corrected variant names to match Subframe UI options
 
+### **9. Enhanced Extraction Pipeline** (NEW - December 2024)
+
+#### **New Pipeline Flow**:
+1. **User Input** → Manufacturer/Retailer Button Click
+2. **URL Processing** → Automatic URL field population based on source type
+3. **Screenshot Analysis** → GPT-4o Vision with complete field definitions
+4. **URL Enhancement** → Perplexity AI for missing/complementary information
+5. **Confidence Analysis** → Decision making for conflicting data
+
+#### **URL Processing Logic**:
+- **Source URL**: Always populated with the original URL
+- **Manufacturer Source**: 
+  - `manufacturer_product_url` ← Full URL
+  - `manufacturer_main_url` ← Base URL (domain only)
+- **Retailer Source**:
+  - `retailer_product_url` ← Full URL
+  - `retailer_main_url` ← Base URL (domain only)
+
+#### **Enhanced AI Analysis**:
+- **Created**: `/api/extraction/enhanced-analysis` endpoint
+- **Features**:
+  - GPT-4o Vision analysis with complete field definitions
+  - Perplexity AI analysis with complete field definitions
+  - Confidence-based data fusion
+  - Source attribution for each field
+  - Conflict resolution with reasoning
+
+#### **Confidence-Based Decision Making**:
+- **Logic**: Higher confidence wins in conflicts
+- **Features**:
+  - Source tracking (OpenAI vs Perplexity)
+  - Confidence scoring for each field
+  - Reasoning documentation
+  - Conflict resolution flags
+
+#### **Updated Components**:
+- **useExtraction Hook**: New state management for enhanced pipeline
+- **Capture Page**: URL processing and enhanced data handling
+- **API Endpoint**: Combined AI analysis with fusion
+- **Progress Tracking**: Updated for new pipeline steps
+
 ## 🚧 Error Fixes & Improvements
 
 ### **1. Base64 Image Issues**
@@ -234,6 +275,9 @@ This document tracks all the changes made to the data extraction pipeline during
 10. ✅ **UI Field Mapping** - Working (NEW)
 11. ✅ **Navigation System** - Working (NEW)
 12. ✅ **Settings Page** - Working (NEW)
+13. ✅ **Enhanced Extraction Pipeline** - Working (NEW)
+14. ✅ **URL Processing** - Working (NEW)
+15. ✅ **Confidence-Based AI Fusion** - Working (NEW)
 
 ### **Disabled Components**:
 1. 🔄 **Perplexity AI** - Implemented but disabled for debugging

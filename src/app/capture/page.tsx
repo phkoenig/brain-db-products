@@ -56,8 +56,9 @@ function Extractor() {
     progress,
     startExtraction,
     isExtracting,
-    primaryScrapeData,
-    counterpartData,
+    enhancedAnalysisData,
+    openAIData,
+    perplexityData,
   } = useExtraction();
 
   // Helper function to add logging messages
@@ -67,12 +68,12 @@ function Extractor() {
     setLoggingMessages(prev => [...prev, logEntry]);
   };
 
-  // Update form fields when extraction data is available
+  // Update form fields when enhanced analysis data is available
   useEffect(() => {
-    if (primaryScrapeData) {
-      addLogMessage("=== WEB SCRAPING RESULTS ===");
-      addLogMessage("Updating form fields with extracted data...");
-      console.log("DEBUG: primaryScrapeData received:", primaryScrapeData);
+    if (enhancedAnalysisData) {
+      addLogMessage("=== ENHANCED AI ANALYSIS RESULTS ===");
+      addLogMessage("Updating form fields with fused data...");
+      console.log("DEBUG: enhancedAnalysisData received:", enhancedAnalysisData);
       
       // Helper function to safely extract value from FieldData
       const getFieldValue = (fieldData: unknown): string => {
@@ -105,99 +106,57 @@ function Extractor() {
         return '';
       };
 
-      // Log detailed information about each field
-      const fieldsToLog = [
-        { key: 'product_name', label: 'Product Name' },
-        { key: 'manufacturer', label: 'Manufacturer' },
-        { key: 'series', label: 'Series' },
-        { key: 'product_code', label: 'Product Code' },
-        { key: 'application_area', label: 'Application Area' },
-        { key: 'description', label: 'Description' },
-        { key: 'price', label: 'Price' },
-        { key: 'unit', label: 'Unit' },
-        { key: 'price_per_unit', label: 'Price per Unit' },
-        { key: 'availability', label: 'Availability' },
-        { key: 'dimensions', label: 'Dimensions' },
-        { key: 'color', label: 'Color' },
-        { key: 'surface', label: 'Surface' },
-        { key: 'weight_per_unit', label: 'Weight per Unit' },
-        { key: 'fire_resistance', label: 'Fire Resistance' },
-        { key: 'thermal_conductivity', label: 'Thermal Conductivity' },
-        { key: 'u_value', label: 'U-Value' },
-        { key: 'sound_insulation', label: 'Sound Insulation' },
-        { key: 'water_resistance', label: 'Water Resistance' },
-        { key: 'vapor_diffusion', label: 'Vapor Diffusion' },
-        { key: 'installation_type', label: 'Installation Type' },
-        { key: 'maintenance', label: 'Maintenance' },
-        { key: 'environment_cert', label: 'Environment Cert' },
-        { key: 'rating', label: 'Rating' }
-      ];
+      // Helper function to safely extract source from FieldData
+      const getFieldSource = (fieldData: unknown): string => {
+        if (!fieldData) return '';
+        if (typeof fieldData === 'object' && fieldData !== null && 'source' in fieldData) {
+          return String((fieldData as { source: unknown }).source);
+        }
+        return '';
+      };
 
-      addLogMessage("--- FIELD EXTRACTION DETAILS ---");
-      fieldsToLog.forEach(({ key, label }) => {
-        const fieldData = (primaryScrapeData as any)[key];
+      // Update form fields with enhanced analysis data
+      const fieldUpdates: Record<string, string> = {};
+      
+      Object.entries(enhancedAnalysisData).forEach(([fieldName, fieldData]) => {
         const value = getFieldValue(fieldData);
         const confidence = getFieldConfidence(fieldData);
+        const source = getFieldSource(fieldData);
         const reasoning = getFieldReasoning(fieldData);
-        
-        if (value && value.length > 0) {
-          addLogMessage(`✓ ${label}: "${value}" (Confidence: ${(confidence * 100).toFixed(0)}%, Source: ${reasoning})`);
-        } else {
-          addLogMessage(`✗ ${label}: Not found (${reasoning})`);
+
+        if (value && value.trim() !== '') {
+          fieldUpdates[fieldName] = value;
+          addLogMessage(`${fieldName}: "${value}" (${source}, confidence: ${confidence})`);
+          
+          if (reasoning) {
+            addLogMessage(`  Reasoning: ${reasoning}`);
+          }
         }
       });
 
-      // Log some key fields to see what we're getting
-      console.log("DEBUG: Manufacturer:", getFieldValue(primaryScrapeData.manufacturer));
-      console.log("DEBUG: Product Name:", getFieldValue(primaryScrapeData.product_name));
-      console.log("DEBUG: Price:", getFieldValue(primaryScrapeData.price));
-      console.log("DEBUG: Description:", getFieldValue(primaryScrapeData.description));
+      // Apply all field updates at once
+      if (Object.keys(fieldUpdates).length > 0) {
+        updateFields(fieldUpdates);
+        addLogMessage(`Updated ${Object.keys(fieldUpdates).length} fields with enhanced analysis data`);
+      } else {
+        addLogMessage("No valid field data found in enhanced analysis results");
+      }
 
-      const fieldUpdates = {
-        manufacturer: getFieldValue(primaryScrapeData.manufacturer),
-        product_name: getFieldValue(primaryScrapeData.product_name),
-        series: getFieldValue(primaryScrapeData.series),
-        product_code: getFieldValue(primaryScrapeData.product_code),
-        application_area: getFieldValue(primaryScrapeData.application_area),
-        description: getFieldValue(primaryScrapeData.description),
-        price: getFieldValue(primaryScrapeData.price),
-        unit: getFieldValue(primaryScrapeData.unit),
-        price_per_unit: getFieldValue(primaryScrapeData.price_per_unit),
-        availability: getFieldValue(primaryScrapeData.availability),
-        dimensions: getFieldValue(primaryScrapeData.dimensions),
-        color: getFieldValue(primaryScrapeData.color),
-        surface: getFieldValue(primaryScrapeData.surface),
-        weight_per_unit: getFieldValue(primaryScrapeData.weight_per_unit),
-        fire_resistance: getFieldValue(primaryScrapeData.fire_resistance),
-        thermal_conductivity: getFieldValue(primaryScrapeData.thermal_conductivity),
-        u_value: getFieldValue(primaryScrapeData.u_value),
-        sound_insulation: getFieldValue(primaryScrapeData.sound_insulation),
-        water_resistance: getFieldValue(primaryScrapeData.water_resistance),
-        vapor_diffusion: getFieldValue(primaryScrapeData.vapor_diffusion),
-        installation_type: getFieldValue(primaryScrapeData.installation_type),
-        maintenance: getFieldValue(primaryScrapeData.maintenance),
-        environment_cert: getFieldValue(primaryScrapeData.environment_cert),
-        rating: getFieldValue(primaryScrapeData.rating),
-      };
-
-      console.log("DEBUG: About to update fields with:", fieldUpdates);
-      updateFields(fieldUpdates);
-      
-      addLogMessage("Form fields updated successfully");
-      addLogMessage(`Extracted data: Manufacturer=${getFieldValue(primaryScrapeData.manufacturer)}, Product=${getFieldValue(primaryScrapeData.product_name)}, Price=${getFieldValue(primaryScrapeData.price)}`);
-      addLogMessage("=== END WEB SCRAPING RESULTS ===");
+      // Log source comparison if available
+      if (openAIData && perplexityData) {
+        addLogMessage("=== SOURCE COMPARISON ===");
+        addLogMessage(`OpenAI fields: ${Object.keys(openAIData).length}`);
+        addLogMessage(`Perplexity fields: ${Object.keys(perplexityData).length}`);
+        addLogMessage(`Fused fields: ${Object.keys(enhancedAnalysisData).length}`);
+      }
     }
-  }, [primaryScrapeData, updateFields]);
+  }, [enhancedAnalysisData, updateFields]);
 
   // Helper function to format alternative retailers for display
   const getAlternativeRetailers = () => {
-    if (!counterpartData || !Array.isArray(counterpartData)) return [];
-    
-    return counterpartData.map((retailer, index) => ({
-      name: retailer.name || `Retailer ${index + 1}`,
-      price: retailer.price || 'N/A',
-      url: retailer.url || '#'
-    }));
+    // For now, return empty string since we're not using counterpartData anymore
+    // This can be enhanced later if needed
+    return '';
   };
 
   // Log extraction state changes
@@ -307,6 +266,34 @@ function Extractor() {
       addLogMessage(`URL to scrape: ${capture.url}`);
       addLogMessage(`Source type: ${selectedSourceType}`);
       addLogMessage(`Country: ${country}`);
+
+      // Step 1: URL Processing - Automatically populate URL fields based on source type
+      addLogMessage("=== STEP 1: URL PROCESSING ===");
+      
+      // Always set source_url
+      updateField('source_url', capture.url);
+      addLogMessage(`Source URL set: ${capture.url}`);
+
+      // Extract base URL (remove path and query parameters)
+      const urlObj = new URL(capture.url);
+      const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+      addLogMessage(`Base URL extracted: ${baseUrl}`);
+
+      // Set URL fields based on source type
+      if (selectedSourceType === "manufacturer") {
+        updateField('manufacturer_product_url', capture.url);
+        updateField('manufacturer_main_url', baseUrl);
+        addLogMessage(`Manufacturer Product URL set: ${capture.url}`);
+        addLogMessage(`Manufacturer Main URL set: ${baseUrl}`);
+      } else { // reseller
+        updateField('retailer_product_url', capture.url);
+        updateField('retailer_main_url', baseUrl);
+        addLogMessage(`Retailer Product URL set: ${capture.url}`);
+        addLogMessage(`Retailer Main URL set: ${baseUrl}`);
+      }
+
+      // Step 2: Screenshot Analysis
+      addLogMessage("=== STEP 2: SCREENSHOT ANALYSIS ===");
       addLogMessage("Converting screenshot to base64 format...");
       const response = await fetch(capture.screenshot_url);
       if (!response.ok) {
@@ -314,19 +301,19 @@ function Extractor() {
       }
       
       const blob = await response.blob();
-                  const base64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                if (typeof reader.result === 'string') {
-                  // Keep the full data URI as AIAnalyzer expects it
-                  resolve(reader.result);
-                } else {
-                  reject(new Error('Failed to convert to base64'));
-                }
-              };
-              reader.onerror = () => reject(new Error('FileReader error'));
-              reader.readAsDataURL(blob);
-            });
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            // Keep the full data URI as AIAnalyzer expects it
+            resolve(reader.result);
+          } else {
+            reject(new Error('Failed to convert to base64'));
+          }
+        };
+        reader.onerror = () => reject(new Error('FileReader error'));
+        reader.readAsDataURL(blob);
+      });
 
       addLogMessage("Base64 conversion successful, starting extraction process...");
 
@@ -351,7 +338,8 @@ function Extractor() {
     if (extractionState === 'idle') return 0;
     if (extractionState === 'error') return 0;
     
-    const stepOrder = ['scraping_primary', 'analyzing_primary', 'finding_manufacturer', 'finding_retailers', 'fusing_data', 'complete'];
+    // Simplified progress calculation
+    const stepOrder = ['url_processing', 'screenshot_analysis', 'url_enhancement', 'confidence_fusion', 'complete'];
     const currentIndex = stepOrder.indexOf(extractionState);
     const stepIndex = stepOrder.indexOf(step);
     

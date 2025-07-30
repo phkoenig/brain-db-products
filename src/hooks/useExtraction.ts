@@ -9,16 +9,13 @@ const getFieldValue = (fieldData: any): string => {
   return '';
 };
 
-
-
 // Define the detailed states of the extraction process
 export type ExtractionState =
   | 'idle'
-  | 'scraping_primary'
-  | 'analyzing_primary'
-  | 'finding_manufacturer'
-  | 'finding_retailers'
-  | 'fusing_data'
+  | 'url_processing'
+  | 'screenshot_analysis'
+  | 'url_enhancement'
+  | 'confidence_fusion'
   | 'complete'
   | 'error';
 
@@ -28,17 +25,17 @@ export function useExtraction() {
   const [error, setError] = useState<string | null>(null);
 
   // State to hold data from each step
-  const [primaryScrapeData, setPrimaryScrapeData] = useState<AIAnalysisResult | null>(null);
-  const [counterpartData, setCounterpartData] = useState<any | null>(null); // Can be manufacturer info or retailer list
-  const [fusedData, setFusedData] = useState<FusedResult | null>(null);
+  const [enhancedAnalysisData, setEnhancedAnalysisData] = useState<any | null>(null);
+  const [openAIData, setOpenAIData] = useState<any | null>(null);
+  const [perplexityData, setPerplexityData] = useState<any | null>(null);
 
   const resetExtraction = () => {
     setExtractionState('idle');
     setProgress(0);
     setError(null);
-    setPrimaryScrapeData(null);
-    setCounterpartData(null);
-    setFusedData(null);
+    setEnhancedAnalysisData(null);
+    setOpenAIData(null);
+    setPerplexityData(null);
   };
 
   const startExtraction = async (
@@ -47,78 +44,52 @@ export function useExtraction() {
     sourceType: 'manufacturer' | 'reseller',
     country: string
   ) => {
-    console.log("useExtraction: Starting extraction process", { primaryUrl, sourceType, country });
+    console.log("useExtraction: Starting enhanced extraction process", { primaryUrl, sourceType, country });
     resetExtraction(); // Start fresh
 
     try {
-      // Step 1: Combined AI analysis (OpenAI + Perplexity)
-      console.log("useExtraction: Step 1 - Starting combined AI analysis");
-      setExtractionState('scraping_primary');
-      setProgress(20);
+      // Step 1: URL Processing (already done in capture page)
+      console.log("useExtraction: Step 1 - URL processing completed in UI");
+      setExtractionState('url_processing');
+      setProgress(10);
+
+      // Step 2: Enhanced AI Analysis (GPT-4o + Perplexity + Confidence Fusion)
+      console.log("useExtraction: Step 2 - Starting enhanced AI analysis");
+      setExtractionState('screenshot_analysis');
+      setProgress(30);
       
-      const simpleResponse = await fetch('/api/extraction/simple-ai-analysis', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: primaryUrl, screenshotBase64, sourceType }),
+      const enhancedResponse = await fetch('/api/extraction/enhanced-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          url: primaryUrl, 
+          screenshotBase64, 
+          sourceType 
+        }),
       });
-      if (!simpleResponse.ok) throw new Error('Simple AI analysis failed');
-      const simpleData = (await simpleResponse.json()).data;
-      
-      console.log("useExtraction: Step 1 complete - Simple AI data:", simpleData);
-      
-      // Set the data as primary result
-      setPrimaryScrapeData(simpleData);
-      console.log("useExtraction: Data set as primaryScrapeData:", simpleData);
 
-      // Extract names from data for next steps
-      const productName = getFieldValue(simpleData.product_name);
-      const manufacturerName = getFieldValue(simpleData.manufacturer);
-      const retailerName = getFieldValue(simpleData.retailer_name);
-
-      console.log("useExtraction: Extracted names from fused data:", { productName, manufacturerName, retailerName });
-
-      // Step 4: Find the counterpart based on source type (optional)
-      if (sourceType === 'reseller') {
-        console.log("useExtraction: Step 4 - Finding manufacturer (reseller source)");
-        setExtractionState('finding_manufacturer');
-        setProgress(90);
-        if (productName && retailerName) {
-            const findManufacturerResponse = await fetch('/api/extraction/find-manufacturer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ productName, retailerName }),
-            });
-            if (findManufacturerResponse.ok) {
-                const manufacturerInfo = await findManufacturerResponse.json();
-                setCounterpartData(manufacturerInfo);
-                console.log("useExtraction: Step 4 complete - Manufacturer info:", manufacturerInfo);
-            }
-        } else {
-          console.log("useExtraction: Skipping manufacturer search - missing productName or retailerName");
-        }
-      } else { // sourceType is 'manufacturer'
-        console.log("useExtraction: Step 4 - Finding retailers (manufacturer source)");
-        setExtractionState('finding_retailers');
-        setProgress(90);
-        if (productName && manufacturerName) {
-            const findRetailersResponse = await fetch('/api/extraction/find-retailers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ productName, manufacturerName, country }),
-            });
-            if (findRetailersResponse.ok) {
-                const retailersData = await findRetailersResponse.json();
-                setCounterpartData(retailersData.retailers);
-                console.log("useExtraction: Step 4 complete - Retailers data:", retailersData.retailers);
-            }
-        } else {
-          console.log("useExtraction: Skipping retailers search - missing productName or manufacturerName");
-        }
+      if (!enhancedResponse.ok) {
+        const errorData = await enhancedResponse.json();
+        throw new Error(`Enhanced analysis failed: ${errorData.error || 'Unknown error'}`);
       }
-      
+
+      const enhancedData = await enhancedResponse.json();
+      console.log("useExtraction: Enhanced analysis complete:", enhancedData);
+
+      // Store the results
+      setEnhancedAnalysisData(enhancedData.data);
+      setOpenAIData(enhancedData.sources.openai);
+      setPerplexityData(enhancedData.sources.perplexity);
+
+      // Step 3: Confidence Fusion (already done in API)
+      console.log("useExtraction: Step 3 - Confidence fusion completed");
+      setExtractionState('confidence_fusion');
+      setProgress(90);
+
+      // Step 4: Complete
       setProgress(100);
       setExtractionState('complete');
-      console.log("useExtraction: Extraction complete!");
+      console.log("useExtraction: Enhanced extraction complete!");
 
     } catch (err) {
       console.error("useExtraction: Error during extraction:", err);
@@ -130,14 +101,13 @@ export function useExtraction() {
   
   const getProgressMessage = (): string => {
     switch (extractionState) {
-        case 'scraping_primary': return 'OpenAI Screenshot-Analyse läuft...';
-        case 'analyzing_primary': return 'OpenAI Screenshot-Analyse läuft...';
-        case 'finding_manufacturer': return 'Suche nach Hersteller...';
-        case 'finding_retailers': return 'Suche nach Händlern...';
-        case 'fusing_data': return 'KI-Daten werden fusioniert...';
-        case 'complete': return 'Extraktion abgeschlossen!';
-        case 'error': return `Fehler: ${error}`;
-        default: return 'Bereit für Extraktion.';
+      case 'url_processing': return 'URL-Verarbeitung läuft...';
+      case 'screenshot_analysis': return 'GPT-4o Vision + Perplexity AI Analyse läuft...';
+      case 'url_enhancement': return 'URL-Erweiterung mit Perplexity AI...';
+      case 'confidence_fusion': return 'Confidence-basierte Datenfusion...';
+      case 'complete': return 'Erweiterte Extraktion abgeschlossen!';
+      case 'error': return `Fehler: ${error}`;
+      default: return 'Bereit für erweiterte Extraktion.';
     }
   }
 
@@ -145,9 +115,9 @@ export function useExtraction() {
     extractionState,
     progress,
     error,
-    primaryScrapeData,
-    counterpartData,
-    fusedData,
+    enhancedAnalysisData,
+    openAIData,
+    perplexityData,
     startExtraction,
     resetExtraction,
     getProgressMessage,
