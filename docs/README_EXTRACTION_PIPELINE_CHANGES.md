@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-This document tracks all the changes made to the data extraction pipeline during development, from the initial web scraping approach to the current AI-only pipeline.
+This document tracks all the changes made to the data extraction pipeline during development, from the initial web scraping approach to the current AI-only pipeline with database schema optimization.
 
 ## 📋 Major Pipeline Evolution
 
@@ -20,6 +20,10 @@ This document tracks all the changes made to the data extraction pipeline during
 ### **Phase 3: AI-Only Pipeline** (Current)
 - **Technology**: OpenAI GPT-4o + Perplexity AI + Dynamic Field Definitions
 - **Status**: ✅ Active development
+
+### **Phase 4: Database Schema Optimization** (Latest - December 2024)
+- **Technology**: Supabase Database Schema + Automated Sync System
+- **Status**: ✅ Completed
 
 ## 🔧 Technical Changes Made
 
@@ -115,6 +119,64 @@ This document tracks all the changes made to the data extraction pipeline during
   - Integration with Category field
   - Hierarchical category structure
 
+### **7. Database Schema Optimization** (NEW - December 2024)
+
+#### **Enhanced Products Table**:
+- **New URL Fields Added**:
+  - `retailer_product_url` (TEXT) - Direct link to product on retailer site
+  - `retailer_main_url` (TEXT) - Main retailer website URL
+  - `manufacturer_product_url` (TEXT) - Direct link to product on manufacturer site
+  - `manufacturer_main_url` (TEXT) - Main manufacturer website URL
+- **Existing URL Fields Confirmed**:
+  - `source_url` - Primary extraction source URL
+  - `retailer_url` - Legacy retailer URL field
+
+#### **Automated Sync System**:
+- **Created**: `product_field_sync_log` table for audit trail
+- **Created**: `sync_product_fields()` PostgreSQL function
+- **Created**: `product_schema_change_trigger` event trigger
+- **Created**: `products_organized` view for logical field ordering
+- **Created**: `ProductFieldSynchronizer` TypeScript class
+- **Created**: `/api/sync/product-fields` API endpoint
+
+#### **Sync System Features**:
+- **Automatic Detection**: Detects new columns in `products` table
+- **Type Mapping**: Maps PostgreSQL types to JSON Schema types
+- **Field Categorization**: Automatically determines field categories
+- **Label Generation**: Creates human-readable labels
+- **Audit Trail**: Logs all sync operations
+- **Manual Trigger**: API endpoint for manual synchronization
+
+#### **UI Field Mapping Corrections**:
+- **Fixed**: `Manufacturer URL` now maps to `manufacturer_main_url`
+- **Fixed**: `Retailer Product URL` now maps to `retailer_product_url`
+- **Added**: New UI field for `Retailer Main URL` mapping to `retailer_main_url`
+- **Updated**: TypeScript interfaces to include all new URL fields
+
+### **8. Navigation and UI Fixes** (NEW - December 2024)
+
+#### **Navigation System Repairs**:
+- **Fixed**: Navigation links in `DefaultPageLayout` now properly connect to pages
+- **Added**: `usePathname` hook for active page highlighting
+- **Connected**: 
+  - **DB** → `/database` (Database overview)
+  - **New** → `/capture` (Product capture)
+  - **Settings** → `/settings` (Field definitions)
+  - **User** → `/` (Homepage)
+
+#### **Settings Page Optimization**:
+- **Fixed**: Tabs component compatibility issues (Radix UI → Subframe UI)
+- **Fixed**: Table component structure problems
+- **Simplified**: Removed problematic UI components causing runtime errors
+- **Replaced**: Complex components with simple HTML/CSS alternatives
+- **Maintained**: All core functionality (field overview, activation/deactivation)
+
+#### **UI Component Compatibility**:
+- **Tabs**: Updated from `Tabs.List/Trigger/Content` to `Tabs.Item` structure
+- **Table**: Replaced with simple HTML table for better compatibility
+- **Badge**: Replaced with CSS-styled spans
+- **Button**: Corrected variant names to match Subframe UI options
+
 ## 🚧 Error Fixes & Improvements
 
 ### **1. Base64 Image Issues**
@@ -142,6 +204,21 @@ This document tracks all the changes made to the data extraction pipeline during
 - **Solution**: Removed problematic Select.Item with empty value
 - **File**: `src/app/capture/page.tsx`
 
+### **6. Database Schema Synchronization** (NEW)
+- **Problem**: Inconsistency between `products` and `product_field_definitions` tables
+- **Solution**: Implemented automated sync system with PostgreSQL triggers
+- **Files**: Database migrations, `src/lib/sync/productFieldSync.ts`, `/api/sync/product-fields`
+
+### **7. UI Field Mapping Issues** (NEW)
+- **Problem**: UI fields mapped to incorrect database columns
+- **Solution**: Corrected all field mappings in capture page and TypeScript types
+- **Files**: `src/app/capture/page.tsx`, `src/types/products.ts`, `src/hooks/useCaptureForm.ts`
+
+### **8. Navigation and Settings Page Errors** (NEW)
+- **Problem**: Runtime errors with Tabs and Table components
+- **Solution**: Fixed component compatibility and simplified UI structure
+- **Files**: `src/ui/layouts/DefaultPageLayout.tsx`, `src/app/settings/page.tsx`
+
 ## 📊 Current Pipeline Status
 
 ### **Active Components**:
@@ -152,6 +229,11 @@ This document tracks all the changes made to the data extraction pipeline during
 5. ✅ **Settings UI** - Working
 6. ✅ **Category Integration** - Working
 7. ✅ **Project Field** - Working
+8. ✅ **Database Schema Sync** - Working (NEW)
+9. ✅ **URL Field Management** - Working (NEW)
+10. ✅ **UI Field Mapping** - Working (NEW)
+11. ✅ **Navigation System** - Working (NEW)
+12. ✅ **Settings Page** - Working (NEW)
 
 ### **Disabled Components**:
 1. 🔄 **Perplexity AI** - Implemented but disabled for debugging
@@ -163,6 +245,7 @@ This document tracks all the changes made to the data extraction pipeline during
 - **Console Logging**: Comprehensive logging throughout
 - **Field-by-Field Tracking**: Monitor each extraction
 - **UI State Monitoring**: Track form updates
+- **Database Sync Monitoring**: Audit trail for schema changes
 
 ## 🎯 Next Development Steps
 
@@ -185,12 +268,25 @@ This document tracks all the changes made to the data extraction pipeline during
 2. **AI-First Approach** - Better accuracy and flexibility
 3. **Dynamic Field Definitions** - Centralized configuration
 4. **Simplified Pipeline** - Focus on core functionality first
+5. **Automated Schema Sync** - Ensure data consistency (NEW)
+6. **Comprehensive URL Fields** - Support all extraction scenarios (NEW)
 
 ### **Lessons Learned**:
 1. **Web Scraping Limitations** - CSS selectors are too fragile
 2. **AI Prompt Engineering** - Critical for good results
 3. **Error Handling** - Essential for user experience
 4. **Type Safety** - Prevents runtime errors
+5. **Database Schema Management** - Automated sync prevents drift (NEW)
+6. **UI-Database Alignment** - Field mappings must be carefully maintained (NEW)
+7. **UI Component Compatibility** - Subframe UI has different structure than Radix UI (NEW)
+8. **Navigation State Management** - Active page highlighting improves UX (NEW)
+
+## 🔗 Related Documentation
+
+- **Data Extraction Logic**: `README_DATA_EXTRACTION_LOGIC.md`
+- **Data Extraction Overview**: `README_DATA_EXTRACTION.md`
+- **Implementation Plan**: `IMPLEMENTATION_PLAN_FINAL.md`
+- **Development Best Practices**: `README_DEVELOPMENT_BEST_PRACTICES.md`
 
 ---
 

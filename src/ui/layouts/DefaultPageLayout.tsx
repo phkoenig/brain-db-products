@@ -12,6 +12,8 @@ import { FeatherDatabase } from "@subframe/core";
 import { FeatherPlus } from "@subframe/core";
 import { FeatherSettings } from "@subframe/core";
 import { FeatherUserCircle } from "@subframe/core";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface DefaultPageLayoutRootProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -26,6 +28,8 @@ const DefaultPageLayoutRoot = React.forwardRef<
   { children, className, ...otherProps }: DefaultPageLayoutRootProps,
   ref
 ) {
+  const pathname = usePathname();
+
   return (
     <div
       className={SubframeUtils.twClassNames(
@@ -44,24 +48,41 @@ const DefaultPageLayoutRoot = React.forwardRef<
         }
         footer={
           <>
-            <SidebarRailWithLabels.NavItem icon={<FeatherSettings />}>
-              Settings
-            </SidebarRailWithLabels.NavItem>
-            <SidebarRailWithLabels.NavItem icon={<FeatherUserCircle />}>
-              User
-            </SidebarRailWithLabels.NavItem>
+            <Link href="/settings" className="w-full">
+              <SidebarRailWithLabels.NavItem 
+                icon={<FeatherSettings />}
+                selected={pathname === "/settings"}
+              >
+                Settings
+              </SidebarRailWithLabels.NavItem>
+            </Link>
+            <Link href="/" className="w-full">
+              <SidebarRailWithLabels.NavItem 
+                icon={<FeatherUserCircle />}
+                selected={pathname === "/"}
+              >
+                User
+              </SidebarRailWithLabels.NavItem>
+            </Link>
           </>
         }
       >
-        <SidebarRailWithLabels.NavItem
-          icon={<FeatherDatabase />}
-          selected={true}
-        >
-          DB
-        </SidebarRailWithLabels.NavItem>
-        <SidebarRailWithLabels.NavItem icon={<FeatherPlus />}>
-          New
-        </SidebarRailWithLabels.NavItem>
+        <Link href="/database" className="w-full">
+          <SidebarRailWithLabels.NavItem
+            icon={<FeatherDatabase />}
+            selected={pathname === "/database"}
+          >
+            DB
+          </SidebarRailWithLabels.NavItem>
+        </Link>
+        <Link href="/capture" className="w-full">
+          <SidebarRailWithLabels.NavItem 
+            icon={<FeatherPlus />}
+            selected={pathname === "/capture"}
+          >
+            New
+          </SidebarRailWithLabels.NavItem>
+        </Link>
       </SidebarRailWithLabels>
       {children ? (
         <div className="flex grow shrink-0 basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background">
