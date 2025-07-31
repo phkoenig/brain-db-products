@@ -3,12 +3,13 @@ import { supabase } from '@/lib/supabase';
 interface DynamicPromptOptions {
   url: string;
   spalte: string;
+  buttonType?: 'hersteller' | 'haendler'; // Neuer Parameter für Button-Typ
 }
 
 /**
  * Generiert dynamische Prompts basierend auf Datenbank-Felddefinitionen
  */
-export async function generateDynamicPrompt({ url, spalte }: DynamicPromptOptions): Promise<string> {
+export async function generateDynamicPrompt({ url, spalte, buttonType }: DynamicPromptOptions): Promise<string> {
   try {
     console.log(`generateDynamicPrompt: Lade Felddefinitionen für Spalte: ${spalte}`);
     
@@ -33,16 +34,19 @@ export async function generateDynamicPrompt({ url, spalte }: DynamicPromptOption
 
     // Lade Materialkategorien für bessere Kontextualisierung (nur für produkt-Spalte)
     let materialCategoriesContext = '';
+    let productContext = '';
+    
     if (spalte === 'produkt') {
       const { data: categories } = await supabase
         .from('material_categories')
-        .select('main_category, sub_category, label')
+        .select('main_category, sub_category, label, id')
         .order('main_category, sub_category');
       
       if (categories && categories.length > 0) {
         const categoryGroups = categories.reduce((acc: Record<string, string[]>, cat) => {
           if (!acc[cat.main_category]) acc[cat.main_category] = [];
-          acc[cat.main_category].push(cat.label);
+          // Format: "Label (ID)" für bessere AI-Verständlichkeit
+          acc[cat.main_category].push(`${cat.label} (${cat.id})`);
           return acc;
         }, {});
 
@@ -55,6 +59,85 @@ VERFÜGBARE MATERIALKATEGORIEN (für produkt_kategorie):
 ${categoryList}
 `;
         console.log(`generateDynamicPrompt: ${categories.length} Materialkategorien geladen`);
+      }
+    }
+    
+    // Für Dokumente- und Händler-Suche: Lade bereits bekannte Produktdaten als Kontext
+    if (spalte === 'dokumente' || spalte === 'haendler') {
+      try {
+        const { data: existingProducts } = await supabase
+          .from('products')
+          .select('produkt_hersteller, produkt_name_modell, produkt_code_id, produkt_hersteller_webseite')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (existingProducts && existingProducts.length > 0) {
+          const product = existingProducts[0];
+          productContext = `
+BEREITS IDENTIFIZIERTE PRODUKTDATEN:
+- Hersteller: ${product.produkt_hersteller || 'Unbekannt'}
+- Produktname: ${product.produkt_name_modell || 'Unbekannt'}
+- Produktcode: ${product.produkt_code_id || 'Unbekannt'}
+- Hersteller-Website: ${product.produkt_hersteller_webseite || 'Unbekannt'}
+
+Nutze diese Informationen für gezielte Suche nach Dokumenten und Händlern.
+`;
+          console.log(`generateDynamicPrompt: Produkt-Kontext für ${spalte}-Suche geladen`);
+        }
+      } catch (error) {
+        console.warn(`generateDynamicPrompt: Fehler beim Laden des Produkt-Kontexts:`, error);
+      }
+    }
+
+    // Spezielle Logik für Händler-Suche basierend auf Button-Typ
+    if (spalte === 'haendler' && buttonType) {
+      let retailerPrompt = '';
+      
+      if (buttonType === 'haendler') {
+        // Händler-Button: Suche alternative Händler für das Produkt auf der Quell-URL
+        retailerPrompt = `
+SPEZIELLE HÄNDLER-SUCHE (Händler-Seite):
+Suche für das Produkt unter ${url}: alternative Händler und gib Händlernamen, URL zum Produkt beim Händler und Preis als JSON zurück.
+
+FORMAT:
+[
+  {
+    "name": "Händlername",
+    "url": "https://händler.de/produkt-url",
+    "price": "180,00 € pro m²"
+  }
+]
+
+Suche nach mindestens 3-5 alternativen Händlern, die das gleiche Produkt anbieten.
+`;
+      } else if (buttonType === 'hersteller') {
+        // Hersteller-Button: Suche Händler für das identifizierte Produkt
+        const manufacturer = productContext.match(/Hersteller: ([^\n]+)/)?.[1] || 'Unbekannt';
+        const productName = productContext.match(/Produktname: ([^\n]+)/)?.[1] || 'Unbekannt';
+        const productCode = productContext.match(/Produktcode: ([^\n]+)/)?.[1] || '';
+        
+        retailerPrompt = `
+SPEZIELLE HÄNDLER-SUCHE (Hersteller-Seite):
+Suche für das genannte Produkt: ${manufacturer} ${productName} ${productCode ? `(${productCode})` : ''}
+
+Händler und gib Händlernamen, URL zum Produkt beim Händler und Preis als JSON zurück.
+
+FORMAT:
+[
+  {
+    "name": "Händlername", 
+    "url": "https://händler.de/produkt-url",
+    "price": "180,00 € pro m²"
+  }
+]
+
+Suche nach mindestens 3-5 Händlern, die dieses Produkt anbieten.
+`;
+      }
+      
+      if (retailerPrompt) {
+        console.log(`generateDynamicPrompt: Spezieller Händler-Prompt für Button-Typ '${buttonType}' generiert`);
+        return retailerPrompt.trim();
       }
     }
 
@@ -89,6 +172,7 @@ ${categoryList}
 
 WEBSEITE: ${url}
 ${materialCategoriesContext}
+${productContext}
 AUFGABE: Extrahiere die folgenden ${spaltenName}-Informationen und gib sie im exakten JSON-Format zurück.
 
 FELD-DEFINITIONEN:
@@ -102,9 +186,17 @@ EXTRAKTIONS-REGELN:
 2. Extrahiere nur korrekte, auf der Webseite gefundene Informationen
 3. Verwende confidence-Werte: 1.0 = sicher gefunden, 0.5 = wahrscheinlich, 0.0 = nicht gefunden
 4. Bei numerischen Werten: nur Zahlen ohne Einheiten (z.B. "29.90" statt "29,90 €")
-5. Bei Arrays (produkt_kategorie): wähle aus verfügbaren Kategorien
+5. Bei Arrays (produkt_kategorie): verwende die IDs aus den Klammern (z.B. "FB.FL" statt "Fliesen")
 6. Bei fehlenden Informationen: leere Strings verwenden
 7. Gib eine kurze Begründung für jeden extrahierten Wert
+${spalte === 'dokumente' ? `
+8. DOKUMENTE-SUCHE: Suche aktiv nach Download-Links, PDFs, Datenblättern, technischen Merkblättern
+9. Prüfe auch die Hersteller-Website für zusätzliche Dokumente
+10. Bei gefundenen Dokumenten: Verwende die vollständige URL` : ''}
+${spalte === 'haendler' ? `
+8. HÄNDLER-SUCHE: Suche nach alternativen Händlern, die das gleiche Produkt anbieten
+9. Prüfe Preise und Verfügbarkeit bei verschiedenen Händlern
+10. Verwende die Hersteller-Informationen für gezielte Händler-Suche` : ''}
 
 ANTWORT-FORMAT: Antworte ausschließlich mit gültigem JSON entsprechend dem Schema oben.`.trim();
 
@@ -133,7 +225,7 @@ function generateJsonSchema(fieldDefinitions: any[], spalte: string): string {
       example = '29.90';
     } else if (fieldName === 'produkt_kategorie') {
       type = 'array';
-      example = '["Fußbodenbeläge", "Fliesen"]';
+      example = '["FB.FL", "DS.MI"]';
     } else {
       example = '"extrahierter Wert"';
     }

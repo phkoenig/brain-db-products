@@ -9,21 +9,36 @@ export class PerplexityAnalyzer {
   }
   
   async analyzeUrl(url: string, customPrompt?: string): Promise<AIAnalysisResult> {
-    const prompt = customPrompt || await this.buildDynamicPrompt(url);
+    return this.analyzeWithEnhancedSearch({ url, prompt: customPrompt });
+  }
+
+  async analyzeWithEnhancedSearch({ 
+    url, 
+    prompt, 
+    searchQueries = [] 
+  }: {
+    url: string;
+    prompt?: string;
+    searchQueries?: string[];
+  }): Promise<AIAnalysisResult> {
+    const finalPrompt = prompt || await this.buildDynamicPrompt(url);
     
-    console.log('DEBUG: Perplexity prompt length:', prompt.length);
-    console.log('DEBUG: Perplexity prompt preview:', prompt.substring(0, 200) + '...');
+    console.log('DEBUG: Perplexity prompt length:', finalPrompt.length);
+    console.log('DEBUG: Perplexity prompt preview:', finalPrompt.substring(0, 200) + '...');
+    if (searchQueries.length > 0) {
+      console.log('DEBUG: Enhanced search queries:', searchQueries);
+    }
     
     const requestBody = {
       model: 'sonar-pro',
       messages: [
         {
           role: 'system',
-          content: `URL: ${url}`
+          content: `URL: ${url}${searchQueries.length > 0 ? `\nZusätzliche Suchbegriffe: ${searchQueries.join(', ')}` : ''}`
         },
         {
           role: 'user',
-          content: prompt
+          content: finalPrompt
         }
       ],
       temperature: 0.1,
@@ -53,7 +68,53 @@ export class PerplexityAnalyzer {
 
       const data = await response.json();
       console.log('DEBUG: Perplexity success response preview:', JSON.stringify(data).substring(0, 500) + '...');
-      return this.parseAIResponse(data.choices[0].message.content);
+      
+      // Parse die rohe AI-Antwort direkt als JSON
+      const content = data.choices[0].message.content;
+      console.log('DEBUG: Raw content from Perplexity:', content.substring(0, 300) + '...');
+      
+      try {
+        // Bereinige den Content für JSON-Parsing
+        let cleanedContent = content.trim();
+        
+        // Extrahiere JSON aus Markdown-Code-Blöcken
+        const jsonMatch = cleanedContent.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          cleanedContent = jsonMatch[1].trim();
+          console.log('DEBUG: Extracted JSON from markdown block');
+        } else if (cleanedContent.startsWith('```json')) {
+          cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/\s*```[\s\S]*$/, '');
+        } else if (cleanedContent.startsWith('```')) {
+          cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```[\s\S]*$/, '');
+        } else {
+          // Versuche JSON-Array oder -Objekt zu finden
+          const arrayMatch = cleanedContent.match(/(\[[\s\S]*?\])/);
+          const objectMatch = cleanedContent.match(/(\{[\s\S]*?\})/);
+          
+          if (arrayMatch) {
+            cleanedContent = arrayMatch[1];
+            console.log('DEBUG: Extracted JSON array from text');
+          } else if (objectMatch) {
+            cleanedContent = objectMatch[1];
+            console.log('DEBUG: Extracted JSON object from text');
+          }
+        }
+        
+        console.log('DEBUG: Cleaned content for JSON parsing:', cleanedContent.substring(0, 300) + '...');
+        
+        const parsedResult = JSON.parse(cleanedContent);
+        console.log('DEBUG: Perplexity analysis completed successfully');
+        
+        return {
+          data: parsedResult,
+          searchQueries,
+          sources: data.citations || []
+        };
+      } catch (parseError) {
+        console.error('DEBUG: Failed to parse JSON response:', parseError);
+        console.error('DEBUG: Raw content that failed to parse:', content);
+        throw new Error(`Failed to parse Perplexity response as JSON: ${parseError}`);
+      }
     } catch (error) {
       return this.handleError(error);
     }
@@ -257,11 +318,24 @@ Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
     };
   }
   
-  private handleError(error: unknown): AIAnalysisResult {
+  private handleError(error: unknown): any {
     console.error('Perplexity AI analysis error:', error);
-    return this.createEmptyResult();
+    return {
+      data: {},
+      searchQueries: [],
+      sources: [],
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 } 
+
+// Export einer Instanz von PerplexityAnalyzer
+const apiKey = process.env.PERPLEXITY_API_KEY;
+if (!apiKey) {
+  throw new Error('PERPLEXITY_API_KEY environment variable is not set');
+}
+
+export const perplexityAnalyzer = new PerplexityAnalyzer(apiKey);
 
 // Export function for the enhanced analysis API with dynamic prompts
 export async function analyzeWithPerplexity(url: string, fieldDefinitions: any, customPrompt?: string): Promise<any> {

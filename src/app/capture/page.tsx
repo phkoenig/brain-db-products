@@ -71,6 +71,7 @@ function Extractor() {
     haendler_einheit: "",
     haendler_preis: "",
     haendler_preis_pro_einheit: "",
+    haendler_weitere_haendler_und_preise: [] as { name: string; website: string; productUrl: string; price: string; unit: string }[],
     // ERFAHRUNG-Spalte
     erfahrung_einsatz_in_projekt: "",
     erfahrung_muster_bestellt: "",
@@ -127,7 +128,7 @@ function Extractor() {
   
   const startSpaltenExtraction = useCallback(async (spalte: string, url: string) => {
     const felder = SPALTEN_FELDER[spalte];
-    if (!felder) return;
+    if (!felder) return null;
 
     setExtractionLog((prev) => prev + `\n=== STARTE ${spalte.toUpperCase()}-ANALYSE ===`);
     
@@ -176,16 +177,38 @@ function Extractor() {
               // Spezielle Behandlung für verschiedene Datentypen
               if (field === 'produkt_kategorie') {
                 // Kategorie-Arrays behandeln
+                let categoryValues = [];
                 if (Array.isArray(value)) {
-                  updates[field] = value.filter(v => v && v.trim && v.trim());
+                  categoryValues = value.filter(v => v && v.trim && v.trim());
                 } else if (typeof value === 'string') {
                   try {
                     const parsed = JSON.parse(value);
-                    updates[field] = Array.isArray(parsed) ? parsed : [value.trim()];
+                    categoryValues = Array.isArray(parsed) ? parsed : [value.trim()];
                   } catch {
-                    updates[field] = [value.trim()];
+                    categoryValues = [value.trim()];
                   }
                 }
+                
+                // Backup: Labels zu IDs mappen falls AI Labels zurückgegeben hat
+                const mappedCategories = categoryValues.map(cat => {
+                  const trimmedCat = cat.trim();
+                  // Prüfe ob bereits eine ID vorliegt (Format: XX.XX)
+                  if (/^[A-Z]{2}\.[A-Z]{2}$/.test(trimmedCat)) {
+                    return trimmedCat; // Bereits eine ID
+                  }
+                  // Suche nach Label in den verfügbaren Kategorien
+                  const foundCategory = categories.find(c => 
+                    c.label.toLowerCase() === trimmedCat.toLowerCase()
+                  );
+                  if (foundCategory) {
+                    console.log(`📝 Kategorie-Mapping: "${trimmedCat}" → "${foundCategory.id}"`);
+                    return foundCategory.id;
+                  }
+                  console.warn(`⚠️ Unbekannte Kategorie: "${trimmedCat}"`);
+                  return trimmedCat; // Fallback: Original-Wert beibehalten
+                });
+                
+                updates[field] = mappedCategories.filter(c => c);
               } else if (Array.isArray(value)) {
                 // Andere Arrays
                 updates[field] = value.filter(v => v !== null && v !== undefined && v !== '');
@@ -218,9 +241,13 @@ function Extractor() {
         
         setExtractionLog((prev) => prev + `\n🎯 KI-ANTWORT erhalten - ${Object.keys(updates).length} Felder extrahiert`);
         setExtractionLog((prev) => prev + `\n✅ ${spalte.toUpperCase()}-Analyse abgeschlossen\n`);
+        
+        // Gib die extrahierten Daten zurück
+        return { data: updates };
       }
     } catch (error) {
       setExtractionLog((prev) => prev + `\n❌ Fehler bei ${spalte}-Analyse: ${error.message}`);
+      return null;
     }
   }, []);
 
@@ -246,18 +273,177 @@ function Extractor() {
     }
     setExtractionLog((prev) => prev + `  • Hersteller-Produkt-URL: ${currentUrl}\n\n`);
     
-    // PARALLEL-Analyse für maximale Geschwindigkeit! 🚀
-    setExtractionLog((prev) => prev + "🚀 STARTE PARALLEL-ANALYSE (produkt, parameter, dokumente)...\n");
+    // STUFE 1: Genaue Produkt-Identifikation auf Basis der URL
+    setExtractionLog((prev) => prev + "🚀 STUFE 1: PRODUKT-IDENTIFIKATION (produkt, parameter)...\n");
     
-    const herstellerPromises = [
+    const stage1Promises = [
       startSpaltenExtraction("produkt", currentUrl),
-      startSpaltenExtraction("parameter", currentUrl),
-      startSpaltenExtraction("dokumente", currentUrl)
+      startSpaltenExtraction("parameter", currentUrl)
     ];
     
-    await Promise.all(herstellerPromises);
+    const stage1Results = await Promise.all(stage1Promises);
     
-    setExtractionLog((prev) => prev + "\n=== HERSTELLER-ANALYSE ABGESCHLOSSEN ===");
+    // Extrahiere Produktdaten direkt aus den KI-Ergebnissen
+    let manufacturer = "";
+    let productName = "";
+    let productCode = "";
+    
+    // Debug: Logge die kompletten stage1Results
+    console.log('🔍 DEBUG: stage1Results =', stage1Results);
+    
+    // Durchsuche die Ergebnisse nach Produktdaten
+    stage1Results.forEach(result => {
+      console.log('🔍 DEBUG: Processing result =', result);
+      if (result && result.data) {
+        console.log('🔍 DEBUG: result.data =', result.data);
+        Object.entries(result.data).forEach(([field, value]) => {
+          console.log(`🔍 DEBUG: field="${field}", value="${value}"`);
+          if (value) {
+            if (field === 'produkt_hersteller' && value) manufacturer = value;
+            if (field === 'produkt_name_modell' && value) productName = value;
+            if (field === 'produkt_code_id' && value) productCode = value;
+          }
+        });
+      }
+    });
+    
+    // STUFE 2: Nachgelagerte Suche nach Dokumenten und Händlern (mit Web-Suche)
+    setExtractionLog((prev) => prev + "\n🔍 STUFE 2: DOKUMENTE & HÄNDLER-SUCHE (mit Web-Suche)...\n");
+    
+    // Direkt erweiterte Suchen starten (ohne setTimeout)
+    try {
+      // Debug: Logge die Werte
+      setExtractionLog((prev) => prev + `🔍 DEBUG: manufacturer="${manufacturer}", productName="${productName}", productCode="${productCode}"\n`);
+      
+      if (manufacturer && productName) {
+        setExtractionLog((prev) => prev + `📋 Kontext für erweiterte Suche: ${manufacturer} - ${productName}\n`);
+        
+        // PHASE 2A: Erweiterte Dokumente-Suche mit Web-Suche
+        setExtractionLog((prev) => prev + "\n📄 PHASE 2A: DOKUMENTE-SUCHE (mit Web-Suche)...\n");
+        try {
+          const documentsResponse = await fetch("/api/extraction/enhanced-documents-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: currentUrl,
+              manufacturer,
+              productName,
+              productCode
+            }),
+          });
+          
+          if (documentsResponse.ok) {
+            const documentsResult = await documentsResponse.json();
+            console.log('Enhanced Documents Search Result:', documentsResult);
+            
+            // Verarbeite die Ergebnisse
+            if (documentsResult.data) {
+              const updates = {};
+              Object.entries(documentsResult.data).forEach(([field, fieldData]) => {
+                if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
+                  const value = fieldData.value;
+                  if (value && value !== '') {
+                    updates[field] = value;
+                    console.log(`Setze ${field} = "${value}"`);
+                  }
+                }
+              });
+              
+              setFormData((prev) => {
+                const newData = { ...prev, ...updates };
+                updateAllProgress(newData);
+                return newData;
+              });
+              
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Dokumente-Suche: ${Object.keys(updates).length} Dokumente gefunden\n`);
+            }
+          } else {
+            setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche\n`);
+          }
+        } catch (error) {
+          console.error('Enhanced Documents Search Error:', error);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error.message}\n`);
+        }
+        
+        // PHASE 2B: Erweiterte Händler-Suche mit Web-Suche
+        setExtractionLog((prev) => prev + "\n🏪 PHASE 2B: HÄNDLER-SUCHE (mit Web-Suche) - NEUE ERWEITERTE API...\n");
+        try {
+          const retailersResponse = await fetch("/api/extraction/enhanced-retailers-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: currentUrl,
+              manufacturer,
+              productName,
+              productCode,
+              buttonType: 'haendler' // Da wir in handleResellerClick sind
+            }),
+          });
+          
+          if (retailersResponse.ok) {
+            const retailersResult = await retailersResponse.json();
+            console.log('Enhanced Retailers Search Result:', retailersResult);
+            
+            // Logge die Rohdaten für Debugging
+            setExtractionLog((prev) => prev + `🔍 ROHDATEN von erweiterter Händler-Suche:\n`);
+            setExtractionLog((prev) => prev + `   ${JSON.stringify(retailersResult.data, null, 2)}\n\n`);
+            
+            // Verarbeite die Ergebnisse
+            if (retailersResult.data) {
+              const updates = {};
+              const additionalRetailers = [];
+              Object.entries(retailersResult.data).forEach(([field, fieldData]) => {
+                if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
+                  const value = fieldData.value;
+                  if (value && value !== '') {
+                    updates[field] = value;
+                    // Zusätzliche Händler sammeln (nur wenn nicht identisch mit Haupthändler)
+                    if (field === 'haendler_haendlername' && value !== formData.haendler_haendlername) {
+                      additionalRetailers.push({
+                        name: value,
+                        website: retailersResult.data.haendler_haendler_webseite?.value || '',
+                        productUrl: retailersResult.data.haendler_haendler_produkt_url?.value || '',
+                        price: retailersResult.data.haendler_preis?.value || '',
+                        unit: retailersResult.data.haendler_einheit?.value || ''
+                      });
+                    }
+                  }
+                }
+              });
+              // Füge zusätzliche Händler zu den bestehenden hinzu
+              if (additionalRetailers.length > 0) {
+                const existingRetailers = formData.haendler_weitere_haendler_und_preise || [];
+                const allRetailers = [...existingRetailers, ...additionalRetailers];
+                updates.haendler_weitere_haendler_und_preise = allRetailers;
+                setExtractionLog((prev) => prev + `🏪 Zusätzliche Händler gefunden: ${additionalRetailers.map(r => r.name).join(', ')}\n`);
+              }
+              setFormData((prev) => {
+                const newData = { ...prev, ...updates };
+                updateAllProgress(newData);
+                return newData;
+              });
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Händler-Suche: ${Object.keys(updates).length} Felder aktualisiert\n`);
+            }
+          } else {
+            setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche\n`);
+          }
+        } catch (error) {
+          console.error('Enhanced Retailers Search Error:', error);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error.message}\n`);
+        }
+        
+      } else {
+        // Fallback: Normale Suchen ohne Kontext
+        setExtractionLog((prev) => prev + "⚠️ Kein Produkt-Kontext verfügbar - verwende ALTE STANDARD-SUCHE\n");
+        await startSpaltenExtraction("dokumente", currentUrl);
+        await startSpaltenExtraction("haendler", currentUrl);
+      }
+    } catch (error) {
+      console.error('Enhanced Search Error:', error);
+      setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Suche: ${error.message}\n`);
+    }
+    
+    setExtractionLog((prev) => prev + "\n=== HÄNDLER-ANALYSE ABGESCHLOSSEN ===");
   }, [currentUrl, startSpaltenExtraction]);
 
   const handleResellerClick = useCallback(async () => {
@@ -282,17 +468,175 @@ function Extractor() {
     }
     setExtractionLog((prev) => prev + `  • Händler-Produkt-URL: ${currentUrl}\n\n`);
     
-    // PARALLEL-Analyse für maximale Geschwindigkeit! 🚀
-    setExtractionLog((prev) => prev + "🚀 STARTE PARALLEL-ANALYSE (produkt, parameter, dokumente, haendler)...\n");
+    // STUFE 1: Genaue Produkt-Identifikation auf Basis der URL
+    setExtractionLog((prev) => prev + "🚀 STUFE 1: PRODUKT-IDENTIFIKATION (produkt, parameter)...\n");
     
-    const haendlerPromises = [
+    const stage1Promises = [
       startSpaltenExtraction("produkt", currentUrl),
-      startSpaltenExtraction("parameter", currentUrl),
-      startSpaltenExtraction("dokumente", currentUrl),
-      startSpaltenExtraction("haendler", currentUrl)
+      startSpaltenExtraction("parameter", currentUrl)
     ];
     
-    await Promise.all(haendlerPromises);
+    const stage1Results = await Promise.all(stage1Promises);
+    
+    // Extrahiere Produktdaten direkt aus den KI-Ergebnissen
+    let manufacturer = "";
+    let productName = "";
+    let productCode = "";
+    
+    // Debug: Logge die kompletten stage1Results
+    console.log('🔍 DEBUG: stage1Results =', stage1Results);
+    
+    // Durchsuche die Ergebnisse nach Produktdaten
+    stage1Results.forEach(result => {
+      console.log('🔍 DEBUG: Processing result =', result);
+      if (result && result.data) {
+        console.log('🔍 DEBUG: result.data =', result.data);
+        Object.entries(result.data).forEach(([field, value]) => {
+          console.log(`🔍 DEBUG: field="${field}", value="${value}"`);
+          if (value) {
+            if (field === 'produkt_hersteller' && value) manufacturer = value;
+            if (field === 'produkt_name_modell' && value) productName = value;
+            if (field === 'produkt_code_id' && value) productCode = value;
+          }
+        });
+      }
+    });
+    
+    // STUFE 2: Nachgelagerte Suche nach Dokumenten und Händlern (mit Web-Suche)
+    setExtractionLog((prev) => prev + "\n🔍 STUFE 2: DOKUMENTE & HÄNDLER-SUCHE (mit Web-Suche)...\n");
+    
+    // Direkt erweiterte Suchen starten (ohne setTimeout)
+    try {
+      // Debug: Logge die Werte
+      setExtractionLog((prev) => prev + `🔍 DEBUG: manufacturer="${manufacturer}", productName="${productName}", productCode="${productCode}"\n`);
+      
+      if (manufacturer && productName) {
+        setExtractionLog((prev) => prev + `📋 Kontext für erweiterte Suche: ${manufacturer} - ${productName}\n`);
+        
+        // PHASE 2A: Erweiterte Dokumente-Suche mit Web-Suche
+        setExtractionLog((prev) => prev + "\n📄 PHASE 2A: DOKUMENTE-SUCHE (mit Web-Suche)...\n");
+        try {
+          const documentsResponse = await fetch("/api/extraction/enhanced-documents-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: currentUrl,
+              manufacturer,
+              productName,
+              productCode
+            }),
+          });
+          
+          if (documentsResponse.ok) {
+            const documentsResult = await documentsResponse.json();
+            console.log('Enhanced Documents Search Result:', documentsResult);
+            
+            // Verarbeite die Ergebnisse
+            if (documentsResult.data) {
+              const updates = {};
+              Object.entries(documentsResult.data).forEach(([field, fieldData]) => {
+                if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
+                  const value = fieldData.value;
+                  if (value && value !== '') {
+                    updates[field] = value;
+                    console.log(`Setze ${field} = "${value}"`);
+                  }
+                }
+              });
+              
+              setFormData((prev) => {
+                const newData = { ...prev, ...updates };
+                updateAllProgress(newData);
+                return newData;
+              });
+              
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Dokumente-Suche: ${Object.keys(updates).length} Dokumente gefunden\n`);
+            }
+          } else {
+            setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche\n`);
+          }
+        } catch (error) {
+          console.error('Enhanced Documents Search Error:', error);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error.message}\n`);
+        }
+        
+        // PHASE 2B: Erweiterte Händler-Suche mit Web-Suche
+        setExtractionLog((prev) => prev + "\n🏪 PHASE 2B: HÄNDLER-SUCHE (mit Web-Suche) - NEUE ERWEITERTE API...\n");
+        try {
+          const retailersResponse = await fetch("/api/extraction/enhanced-retailers-search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: currentUrl,
+              manufacturer,
+              productName,
+              productCode,
+              buttonType: 'haendler' // Da wir in handleResellerClick sind
+            }),
+          });
+          
+          if (retailersResponse.ok) {
+            const retailersResult = await retailersResponse.json();
+            console.log('Enhanced Retailers Search Result:', retailersResult);
+            
+            // Logge die Rohdaten für Debugging
+            setExtractionLog((prev) => prev + `🔍 ROHDATEN von erweiterter Händler-Suche:\n`);
+            setExtractionLog((prev) => prev + `   ${JSON.stringify(retailersResult.data, null, 2)}\n\n`);
+            
+            // Verarbeite die Ergebnisse
+            if (retailersResult.data) {
+              const updates = {};
+              const additionalRetailers = [];
+              Object.entries(retailersResult.data).forEach(([field, fieldData]) => {
+                if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
+                  const value = fieldData.value;
+                  if (value && value !== '') {
+                    updates[field] = value;
+                    // Zusätzliche Händler sammeln (nur wenn nicht identisch mit Haupthändler)
+                    if (field === 'haendler_haendlername' && value !== formData.haendler_haendlername) {
+                      additionalRetailers.push({
+                        name: value,
+                        website: retailersResult.data.haendler_haendler_webseite?.value || '',
+                        productUrl: retailersResult.data.haendler_haendler_produkt_url?.value || '',
+                        price: retailersResult.data.haendler_preis?.value || '',
+                        unit: retailersResult.data.haendler_einheit?.value || ''
+                      });
+                    }
+                  }
+                }
+              });
+              // Füge zusätzliche Händler zu den bestehenden hinzu
+              if (additionalRetailers.length > 0) {
+                const existingRetailers = formData.haendler_weitere_haendler_und_preise || [];
+                const allRetailers = [...existingRetailers, ...additionalRetailers];
+                updates.haendler_weitere_haendler_und_preise = allRetailers;
+                setExtractionLog((prev) => prev + `🏪 Zusätzliche Händler gefunden: ${additionalRetailers.map(r => r.name).join(', ')}\n`);
+              }
+              setFormData((prev) => {
+                const newData = { ...prev, ...updates };
+                updateAllProgress(newData);
+                return newData;
+              });
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Händler-Suche: ${Object.keys(updates).length} Felder aktualisiert\n`);
+            }
+          } else {
+            setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche\n`);
+          }
+        } catch (error) {
+          console.error('Enhanced Retailers Search Error:', error);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error.message}\n`);
+        }
+        
+      } else {
+        // Fallback: Normale Suchen ohne Kontext
+        setExtractionLog((prev) => prev + "⚠️ Kein Produkt-Kontext verfügbar - verwende ALTE STANDARD-SUCHE\n");
+        await startSpaltenExtraction("dokumente", currentUrl);
+        await startSpaltenExtraction("haendler", currentUrl);
+      }
+    } catch (error) {
+      console.error('Enhanced Search Error:', error);
+      setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Suche: ${error.message}\n`);
+    }
     
     setExtractionLog((prev) => prev + "\n=== HÄNDLER-ANALYSE ABGESCHLOSSEN ===");
   }, [currentUrl, startSpaltenExtraction]);
@@ -1042,54 +1386,49 @@ function Extractor() {
                   </span>
                   <div className="flex w-full flex-col items-start gap-1 bg-neutral-50">
                     <Table>
-                      <Table.Row>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500">
-                            Retailer 02
-                          </span>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
-                            152,59
-                          </span>
-                        </Table.Cell>
-                      </Table.Row>
-                      <Table.Row>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500">
-                            Retailer 03
-                          </span>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
-                            152,59
-                          </span>
-                        </Table.Cell>
-                      </Table.Row>
-                      <Table.Row>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500">
-                            Retailer 04
-                          </span>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
-                            152,59
-                          </span>
-                        </Table.Cell>
-                      </Table.Row>
-                      <Table.Row>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-pre-wrap text-body font-body text-neutral-500">
-                            {"Retailer 05\n"}
-                          </span>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
-                            152,59
-                          </span>
-                        </Table.Cell>
-                      </Table.Row>
+                      {formData.haendler_weitere_haendler_und_preise && formData.haendler_weitere_haendler_und_preise.length > 0 ? (
+                        formData.haendler_weitere_haendler_und_preise.map((retailer, index) => (
+                          <Table.Row key={index}>
+                            <Table.Cell>
+                              <div className="flex flex-col">
+                                <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-700">
+                                  {retailer.name}
+                                </span>
+                                {retailer.website && (
+                                  <span className="grow shrink-0 basis-0 whitespace-nowrap text-caption font-caption text-neutral-400">
+                                    {retailer.website}
+                                  </span>
+                                )}
+                              </div>
+                            </Table.Cell>
+                            <Table.Cell>
+                              <div className="flex flex-col items-end">
+                                <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-700 text-right">
+                                  {retailer.price} {retailer.unit && `/ ${retailer.unit}`}
+                                </span>
+                                {retailer.productUrl && (
+                                  <a 
+                                    href={retailer.productUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-caption font-caption text-blue-500 hover:underline"
+                                  >
+                                    Zur Produktseite
+                                  </a>
+                                )}
+                              </div>
+                            </Table.Cell>
+                          </Table.Row>
+                        ))
+                      ) : (
+                        <Table.Row>
+                          <Table.Cell colSpan={2}>
+                            <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-400 text-center">
+                              Keine weiteren Händler gefunden
+                            </span>
+                          </Table.Cell>
+                        </Table.Row>
+                      )}
                     </Table>
                   </div>
                 </div>
