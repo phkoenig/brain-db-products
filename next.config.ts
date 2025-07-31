@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
-    optimizePackageImports: ['@subframe/ui'],
+    optimizePackageImports: ['@subframe/core'],
   },
   webpack: (config) => {
     config.resolve.alias = {

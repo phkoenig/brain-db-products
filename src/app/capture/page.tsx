@@ -118,11 +118,15 @@ function Extractor() {
       // Update form fields with enhanced analysis data
       const fieldUpdates: Record<string, string> = {};
       
+      console.log("DEBUG: All enhancedAnalysisData keys:", Object.keys(enhancedAnalysisData));
+      
       Object.entries(enhancedAnalysisData).forEach(([fieldName, fieldData]) => {
         const value = getFieldValue(fieldData);
         const confidence = getFieldConfidence(fieldData);
         const source = getFieldSource(fieldData);
         const reasoning = getFieldReasoning(fieldData);
+
+        console.log(`DEBUG: Processing field ${fieldName}:`, { value, confidence, source, reasoning });
 
         if (value && value.trim() !== '') {
           fieldUpdates[fieldName] = value;
@@ -131,11 +135,16 @@ function Extractor() {
           if (reasoning) {
             addLogMessage(`  Reasoning: ${reasoning}`);
           }
+        } else {
+          console.log(`DEBUG: Skipping field ${fieldName} - empty value`);
         }
       });
+      
+      console.log("DEBUG: Final fieldUpdates:", fieldUpdates);
 
       // Apply all field updates at once
       if (Object.keys(fieldUpdates).length > 0) {
+        console.log("DEBUG: Calling updateFields with:", fieldUpdates);
         updateFields(fieldUpdates);
         addLogMessage(`Updated ${Object.keys(fieldUpdates).length} fields with enhanced analysis data`);
       } else {
@@ -153,30 +162,30 @@ function Extractor() {
   }, [enhancedAnalysisData, updateFields]);
 
   // Helper function to format alternative retailers for display
-  const getAlternativeRetailers = () => {
-    // For now, return empty string since we're not using counterpartData anymore
+  const getAlternativeRetailers = (): Array<{name: string, price: string}> => {
+    // For now, return empty array since we're not using counterpartData anymore
     // This can be enhanced later if needed
-    return '';
+    return [];
   };
 
   // Log extraction state changes
   useEffect(() => {
     if (extractionState !== 'idle') {
-      const messages = {
-        'scraping_primary': 'Starting HTML parsing of the source URL...',
-        'analyzing_primary': 'Starting AI screenshot analysis...',
-        'finding_manufacturer': 'Searching for manufacturer information...',
-        'finding_retailers': 'Searching for alternative retailers...',
-        'fusing_data': 'Combining all extracted data...',
-        'complete': 'Extraction process completed successfully!',
-        'error': 'An error occurred during extraction.'
-      };
-      
-      if (messages[extractionState]) {
-        addLogMessage(messages[extractionState]);
-      }
+      addLogMessage(`Extraction state changed to: ${extractionState}`);
     }
-  }, [extractionState]);
+  }, [extractionState, addLogMessage]);
+
+  // Debug: Monitor formData changes
+  useEffect(() => {
+    console.log("DEBUG: formData changed:", formData);
+    console.log("DEBUG: formData keys:", Object.keys(formData));
+    console.log("DEBUG: Sample formData values:", {
+      manufacturer: formData.manufacturer,
+      product_name: formData.product_name,
+      category: formData.category,
+      description: formData.description
+    });
+  }, [formData]);
 
   useEffect(() => {
     if (!captureId) {

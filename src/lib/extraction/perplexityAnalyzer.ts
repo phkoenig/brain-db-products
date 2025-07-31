@@ -11,6 +11,27 @@ export class PerplexityAnalyzer {
   async analyzeUrl(url: string, customPrompt?: string): Promise<AIAnalysisResult> {
     const prompt = customPrompt || await this.buildDynamicPrompt(url);
     
+    console.log('DEBUG: Perplexity prompt length:', prompt.length);
+    console.log('DEBUG: Perplexity prompt preview:', prompt.substring(0, 200) + '...');
+    
+    const requestBody = {
+      model: 'llama-3.1-70b-instruct',
+      messages: [
+        {
+          role: 'system',
+          content: 'Du bist ein Experte für Baumaterialien und Produktdaten-Extraktion. Analysiere die Webseite und extrahiere alle verfügbaren Produktinformationen basierend auf den angegebenen Feldern. Antworte ausschließlich mit gültigem JSON.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 4000
+    };
+    
+    console.log('DEBUG: Perplexity request body:', JSON.stringify(requestBody, null, 2));
+    
     try {
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
@@ -18,28 +39,20 @@ export class PerplexityAnalyzer {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: 'llama-3.1-70b-instruct',
-          messages: [
-            {
-              role: 'system',
-              content: 'Du bist ein Experte für Baumaterialien und Produktdaten-Extraktion. Analysiere die Webseite und extrahiere alle verfügbaren Produktinformationen basierend auf den angegebenen Feldern.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.1
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('DEBUG: Perplexity response status:', response.status);
+      console.log('DEBUG: Perplexity response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`Perplexity API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('DEBUG: Perplexity error response body:', errorText);
+        throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('DEBUG: Perplexity success response preview:', JSON.stringify(data).substring(0, 500) + '...');
       return this.parseAIResponse(data.choices[0].message.content);
     } catch (error) {
       return this.handleError(error);
@@ -237,5 +250,30 @@ Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
   private handleError(error: unknown): AIAnalysisResult {
     console.error('Perplexity AI analysis error:', error);
     return this.createEmptyResult();
+  }
+} 
+
+// Export function for the enhanced analysis API
+export async function analyzeWithPerplexity(url: string, fieldDefinitions: any): Promise<any> {
+  console.log('DEBUG: analyzeWithPerplexity called with URL:', url);
+  console.log('DEBUG: Field definitions keys:', Object.keys(fieldDefinitions || {}));
+  
+  const apiKey = process.env.PERPLEXITY_API_KEY;
+  if (!apiKey) {
+    throw new Error('PERPLEXITY_API_KEY environment variable is not set');
+  }
+  
+  console.log('DEBUG: PERPLEXITY_API_KEY is set');
+  
+  const analyzer = new PerplexityAnalyzer(apiKey);
+  
+  try {
+    console.log('DEBUG: Calling analyzer.analyzeUrl...');
+    const result = await analyzer.analyzeUrl(url);
+    console.log('DEBUG: Perplexity analysis completed successfully');
+    return result;
+  } catch (error) {
+    console.error('DEBUG: Perplexity analysis failed:', error);
+    throw error;
   }
 } 

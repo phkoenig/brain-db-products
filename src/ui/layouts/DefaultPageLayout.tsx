@@ -30,6 +30,12 @@ const DefaultPageLayoutRoot = React.forwardRef<
 ) {
   const pathname = usePathname();
 
+  // Memoize the selected states to prevent unnecessary re-renders
+  const isSettingsSelected = pathname === "/settings";
+  const isHomeSelected = pathname === "/";
+  const isDatabaseSelected = pathname === "/database";
+  const isCaptureSelected = pathname === "/capture";
+
   return (
     <div
       className={SubframeUtils.twClassNames(
@@ -51,7 +57,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
             <Link href="/settings" className="w-full">
               <SidebarRailWithLabels.NavItem 
                 icon={<FeatherSettings />}
-                selected={pathname === "/settings"}
+                selected={isSettingsSelected}
               >
                 Settings
               </SidebarRailWithLabels.NavItem>
@@ -59,7 +65,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
             <Link href="/" className="w-full">
               <SidebarRailWithLabels.NavItem 
                 icon={<FeatherUserCircle />}
-                selected={pathname === "/"}
+                selected={isHomeSelected}
               >
                 User
               </SidebarRailWithLabels.NavItem>
@@ -70,7 +76,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
         <Link href="/database" className="w-full">
           <SidebarRailWithLabels.NavItem
             icon={<FeatherDatabase />}
-            selected={pathname === "/database"}
+            selected={isDatabaseSelected}
           >
             DB
           </SidebarRailWithLabels.NavItem>
@@ -78,7 +84,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
         <Link href="/capture" className="w-full">
           <SidebarRailWithLabels.NavItem 
             icon={<FeatherPlus />}
-            selected={pathname === "/capture"}
+            selected={isCaptureSelected}
           >
             New
           </SidebarRailWithLabels.NavItem>

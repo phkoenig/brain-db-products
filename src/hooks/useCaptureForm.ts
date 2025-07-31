@@ -59,6 +59,10 @@ const initialFormData: ProductFormData = {
   additional_documents: '',
   catalog_path: '',
   
+  // AI & Processing
+  ocr_text_raw: '',
+  manual_reviewed: 'false',
+  
   // Notes
   notes: '',
   
@@ -210,6 +214,10 @@ export function useCaptureForm() {
           }
         })() : null,
       catalog_path: formData.catalog_path || null,
+      
+      // AI & Processing
+      ocr_text_raw: formData.ocr_text_raw || null,
+      manual_reviewed: formData.manual_reviewed === 'true',
       
       // Notes
       notes: formData.notes || null,

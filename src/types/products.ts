@@ -78,7 +78,7 @@ export interface Product {
 // Form data will hold string values for all fields,
 // conversion to number/JSON happens in toProductData
 export type ProductFormData = {
-  [K in keyof Omit<Product, 'id' | 'created_at' | 'updated_at' | 'source_type' | 'screenshot_path' | 'thumbnail_path' | 'user_id' | 'ocr_text_raw' | 'parsed_fields' | 'ai_confidence' | 'manual_reviewed' | 'alternative_retailer_ai_research_progress'>]: string;
+  [K in keyof Omit<Product, 'id' | 'created_at' | 'updated_at' | 'source_type' | 'screenshot_path' | 'thumbnail_path' | 'user_id' | 'parsed_fields' | 'ai_confidence' | 'alternative_retailer_ai_research_progress'>]: string;
 } & {
   // Additional fields for form data that are not in the Product interface
   manufacturer_url?: string; // Legacy field - maps to manufacturer_main_url

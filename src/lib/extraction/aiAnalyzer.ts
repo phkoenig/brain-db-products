@@ -243,3 +243,18 @@ Wichtige Hinweise:
     };
   }
 } 
+
+// Export function for the enhanced analysis API
+export async function analyzeWithOpenAI(screenshotBase64: string, fieldDefinitions: any): Promise<any> {
+  console.log('DEBUG: Available environment variables:', Object.keys(process.env).filter(key => key.includes('OPENAI')));
+  console.log('DEBUG: OPENAI_API_KEY value:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
+  
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY environment variable is not set');
+  }
+  
+  const analyzer = new AIAnalyzer(apiKey);
+  const result = await analyzer.analyzeScreenshot(screenshotBase64, '');
+  return result;
+} 

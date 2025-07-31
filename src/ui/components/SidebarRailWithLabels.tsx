@@ -11,14 +11,14 @@ import * as SubframeCore from "@subframe/core";
 import { FeatherCircleDashed } from "@subframe/core";
 import { Tooltip } from "./Tooltip";
 
-interface NavItemProps extends React.HTMLAttributes<HTMLDivElement> {
+interface NavItemProps extends React.HTMLAttributes<HTMLSpanElement> {
   icon?: React.ReactNode;
   children?: React.ReactNode;
   selected?: boolean;
   className?: string;
 }
 
-const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
+const NavItem = React.memo(React.forwardRef<HTMLSpanElement, NavItemProps>(function NavItem(
   {
     icon = <FeatherCircleDashed />,
     children,
@@ -32,7 +32,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
     <SubframeCore.Tooltip.Provider>
       <SubframeCore.Tooltip.Root>
         <SubframeCore.Tooltip.Trigger asChild={true}>
-          <div
+          <span
             className={SubframeUtils.twClassNames(
               "group/8815d632 flex min-h-[48px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md px-2 pt-3 pb-2 active:bg-neutral-50",
               {
@@ -64,7 +64,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
                 {children}
               </span>
             ) : null}
-          </div>
+          </span>
         </SubframeCore.Tooltip.Trigger>
         <SubframeCore.Tooltip.Portal>
           <SubframeCore.Tooltip.Content
@@ -79,7 +79,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
       </SubframeCore.Tooltip.Root>
     </SubframeCore.Tooltip.Provider>
   );
-});
+}));
 
 interface SidebarRailWithLabelsRootProps
   extends React.HTMLAttributes<HTMLElement> {
