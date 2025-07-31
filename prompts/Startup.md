@@ -6,7 +6,7 @@
 5. Benutze immer das Context7 MCP wenn Schwierigkeiten beim Coden auftreten.
 6. Beende den Dev-Server, bevor du wichtige Änderungen am Code machst. Wache darüber, dass nie parallel mehrere Dev-Server laufen. Falls du den Dev-Server startest, stelle sicher, dass er auf http://localhost:3000 läuft. Wenn der Port belegt ist, deutet das darauf hin, dass ein weiterer Dev-Server im Hintergrund läuft. Den musst du dann bitte beenden.
 7. Führe ein Commit aller Dateien zu GitHub durch wenn ich "gh" prompte
-8. Wenn ich "log" prompte, schreibe was wir gemacht haben, welche Schwierigkeiten aufgetreten sind, wie wir sie gelöst haben, und erkannte Best Practices in das Logbuch. Ich füge dazu jeweils zuoberst einen neuen Abschnitt hinzu, nach folgendem Schema
+8. Wenn ich "log" prompte, schreibe was wir gemacht haben, welche Schwierigkeiten aufgetreten sind, wie wir sie gelöst haben, und erkannte Best Practices in das Logbuch. Fasse Dich dabei sehr kurz, damit das Kontextfenster nicht zu schnell voll wird. Füge dazu jeweils zuoberst einen neuen Abschnitt hinzu, nach folgendem Schema
 
 # 31.07.2025 - 05:35 - Weiterarbeit an der Extraction Pipeline.
 

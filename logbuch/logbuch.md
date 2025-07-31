@@ -1,5 +1,15 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 31.12.2024 - 17:30 - React Performance-Probleme behoben
+
+**Problem**: "Maximum update depth exceeded" + "Cannot access before initialization" Fehler
+**Lösung**: useCallback Memoization für alle Handler-Funktionen + Funktionsreihenfolge korrigiert
+**Dateien**: useExtraction.ts, capture/page.tsx
+**Ergebnis**: Dev-Server läuft stabil, Enhanced Analysis funktioniert (Waschtischarmatur-Test erfolgreich)
+**Neues Problem**: Perplexity API Model 'llama-3.1-70b-instruct' ungültig - muss auf gültiges Modell umgestellt werden
+
+---
+
 ## 31.12.2024 - 16:00 - Kritischer React Infinite Loop behoben
 
 ### 🎯 Aufgabenstellung
