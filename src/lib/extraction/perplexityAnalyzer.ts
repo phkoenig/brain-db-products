@@ -15,15 +15,15 @@ export class PerplexityAnalyzer {
     console.log('DEBUG: Perplexity prompt preview:', prompt.substring(0, 200) + '...');
     
     const requestBody = {
-      model: 'llama-3.1-sonar-large-128k-online',
+      model: 'sonar-pro',
       messages: [
-        {
-          role: 'system',
-          content: 'Du bist ein Experte für Baumaterialien und Produktdaten-Extraktion. Analysiere die Webseite und extrahiere alle verfügbaren Produktinformationen basierend auf den angegebenen Feldern. Antworte ausschließlich mit gültigem JSON.'
-        },
         {
           role: 'user',
           content: prompt
+        },
+        {
+          role: 'system',
+          content: `URL: ${url}`
         }
       ],
       temperature: 0.1,
