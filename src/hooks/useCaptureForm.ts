@@ -1,47 +1,72 @@
 import { useState, useCallback } from 'react';
 import { ProductFormData } from '@/types/products';
 
-// Initial empty form data
+// Initial empty form data mit neuen Präfix-Feldnamen
 const initialFormData: ProductFormData = {
   // Source Information (Chrome Extension)
   source_url: '',
   
-  // Identity
-  manufacturer: '',
-  product_name: '',
-  product_code: '',
-  description: '',
-  category: '',
-  application_area: '',
-  series: '',
+  // PRODUKT-Spalte
+  produkt_kategorie: [],
+  produkt_hersteller: '',
+  produkt_name_modell: '',
+  produkt_produktlinie_serie: '',
+  produkt_code_id: '',
+  produkt_anwendungsbereich: '',
+  produkt_beschreibung: '',
+  produkt_hersteller_webseite: '',
+  produkt_hersteller_produkt_url: '',
   
-  // Specifications
-  material_type: '',
-  color: '',
-  surface: '',
-  dimensions: '',
-  weight_per_unit: '',
-  fire_resistance: '',
-  thermal_conductivity: '',
-  sound_insulation: '',
-  u_value: '',
-  water_resistance: '',
-  vapor_diffusion: '',
-  installation_type: '',
-  maintenance: '',
-  environment_cert: '',
+  // PARAMETER-Spalte
+  parameter_masse: '',
+  parameter_farbe: '',
+  parameter_hauptmaterial: '',
+  parameter_oberflaeche: '',
+  parameter_gewicht_pro_einheit: '',
+  parameter_feuerwiderstand: '',
+  parameter_waermeleitfaehigkeit: '',
+  parameter_u_wert: '',
+  parameter_schalldaemmung: '',
+  parameter_wasserbestaendigkeit: '',
+  parameter_dampfdiffusion: '',
+  parameter_einbauart: '',
+  parameter_wartung: '',
+  parameter_umweltzertifikat: '',
   
-  // Pricing & Retailer
-  price: '',
-  unit: '',
-  price_per_unit: '',
-  retailer: '',
-  retailer_url: '',
-  retailer_product_url: '',
-  retailer_main_url: '',
-  availability: '',
+  // DOKUMENTE-Spalte
+  dokumente_datenblatt: '',
+  dokumente_technisches_merkblatt: '',
+  dokumente_produktkatalog: '',
+  dokumente_weitere_dokumente: '',
+  dokumente_bim_cad_technische_zeichnungen: '',
   
-  // Alternative Retailer (NEW)
+  // HÄNDLER-Spalte
+  haendler_haendlername: '',
+  haendler_haendler_webseite: '',
+  haendler_haendler_produkt_url: '',
+  haendler_verfuegbarkeit: '',
+  haendler_einheit: '',
+  haendler_preis: '',
+  haendler_preis_pro_einheit: '',
+  
+  // ERFAHRUNG-Spalte
+  erfahrung_einsatz_in_projekt: '',
+  erfahrung_muster_bestellt: '',
+  erfahrung_muster_abgelegt: '',
+  erfahrung_bewertung: '',
+  erfahrung_bemerkungen_notizen: '',
+  
+  // ERFASSUNG-Spalte
+  erfassung_quell_url: '',
+  erfassung_erfassungsdatum: '',
+  erfassung_erfassung_fuer: 'Deutschland',
+  erfassung_extraktions_log: '',
+  
+  // AI & Processing (behalten für Kompatibilität)
+  ocr_text_raw: '',
+  notes: '',
+  
+  // Alternative Retailer (erweiterte Funktionalität)
   alternative_retailer_name: '',
   alternative_retailer_url: '',
   alternative_retailer_price: '',
@@ -49,33 +74,7 @@ const initialFormData: ProductFormData = {
   alternative_retailer_price_per_unit: '',
   alternative_retailer_availability: '',
   alternative_retailer_ai_research_status: 'pending',
-  
-  // Documents
-  datasheet_url: '',
-  technical_sheet_url: '',
-  product_page_url: '',
-  manufacturer_product_url: '',
-  manufacturer_main_url: '',
-  additional_documents: '',
-  catalog_path: '',
-  
-  // AI & Processing
-  ocr_text_raw: '',
-  manual_reviewed: 'false',
-  
-  // Notes
-  notes: '',
-  
-  // Additional fields for extraction
-  manufacturer_url: '', // Legacy field - maps to manufacturer_main_url
-  retailer_name: '',
-  main_material: '',
-  additional_documents_url: '',
-  rating: '',
-  catalog_url: '',
-  project: '',
-  sample_ordered: '',
-  sample_stored_in: '',
+  alternative_retailer_ai_research_progress: '',
 };
 
 export function useCaptureForm() {
@@ -116,27 +115,26 @@ export function useCaptureForm() {
   // Load data from capture (when capture_id is provided)
   const loadFromCapture = useCallback((captureData: { url: string; screenshot_url: string; thumbnail_url: string; created_at: string }) => {
     updateFields({
-      product_page_url: captureData.url,
+      erfassung_quell_url: captureData.url,
       source_url: captureData.url,
-      // We could also set screenshot_path and thumbnail_path here
-      // when we implement image upload functionality
+      erfassung_erfassungsdatum: new Date(captureData.created_at).toLocaleString('de-DE'),
     });
-  }, []); // Empty dependency array means this function is created only once
+  }, [updateFields]);
 
   // Validate form data
   const validateForm = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
     
-    if (!formData.manufacturer?.trim()) {
-      errors.push('Manufacturer is required');
+    if (!formData.produkt_hersteller?.trim()) {
+      errors.push('Hersteller ist erforderlich');
     }
     
-    if (!formData.product_name?.trim()) {
-      errors.push('Product name is required');
+    if (!formData.produkt_name_modell?.trim()) {
+      errors.push('Produktname ist erforderlich');
     }
     
-    if (!formData.category?.trim()) {
-      errors.push('Category is required');
+    if (!formData.produkt_kategorie || formData.produkt_kategorie.length === 0) {
+      errors.push('Kategorie ist erforderlich');
     }
     
     return {
@@ -151,47 +149,67 @@ export function useCaptureForm() {
       // Source Information (Chrome Extension)
       source_url: formData.source_url || null,
       
-      // Identity
-      manufacturer: formData.manufacturer || null,
-      product_name: formData.product_name || null,
-      product_code: formData.product_code || null,
-      description: formData.description || null,
-      category: formData.category || null,
-      application_area: formData.application_area || null,
-      series: formData.series || null,
+      // PRODUKT-Spalte
+      produkt_kategorie: formData.produkt_kategorie && formData.produkt_kategorie.length > 0 ? formData.produkt_kategorie : null,
+      produkt_hersteller: formData.produkt_hersteller || null,
+      produkt_name_modell: formData.produkt_name_modell || null,
+      produkt_produktlinie_serie: formData.produkt_produktlinie_serie || null,
+      produkt_code_id: formData.produkt_code_id || null,
+      produkt_anwendungsbereich: formData.produkt_anwendungsbereich || null,
+      produkt_beschreibung: formData.produkt_beschreibung || null,
+      produkt_hersteller_webseite: formData.produkt_hersteller_webseite || null,
+      produkt_hersteller_produkt_url: formData.produkt_hersteller_produkt_url || null,
       
-      // Specifications
-      material_type: formData.material_type || null,
-      color: formData.color || null,
-      surface: formData.surface || null,
-      dimensions: formData.dimensions || null,
-      weight_per_unit: formData.weight_per_unit ? parseFloat(formData.weight_per_unit) : null,
-      fire_resistance: formData.fire_resistance || null,
-      thermal_conductivity: formData.thermal_conductivity ? parseFloat(formData.thermal_conductivity) : null,
-      sound_insulation: formData.sound_insulation || null,
-      u_value: formData.u_value ? parseFloat(formData.u_value) : null,
-      water_resistance: formData.water_resistance || null,
-      vapor_diffusion: formData.vapor_diffusion || null,
-      installation_type: formData.installation_type || null,
-      maintenance: formData.maintenance || null,
-      environment_cert: formData.environment_cert && formData.environment_cert.trim() ? 
-        (() => {
-          try {
-            return JSON.parse(formData.environment_cert);
-          } catch {
-            return formData.environment_cert; // Return as string if not valid JSON
-          }
-        })() : null,
+      // PARAMETER-Spalte
+      parameter_masse: formData.parameter_masse || null,
+      parameter_farbe: formData.parameter_farbe || null,
+      parameter_hauptmaterial: formData.parameter_hauptmaterial || null,
+      parameter_oberflaeche: formData.parameter_oberflaeche || null,
+      parameter_gewicht_pro_einheit: formData.parameter_gewicht_pro_einheit || null,
+      parameter_feuerwiderstand: formData.parameter_feuerwiderstand || null,
+      parameter_waermeleitfaehigkeit: formData.parameter_waermeleitfaehigkeit || null,
+      parameter_u_wert: formData.parameter_u_wert || null,
+      parameter_schalldaemmung: formData.parameter_schalldaemmung || null,
+      parameter_wasserbestaendigkeit: formData.parameter_wasserbestaendigkeit || null,
+      parameter_dampfdiffusion: formData.parameter_dampfdiffusion || null,
+      parameter_einbauart: formData.parameter_einbauart || null,
+      parameter_wartung: formData.parameter_wartung || null,
+      parameter_umweltzertifikat: formData.parameter_umweltzertifikat || null,
       
-      // Pricing & Retailer
-      price: formData.price ? parseFloat(formData.price) : null,
-      unit: formData.unit || null,
-      price_per_unit: formData.price_per_unit ? parseFloat(formData.price_per_unit) : null,
-      retailer: formData.retailer || null,
-      retailer_url: formData.retailer_url || null,
-      availability: formData.availability || null,
+      // DOKUMENTE-Spalte
+      dokumente_datenblatt: formData.dokumente_datenblatt || null,
+      dokumente_technisches_merkblatt: formData.dokumente_technisches_merkblatt || null,
+      dokumente_produktkatalog: formData.dokumente_produktkatalog || null,
+      dokumente_weitere_dokumente: formData.dokumente_weitere_dokumente || null,
+      dokumente_bim_cad_technische_zeichnungen: formData.dokumente_bim_cad_technische_zeichnungen || null,
       
-      // Alternative Retailer (NEW)
+      // HÄNDLER-Spalte
+      haendler_haendlername: formData.haendler_haendlername || null,
+      haendler_haendler_webseite: formData.haendler_haendler_webseite || null,
+      haendler_haendler_produkt_url: formData.haendler_haendler_produkt_url || null,
+      haendler_verfuegbarkeit: formData.haendler_verfuegbarkeit || null,
+      haendler_einheit: formData.haendler_einheit || null,
+      haendler_preis: formData.haendler_preis ? parseFloat(formData.haendler_preis) : null,
+      haendler_preis_pro_einheit: formData.haendler_preis_pro_einheit ? parseFloat(formData.haendler_preis_pro_einheit) : null,
+      
+      // ERFAHRUNG-Spalte
+      erfahrung_einsatz_in_projekt: formData.erfahrung_einsatz_in_projekt || null,
+      erfahrung_muster_bestellt: formData.erfahrung_muster_bestellt || null,
+      erfahrung_muster_abgelegt: formData.erfahrung_muster_abgelegt || null,
+      erfahrung_bewertung: formData.erfahrung_bewertung || null,
+      erfahrung_bemerkungen_notizen: formData.erfahrung_bemerkungen_notizen || null,
+      
+      // ERFASSUNG-Spalte
+      erfassung_quell_url: formData.erfassung_quell_url || null,
+      erfassung_erfassungsdatum: formData.erfassung_erfassungsdatum || null,
+      erfassung_erfassung_fuer: formData.erfassung_erfassung_fuer || 'Deutschland',
+      erfassung_extraktions_log: formData.erfassung_extraktions_log || null,
+      
+      // AI & Processing (behalten für Kompatibilität)
+      ocr_text_raw: formData.ocr_text_raw || null,
+      notes: formData.notes || null,
+      
+      // Alternative Retailer (erweiterte Funktionalität)
       alternative_retailer_name: formData.alternative_retailer_name || null,
       alternative_retailer_url: formData.alternative_retailer_url || null,
       alternative_retailer_price: formData.alternative_retailer_price ? parseFloat(formData.alternative_retailer_price) : null,
@@ -199,28 +217,7 @@ export function useCaptureForm() {
       alternative_retailer_price_per_unit: formData.alternative_retailer_price_per_unit ? parseFloat(formData.alternative_retailer_price_per_unit) : null,
       alternative_retailer_availability: formData.alternative_retailer_availability || null,
       alternative_retailer_ai_research_status: formData.alternative_retailer_ai_research_status || 'pending',
-      alternative_retailer_ai_research_progress: 0,
-      
-      // Documents
-      datasheet_url: formData.datasheet_url || null,
-      technical_sheet_url: formData.technical_sheet_url || null,
-      product_page_url: formData.product_page_url || null,
-      additional_documents: formData.additional_documents && formData.additional_documents.trim() ? 
-        (() => {
-          try {
-            return JSON.parse(formData.additional_documents);
-          } catch {
-            return formData.additional_documents; // Return as string if not valid JSON
-          }
-        })() : null,
-      catalog_path: formData.catalog_path || null,
-      
-      // AI & Processing
-      ocr_text_raw: formData.ocr_text_raw || null,
-      manual_reviewed: formData.manual_reviewed === 'true',
-      
-      // Notes
-      notes: formData.notes || null,
+      alternative_retailer_ai_research_progress: formData.alternative_retailer_ai_research_progress ? parseInt(formData.alternative_retailer_ai_research_progress) : 0,
       
       // Source information (Chrome Extension)
       source_type: 'chrome_extension',
@@ -239,4 +236,4 @@ export function useCaptureForm() {
     toProductData,
     setIsSaving,
   };
-} 
+}

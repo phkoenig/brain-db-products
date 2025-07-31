@@ -32,50 +32,56 @@ function Extractor() {
   });
 
   const [formData, setFormData] = useState({
-    kategorie: [] as string[],
-    hersteller: "",
-    name_modell: "",
-    produktlinie_serie: "",
-    code_id: "",
-    anwendungsbereich: "",
-    beschreibung: "",
-    hersteller_webseite: "",
-    hersteller_produkt_url: "",
-    masse: "",
-    farbe: "",
-    hauptmaterial: "",
-    oberflaeche: "",
-    gewicht_pro_einheit: "",
-    feuerwiderstand: "",
-    waermeleitfaehigkeit: "",
-    u_wert: "",
-    schalldaemmung: "",
-    wasserbestaendigkeit: "",
-    dampfdiffusion: "",
-    einbauart: "",
-    wartung: "",
-    umweltzertifikat: "",
-    datenblatt: "",
-    technisches_merkblatt: "",
-    produktkatalog: "",
-    weitere_dokumente: "",
-    bim_cad_technische_zeichnungen: "",
-    haendlername: "",
-    haendler_webseite: "",
-    haendler_produkt_url: "",
-    verfuegbarkeit: "",
-    einheit: "",
-    preis: "",
-    preis_pro_einheit: "",
-    einsatz_in_projekt: "",
-    muster_bestellt: "",
-    muster_abgelegt: "",
-    bewertung: "",
-    bemerkungen_notizen: "",
-    quell_url: "",
-    erfassungsdatum: "",
-    erfassung_fuer: "Deutschland",
-    extraktions_log: "",
+    // PRODUKT-Spalte
+    produkt_kategorie: [] as string[],
+    produkt_hersteller: "",
+    produkt_name_modell: "",
+    produkt_produktlinie_serie: "",
+    produkt_code_id: "",
+    produkt_anwendungsbereich: "",
+    produkt_beschreibung: "",
+    produkt_hersteller_webseite: "",
+    produkt_hersteller_produkt_url: "",
+    // PARAMETER-Spalte
+    parameter_masse: "",
+    parameter_farbe: "",
+    parameter_hauptmaterial: "",
+    parameter_oberflaeche: "",
+    parameter_gewicht_pro_einheit: "",
+    parameter_feuerwiderstand: "",
+    parameter_waermeleitfaehigkeit: "",
+    parameter_u_wert: "",
+    parameter_schalldaemmung: "",
+    parameter_wasserbestaendigkeit: "",
+    parameter_dampfdiffusion: "",
+    parameter_einbauart: "",
+    parameter_wartung: "",
+    parameter_umweltzertifikat: "",
+    // DOKUMENTE-Spalte
+    dokumente_datenblatt: "",
+    dokumente_technisches_merkblatt: "",
+    dokumente_produktkatalog: "",
+    dokumente_weitere_dokumente: "",
+    dokumente_bim_cad_technische_zeichnungen: "",
+    // HÄNDLER-Spalte
+    haendler_haendlername: "",
+    haendler_haendler_webseite: "",
+    haendler_haendler_produkt_url: "",
+    haendler_verfuegbarkeit: "",
+    haendler_einheit: "",
+    haendler_preis: "",
+    haendler_preis_pro_einheit: "",
+    // ERFAHRUNG-Spalte
+    erfahrung_einsatz_in_projekt: "",
+    erfahrung_muster_bestellt: "",
+    erfahrung_muster_abgelegt: "",
+    erfahrung_bewertung: "",
+    erfahrung_bemerkungen_notizen: "",
+    // ERFASSUNG-Spalte
+    erfassung_quell_url: "",
+    erfassung_erfassungsdatum: "",
+    erfassung_erfassung_fuer: "Deutschland",
+    erfassung_extraktions_log: "",
   });
 
   const { categories, loading: categoriesLoading, getGroupedCategories } = useMaterialCategories();
@@ -162,7 +168,24 @@ function Extractor() {
   const handleManufacturerClick = useCallback(async () => {
     if (!currentUrl) return;
     
+    // Sofort URL-Felder setzen BEVOR KI-Analyse startet
+    handleFormChange('erfassung_quell_url', currentUrl);
+    try {
+      handleFormChange('produkt_hersteller_webseite', new URL(currentUrl).origin);
+    } catch (e) {
+      handleFormChange('produkt_hersteller_webseite', currentUrl);
+    }
+    handleFormChange('produkt_hersteller_produkt_url', currentUrl);
+    
     setExtractionLog("=== STARTE HERSTELLER-ANALYSE ===\n");
+    setExtractionLog((prev) => prev + `✅ URLs sofort gesetzt:\n`);
+    setExtractionLog((prev) => prev + `  • Quell-URL: ${currentUrl}\n`);
+    try {
+      setExtractionLog((prev) => prev + `  • Hersteller-Webseite: ${new URL(currentUrl).origin}\n`);
+    } catch (e) {
+      setExtractionLog((prev) => prev + `  • Hersteller-Webseite: ${currentUrl}\n`);
+    }
+    setExtractionLog((prev) => prev + `  • Hersteller-Produkt-URL: ${currentUrl}\n\n`);
     
     await startSpaltenExtraction("produkt", currentUrl);
     await startSpaltenExtraction("parameter", currentUrl);
@@ -174,7 +197,24 @@ function Extractor() {
   const handleResellerClick = useCallback(async () => {
     if (!currentUrl) return;
     
+    // Sofort URL-Felder setzen BEVOR KI-Analyse startet
+    handleFormChange('erfassung_quell_url', currentUrl);
+    try {
+      handleFormChange('haendler_haendler_webseite', new URL(currentUrl).origin);
+    } catch (e) {
+      handleFormChange('haendler_haendler_webseite', currentUrl);
+    }
+    handleFormChange('haendler_haendler_produkt_url', currentUrl);
+    
     setExtractionLog("=== STARTE HÄNDLER-ANALYSE ===\n");
+    setExtractionLog((prev) => prev + `✅ URLs sofort gesetzt:\n`);
+    setExtractionLog((prev) => prev + `  • Quell-URL: ${currentUrl}\n`);
+    try {
+      setExtractionLog((prev) => prev + `  • Händler-Webseite: ${new URL(currentUrl).origin}\n`);
+    } catch (e) {
+      setExtractionLog((prev) => prev + `  • Händler-Webseite: ${currentUrl}\n`);
+    }
+    setExtractionLog((prev) => prev + `  • Händler-Produkt-URL: ${currentUrl}\n\n`);
     
     await startSpaltenExtraction("produkt", currentUrl);
     await startSpaltenExtraction("parameter", currentUrl);
@@ -199,12 +239,12 @@ function Extractor() {
           if (capture) {
             setCurrentCapture(capture);
             setCurrentUrl(capture.url);
-            handleFormChange('quell_url', capture.url);
+            handleFormChange('erfassung_quell_url', capture.url);
             
             // Set capture date if available
             if (capture.created_at) {
               const captureDate = new Date(capture.created_at).toLocaleString('de-DE');
-              handleFormChange('erfassungsdatum', captureDate);
+              handleFormChange('erfassung_erfassungsdatum', captureDate);
             }
           }
         } catch (error) {
@@ -216,12 +256,12 @@ function Extractor() {
       // Fallback to URL parameter
       else if (url) {
         setCurrentUrl(url);
-        handleFormChange('quell_url', url);
-        handleFormChange('erfassungsdatum', new Date().toLocaleString('de-DE'));
+        handleFormChange('erfassung_quell_url', url);
+        handleFormChange('erfassung_erfassungsdatum', new Date().toLocaleString('de-DE'));
       } 
       // Default case
       else {
-        handleFormChange('erfassungsdatum', new Date().toLocaleString('de-DE'));
+        handleFormChange('erfassung_erfassungsdatum', new Date().toLocaleString('de-DE'));
       }
     };
 
@@ -274,8 +314,8 @@ function Extractor() {
                   className="w-full"
                   variant="filled"
                   options={multiSelectOptions}
-                  selectedValues={formData.kategorie}
-                  onSelectionChange={(values) => handleFormChange('kategorie', values)}
+                  selectedValues={formData.produkt_kategorie}
+                  onSelectionChange={(values) => handleFormChange('produkt_kategorie', values)}
                   placeholder="Kategorien auswählen..."
                   searchPlaceholder="Kategorien durchsuchen..."
                   disabled={categoriesLoading}
@@ -294,8 +334,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.hersteller}
-                    onChange={(e) => handleFormChange('hersteller', e.target.value)}
+                    value={formData.produkt_hersteller}
+                    onChange={(e) => handleFormChange('produkt_hersteller', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -312,8 +352,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.name_modell}
-                    onChange={(e) => handleFormChange('name_modell', e.target.value)}
+                    value={formData.produkt_name_modell}
+                    onChange={(e) => handleFormChange('produkt_name_modell', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -330,8 +370,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produktlinie_serie}
-                    onChange={(e) => handleFormChange('produktlinie_serie', e.target.value)}
+                    value={formData.produkt_produktlinie_serie}
+                    onChange={(e) => handleFormChange('produkt_produktlinie_serie', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -348,8 +388,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.code_id}
-                    onChange={(e) => handleFormChange('code_id', e.target.value)}
+                    value={formData.produkt_code_id}
+                    onChange={(e) => handleFormChange('produkt_code_id', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -366,8 +406,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.anwendungsbereich}
-                    onChange={(e) => handleFormChange('anwendungsbereich', e.target.value)}
+                    value={formData.produkt_anwendungsbereich}
+                    onChange={(e) => handleFormChange('produkt_anwendungsbereich', e.target.value)}
                   />
                 </TextField>
                 <div className="flex w-full flex-col items-start gap-1 pt-4">
@@ -383,8 +423,8 @@ function Extractor() {
                     <TextArea.Input
                       className="h-28 w-full flex-none"
                       placeholder="..."
-                      value={formData.beschreibung}
-                      onChange={(e) => handleFormChange('beschreibung', e.target.value)}
+                      value={formData.produkt_beschreibung}
+                      onChange={(e) => handleFormChange('produkt_beschreibung', e.target.value)}
                     />
                   </TextArea>
                 </div>
@@ -402,8 +442,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.hersteller_webseite}
-                    onChange={(e) => handleFormChange('hersteller_webseite', e.target.value)}
+                    value={formData.produkt_hersteller_webseite}
+                    onChange={(e) => handleFormChange('produkt_hersteller_webseite', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -420,8 +460,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.hersteller_produkt_url}
-                    onChange={(e) => handleFormChange('hersteller_produkt_url', e.target.value)}
+                    value={formData.produkt_hersteller_produkt_url}
+                    onChange={(e) => handleFormChange('produkt_hersteller_produkt_url', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -447,8 +487,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.masse}
-                    onChange={(e) => handleFormChange('masse', e.target.value)}
+                    value={formData.parameter_masse}
+                    onChange={(e) => handleFormChange('parameter_masse', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -465,8 +505,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.farbe}
-                    onChange={(e) => handleFormChange('farbe', e.target.value)}
+                    value={formData.parameter_farbe}
+                    onChange={(e) => handleFormChange('parameter_farbe', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -483,8 +523,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.hauptmaterial}
-                    onChange={(e) => handleFormChange('hauptmaterial', e.target.value)}
+                    value={formData.parameter_hauptmaterial}
+                    onChange={(e) => handleFormChange('parameter_hauptmaterial', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -501,8 +541,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.oberflaeche}
-                    onChange={(e) => handleFormChange('oberflaeche', e.target.value)}
+                    value={formData.parameter_oberflaeche}
+                    onChange={(e) => handleFormChange('parameter_oberflaeche', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -519,8 +559,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.gewicht_pro_einheit}
-                    onChange={(e) => handleFormChange('gewicht_pro_einheit', e.target.value)}
+                    value={formData.parameter_gewicht_pro_einheit}
+                    onChange={(e) => handleFormChange('parameter_gewicht_pro_einheit', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -537,8 +577,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.feuerwiderstand}
-                    onChange={(e) => handleFormChange('feuerwiderstand', e.target.value)}
+                    value={formData.parameter_feuerwiderstand}
+                    onChange={(e) => handleFormChange('parameter_feuerwiderstand', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -555,8 +595,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.waermeleitfaehigkeit}
-                    onChange={(e) => handleFormChange('waermeleitfaehigkeit', e.target.value)}
+                    value={formData.parameter_waermeleitfaehigkeit}
+                    onChange={(e) => handleFormChange('parameter_waermeleitfaehigkeit', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -573,8 +613,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.u_wert}
-                    onChange={(e) => handleFormChange('u_wert', e.target.value)}
+                    value={formData.parameter_u_wert}
+                    onChange={(e) => handleFormChange('parameter_u_wert', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -591,8 +631,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.schalldaemmung}
-                    onChange={(e) => handleFormChange('schalldaemmung', e.target.value)}
+                    value={formData.parameter_schalldaemmung}
+                    onChange={(e) => handleFormChange('parameter_schalldaemmung', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -609,8 +649,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.wasserbestaendigkeit}
-                    onChange={(e) => handleFormChange('wasserbestaendigkeit', e.target.value)}
+                    value={formData.parameter_wasserbestaendigkeit}
+                    onChange={(e) => handleFormChange('parameter_wasserbestaendigkeit', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -627,8 +667,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.dampfdiffusion}
-                    onChange={(e) => handleFormChange('dampfdiffusion', e.target.value)}
+                    value={formData.parameter_dampfdiffusion}
+                    onChange={(e) => handleFormChange('parameter_dampfdiffusion', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -645,8 +685,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.einbauart}
-                    onChange={(e) => handleFormChange('einbauart', e.target.value)}
+                    value={formData.parameter_einbauart}
+                    onChange={(e) => handleFormChange('parameter_einbauart', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -663,8 +703,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.wartung}
-                    onChange={(e) => handleFormChange('wartung', e.target.value)}
+                    value={formData.parameter_wartung}
+                    onChange={(e) => handleFormChange('parameter_wartung', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -681,8 +721,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.umweltzertifikat}
-                    onChange={(e) => handleFormChange('umweltzertifikat', e.target.value)}
+                    value={formData.parameter_umweltzertifikat}
+                    onChange={(e) => handleFormChange('parameter_umweltzertifikat', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -708,8 +748,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.datenblatt}
-                    onChange={(e) => handleFormChange('datenblatt', e.target.value)}
+                    value={formData.dokumente_datenblatt}
+                    onChange={(e) => handleFormChange('dokumente_datenblatt', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -726,8 +766,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.technisches_merkblatt}
-                    onChange={(e) => handleFormChange('technisches_merkblatt', e.target.value)}
+                    value={formData.dokumente_technisches_merkblatt}
+                    onChange={(e) => handleFormChange('dokumente_technisches_merkblatt', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -744,8 +784,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produktkatalog}
-                    onChange={(e) => handleFormChange('produktkatalog', e.target.value)}
+                    value={formData.dokumente_produktkatalog}
+                    onChange={(e) => handleFormChange('dokumente_produktkatalog', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -762,8 +802,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.weitere_dokumente}
-                    onChange={(e) => handleFormChange('weitere_dokumente', e.target.value)}
+                    value={formData.dokumente_weitere_dokumente}
+                    onChange={(e) => handleFormChange('dokumente_weitere_dokumente', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -780,8 +820,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.bim_cad_technische_zeichnungen}
-                    onChange={(e) => handleFormChange('bim_cad_technische_zeichnungen', e.target.value)}
+                    value={formData.dokumente_bim_cad_technische_zeichnungen}
+                    onChange={(e) => handleFormChange('dokumente_bim_cad_technische_zeichnungen', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -807,8 +847,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendlername}
-                    onChange={(e) => handleFormChange('haendlername', e.target.value)}
+                    value={formData.haendler_haendlername}
+                    onChange={(e) => handleFormChange('haendler_haendlername', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -825,8 +865,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendler_webseite}
-                    onChange={(e) => handleFormChange('haendler_webseite', e.target.value)}
+                    value={formData.haendler_haendler_webseite}
+                    onChange={(e) => handleFormChange('haendler_haendler_webseite', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -843,8 +883,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendler_produkt_url}
-                    onChange={(e) => handleFormChange('haendler_produkt_url', e.target.value)}
+                    value={formData.haendler_haendler_produkt_url}
+                    onChange={(e) => handleFormChange('haendler_haendler_produkt_url', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -861,8 +901,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.verfuegbarkeit}
-                    onChange={(e) => handleFormChange('verfuegbarkeit', e.target.value)}
+                    value={formData.haendler_verfuegbarkeit}
+                    onChange={(e) => handleFormChange('haendler_verfuegbarkeit', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -879,8 +919,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.einheit}
-                    onChange={(e) => handleFormChange('einheit', e.target.value)}
+                    value={formData.haendler_einheit}
+                    onChange={(e) => handleFormChange('haendler_einheit', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -898,8 +938,8 @@ function Extractor() {
                   <TextField.Input
                     className="text-right"
                     placeholder="€ 123,00"
-                    value={formData.preis}
-                    onChange={(e) => handleFormChange('preis', e.target.value)}
+                    value={formData.haendler_preis}
+                    onChange={(e) => handleFormChange('haendler_preis', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -917,8 +957,8 @@ function Extractor() {
                   <TextField.Input
                     className="text-right"
                     placeholder="€ 123,00"
-                    value={formData.preis_pro_einheit}
-                    onChange={(e) => handleFormChange('preis_pro_einheit', e.target.value)}
+                    value={formData.haendler_preis_pro_einheit}
+                    onChange={(e) => handleFormChange('haendler_preis_pro_einheit', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -1001,8 +1041,8 @@ function Extractor() {
                   placeholder="Projektauswahl"
                   helpText=""
                   icon={<FeatherSearch />}
-                  value={formData.einsatz_in_projekt}
-                  onValueChange={(value) => handleFormChange('einsatz_in_projekt', value)}
+                  value={formData.erfahrung_einsatz_in_projekt}
+                  onValueChange={(value) => handleFormChange('erfahrung_einsatz_in_projekt', value)}
                 >
                   <Select.Item value="projekt1">Projekt 1</Select.Item>
                   <Select.Item value="projekt2">Projekt 2</Select.Item>
@@ -1021,8 +1061,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.muster_bestellt}
-                    onChange={(e) => handleFormChange('muster_bestellt', e.target.value)}
+                    value={formData.erfahrung_muster_bestellt}
+                    onChange={(e) => handleFormChange('erfahrung_muster_bestellt', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -1039,8 +1079,8 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.muster_abgelegt}
-                    onChange={(e) => handleFormChange('muster_abgelegt', e.target.value)}
+                    value={formData.erfahrung_muster_abgelegt}
+                    onChange={(e) => handleFormChange('erfahrung_muster_abgelegt', e.target.value)}
                   />
                 </TextField>
               </div>
@@ -1050,8 +1090,8 @@ function Extractor() {
                 </span>
                 <ToggleGroup
                   className="h-auto w-full flex-none"
-                  value={formData.bewertung}
-                  onValueChange={(value) => handleFormChange('bewertung', value)}
+                  value={formData.erfahrung_bewertung}
+                  onValueChange={(value) => handleFormChange('erfahrung_bewertung', value)}
                 >
                   <ToggleGroup.Item value="1">1</ToggleGroup.Item>
                   <ToggleGroup.Item value="2">2</ToggleGroup.Item>
@@ -1073,8 +1113,8 @@ function Extractor() {
                   <TextArea.Input
                     className="h-28 w-full flex-none"
                     placeholder="..."
-                    value={formData.bemerkungen_notizen}
-                    onChange={(e) => handleFormChange('bemerkungen_notizen', e.target.value)}
+                    value={formData.erfahrung_bemerkungen_notizen}
+                    onChange={(e) => handleFormChange('erfahrung_bemerkungen_notizen', e.target.value)}
                   />
                 </TextArea>
               </div>
@@ -1144,7 +1184,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.erfassungsdatum}
+                    value={formData.erfassung_erfassungsdatum}
                     readOnly
                   />
                 </TextField>
@@ -1160,8 +1200,8 @@ function Extractor() {
                   placeholder="Deutschland"
                   helpText=""
                   icon={<FeatherSearch />}
-                  value={formData.erfassung_fuer}
-                  onValueChange={(value) => handleFormChange('erfassung_fuer', value)}
+                  value={formData.erfassung_erfassung_fuer}
+                  onValueChange={(value) => handleFormChange('erfassung_erfassung_fuer', value)}
                 >
                   <Select.Item value="Deutschland">Deutschland</Select.Item>
                   <Select.Item value="Österreich">Österreich</Select.Item>
