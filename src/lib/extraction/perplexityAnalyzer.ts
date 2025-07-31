@@ -18,12 +18,12 @@ export class PerplexityAnalyzer {
       model: 'sonar-pro',
       messages: [
         {
-          role: 'user',
-          content: prompt
-        },
-        {
           role: 'system',
           content: `URL: ${url}`
+        },
+        {
+          role: 'user',
+          content: prompt
         }
       ],
       temperature: 0.1,
