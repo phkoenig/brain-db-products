@@ -1,9 +1,10 @@
+0. Prüfe zunächst, ob das Context7 MCP und das Supabase MCP verfügbar ist. Wenn nicht, unterbreche hier und sag mir bescheid. Wenn beide MCP's laufen, dann fahre mit punkt 1. fort.
 1. Gehe durch die Codebase und insbesondere alle Dateien im Docs-Ordner, und mache dich mit der Codebase und dem Projekt vertraut.
-2. Benutze das Supabase MCP, um dich mit dem Backend vertraut zu machen. Gib bescheid, wenn ich vergessen habe das MCP zu aktivieren.
+2. Benutze das Supabase MCP, um dich mit dem Backend vertraut zu machen.
 3. Suche im Ordner Logbuch in der Datei logbuch.md. Hier kannst du unsere letzten Arbeitsschritte nachvollziehen.
 4. Ändere niemals das Frontend-UI-Design ohne explizite Anweisung von mir.
 5. Benutze immer das Context7 MCP wenn Schwierigkeiten beim Coden auftreten.
-6. Beende den Dev-Server, bevor du wichtige Änderungen am Code machst. Wache darüber, dass nie parallel mehrere Dev-Server laufen.
+6. Beende den Dev-Server, bevor du wichtige Änderungen am Code machst. Wache darüber, dass nie parallel mehrere Dev-Server laufen. Falls du den Dev-Server startest, stelle sicher, dass er auf http://localhost:3000 läuft. Wenn der Port belegt ist, deutet das darauf hin, dass ein weiterer Dev-Server im Hintergrund läuft. Den musst du dann bitte beenden.
 7. Führe ein Commit aller Dateien zu GitHub durch wenn ich "gh" prompte
 8. Wenn ich "log" prompte, schreibe was wir gemacht haben, welche Schwierigkeiten aufgetreten sind, wie wir sie gelöst haben, und erkannte Best Practices in das Logbuch. Ich füge dazu jeweils zuoberst einen neuen Abschnitt hinzu, nach folgendem Schema
 

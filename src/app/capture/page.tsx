@@ -250,20 +250,6 @@ function Extractor() {
     }
   }, [capture?.url]);
 
-  const handleManufacturerClick = useCallback(async () => {
-    setSourceType("manufacturer");
-    setError(null);
-    addLogMessage("Manufacturer source type selected - starting extraction...");
-    await startExtractionProcess("manufacturer");
-  }, [addLogMessage, startExtractionProcess]);
-
-  const handleResellerClick = useCallback(async () => {
-    setSourceType("reseller");
-    setError(null);
-    addLogMessage("Reseller source type selected - starting extraction...");
-    await startExtractionProcess("reseller");
-  }, [addLogMessage, startExtractionProcess]);
-
   const startExtractionProcess = useCallback(async (selectedSourceType: "manufacturer" | "reseller") => {
     if (!capture) {
       setError("No capture data available.");
@@ -341,6 +327,20 @@ function Extractor() {
       addLogMessage(`ERROR: ${errorMessage}`);
     }
   }, [capture, addLogMessage, updateField, startExtraction]);
+
+  const handleManufacturerClick = useCallback(async () => {
+    setSourceType("manufacturer");
+    setError(null);
+    addLogMessage("Manufacturer source type selected - starting extraction...");
+    await startExtractionProcess("manufacturer");
+  }, [addLogMessage, startExtractionProcess]);
+
+  const handleResellerClick = useCallback(async () => {
+    setSourceType("reseller");
+    setError(null);
+    addLogMessage("Reseller source type selected - starting extraction...");
+    await startExtractionProcess("reseller");
+  }, [addLogMessage, startExtractionProcess]);
 
   // Helper function to get progress value for each step
   const getProgressValue = (step: string) => {
