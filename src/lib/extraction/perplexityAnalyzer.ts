@@ -15,7 +15,7 @@ export class PerplexityAnalyzer {
     console.log('DEBUG: Perplexity prompt preview:', prompt.substring(0, 200) + '...');
     
     const requestBody = {
-      model: 'llama-3.1-sonar-small-128k-online',
+      model: 'llama-3.1-sonar-large-128k-online',
       messages: [
         {
           role: 'system',

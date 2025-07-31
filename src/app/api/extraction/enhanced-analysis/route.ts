@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
     const fieldDefinitions = await loadProductFieldDefinitions();
     console.log('Enhanced Analysis: Loaded', fieldDefinitions.fields.length, 'field definitions');
 
-    // Step 2: GPT-4o Vision Analysis
-    console.log('Enhanced Analysis: Starting GPT-4o Vision analysis...');
-    const openAIResult = await analyzeWithOpenAI(screenshotBase64, fieldDefinitions);
-    console.log('Enhanced Analysis: GPT-4o analysis complete');
+    // Step 2: GPT-4o Vision Analysis (temporarily disabled for speed)
+    console.log('Enhanced Analysis: GPT-4o Vision analysis temporarily disabled');
+    const openAIResult = {}; // Empty result for now
+    console.log('Enhanced Analysis: Using Perplexity only for faster processing');
 
     // Step 3: Perplexity AI Analysis for enhancement
     console.log('Enhanced Analysis: Starting Perplexity AI analysis...');
@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
       perplexityResult = null;
     }
 
-    // Step 4: Confidence-based data fusion
-    console.log('Enhanced Analysis: Starting confidence-based fusion...');
-    const fusedResult = fuseWithConfidence(openAIResult, perplexityResult);
-    console.log('Enhanced Analysis: Fusion complete');
+    // Step 4: Use Perplexity result directly (no fusion needed)
+    console.log('Enhanced Analysis: Using Perplexity result directly');
+    const fusedResult = perplexityResult || {};
+    console.log('Enhanced Analysis: Processing complete');
 
     return NextResponse.json({
       success: true,
@@ -60,8 +60,8 @@ function fuseWithConfidence(openAIResult: any, perplexityResult: any) {
   
   // Handle case where perplexityResult is null (API failed)
   if (!perplexityResult) {
-    console.log('Enhanced Analysis: Using OpenAI data only (Perplexity failed)');
-    return openAIResult;
+    console.log('Enhanced Analysis: Perplexity failed, returning empty result');
+    return {};
   }
   
   // Get all unique field names from both results
