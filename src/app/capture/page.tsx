@@ -16,8 +16,10 @@ import { FeatherFactory } from "@subframe/core";
 import { FeatherShoppingCart } from "@subframe/core";
 import { useExtraction } from "@/hooks/useExtraction";
 import { useMaterialCategories } from "@/hooks/useMaterialCategories";
+import { useCaptures } from "@/hooks/useCaptures";
 import { SPALTEN_FELDER } from "@/lib/extraction/constants";
 import { MultiSelectWithSearch } from "@/ui/components/MultiSelectWithSearch";
+import { Capture } from "@/types/captures";
 
 function Extractor() {
   const [spaltenProgress, setSpaltenProgress] = useState({
@@ -77,8 +79,11 @@ function Extractor() {
   });
 
   const { categories, loading: categoriesLoading, getGroupedCategories } = useMaterialCategories();
+  const { loadCaptureById } = useCaptures();
   const [currentUrl, setCurrentUrl] = useState("");
   const [extractionLog, setExtractionLog] = useState("");
+  const [currentCapture, setCurrentCapture] = useState<Capture | null>(null);
+  const [captureLoading, setCaptureLoading] = useState(false);
 
   // Transform categories for MultiSelectWithSearch
   const multiSelectOptions = useMemo(() => {
@@ -90,7 +95,7 @@ function Extractor() {
   }, [categories]);
 
   // Helper function to update form field and recalculate progress
-  const handleFormChange = (field, value) => {
+  const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
       updateAllProgress(newData);
@@ -98,12 +103,12 @@ function Extractor() {
     });
   };
 
-  const updateProgress = (fields, data) => {
+  const updateProgress = (fields: string[], data: any) => {
     const filledFields = fields.filter((field) => !!data[field]);
     return (filledFields.length / fields.length) * 100;
   };
   
-  const updateAllProgress = (data) => {
+  const updateAllProgress = (data: any) => {
     setSpaltenProgress({
       produkt: updateProgress(SPALTEN_FELDER.produkt, data),
       parameter: updateProgress(SPALTEN_FELDER.parameter, data),
@@ -114,7 +119,7 @@ function Extractor() {
     });
   };
   
-  const startSpaltenExtraction = useCallback(async (spalte, url) => {
+  const startSpaltenExtraction = useCallback(async (spalte: string, url: string) => {
     const felder = SPALTEN_FELDER[spalte];
     if (!felder) return;
 
@@ -181,17 +186,47 @@ function Extractor() {
 
 
   useEffect(() => {
-    // Set initial URL from search params on component mount
-    const params = new URLSearchParams(window.location.search);
-    const url = params.get('url');
-    if (url) {
+    const loadCaptureData = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const captureId = params.get('capture_id');
+      const url = params.get('url');
+      
+      // If capture_id is provided, load from database
+      if (captureId) {
+        setCaptureLoading(true);
+        try {
+          const capture = await loadCaptureById(parseInt(captureId));
+          if (capture) {
+            setCurrentCapture(capture);
+            setCurrentUrl(capture.url);
+            handleFormChange('quell_url', capture.url);
+            
+            // Set capture date if available
+            if (capture.created_at) {
+              const captureDate = new Date(capture.created_at).toLocaleString('de-DE');
+              handleFormChange('erfassungsdatum', captureDate);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading capture:', error);
+        } finally {
+          setCaptureLoading(false);
+        }
+      } 
+      // Fallback to URL parameter
+      else if (url) {
         setCurrentUrl(url);
         handleFormChange('quell_url', url);
-    }
-    // Set current date
-    handleFormChange('erfassungsdatum', new Date().toLocaleString('de-DE'));
+        handleFormChange('erfassungsdatum', new Date().toLocaleString('de-DE'));
+      } 
+      // Default case
+      else {
+        handleFormChange('erfassungsdatum', new Date().toLocaleString('de-DE'));
+      }
+    };
 
-  }, []);
+    loadCaptureData();
+  }, [loadCaptureById]);
 
   return (
     <DefaultPageLayout>
@@ -209,10 +244,26 @@ function Extractor() {
                     <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                       {"Produktbild\n"}
                     </span>
-                    <img
-                      className="w-full grow shrink-0 basis-0 rounded-md border border-solid border-neutral-border object-cover shadow-md"
-                      src="https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png"
-                    />
+                    {captureLoading ? (
+                      <div className="w-full h-32 rounded-md border border-solid border-neutral-border bg-neutral-100 flex items-center justify-center">
+                        <span className="text-subtext-color">Lade Screenshot...</span>
+                      </div>
+                    ) : currentCapture?.thumbnail_url ? (
+                      <img
+                        className="w-full grow shrink-0 basis-0 rounded-md border border-solid border-neutral-border object-cover shadow-md"
+                        src={currentCapture.thumbnail_url}
+                        alt="Produkt Thumbnail"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png";
+                        }}
+                      />
+                    ) : (
+                      <img
+                        className="w-full grow shrink-0 basis-0 rounded-md border border-solid border-neutral-border object-cover shadow-md"
+                        src="https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png"
+                        alt="Placeholder"
+                      />
+                    )}
                   </div>
                 </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
@@ -1042,10 +1093,27 @@ function Extractor() {
                     {"Quell-Screenshot\n"}
                   </span>
                 </div>
-                <img
-                  className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md"
-                  src="https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png"
-                />
+                {captureLoading ? (
+                  <div className="w-full h-48 rounded-md border border-solid border-neutral-border bg-neutral-100 flex items-center justify-center">
+                    <span className="text-subtext-color">Lade Screenshot...</span>
+                  </div>
+                ) : currentCapture?.screenshot_url ? (
+                  <img
+                    className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md cursor-pointer hover:opacity-90 transition-opacity"
+                    src={currentCapture.screenshot_url}
+                    alt="Quell-Screenshot"
+                    onClick={() => window.open(currentCapture.screenshot_url, '_blank')}
+                    onError={(e) => {
+                      e.currentTarget.src = "https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png";
+                    }}
+                  />
+                ) : (
+                  <img
+                    className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md"
+                    src="https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png"
+                    alt="Placeholder"
+                  />
+                )}
               </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
