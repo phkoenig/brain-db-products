@@ -20,8 +20,14 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Perplexity AI Analysis for enhancement
     console.log('Enhanced Analysis: Starting Perplexity AI analysis...');
-    const perplexityResult = await analyzeWithPerplexity(url, fieldDefinitions);
-    console.log('Enhanced Analysis: Perplexity analysis complete');
+    let perplexityResult = null;
+    try {
+      perplexityResult = await analyzeWithPerplexity(url, fieldDefinitions);
+      console.log('Enhanced Analysis: Perplexity analysis complete');
+    } catch (error) {
+      console.error('Enhanced Analysis: Perplexity analysis failed, continuing with OpenAI only:', error);
+      perplexityResult = null;
+    }
 
     // Step 4: Confidence-based data fusion
     console.log('Enhanced Analysis: Starting confidence-based fusion...');
@@ -51,6 +57,12 @@ export async function POST(request: NextRequest) {
 
 function fuseWithConfidence(openAIResult: any, perplexityResult: any) {
   const fusedData: any = {};
+  
+  // Handle case where perplexityResult is null (API failed)
+  if (!perplexityResult) {
+    console.log('Enhanced Analysis: Using OpenAI data only (Perplexity failed)');
+    return openAIResult;
+  }
   
   // Get all unique field names from both results
   const allFields = new Set([
