@@ -3,8 +3,9 @@
 3. Suche im Ordner Logbuch in der Datei logbuch.md. Hier kannst du unsere letzten Arbeitsschritte nachvollziehen.
 4. Ändere niemals das Frontend-UI-Design ohne explizite Anweisung von mir.
 5. Benutze immer das Context7 MCP wenn Schwierigkeiten beim Coden auftreten.
-6. Führe in regelmäßigen Abständen ein Commit aller Dateien zu GitHub durch.
-7. Schreibe in regelmäßigen Abständen, was wir gemacht haben, welche Schwierigkeiten aufgetreten sind, wie wir sie gelöst haben, und erkannte Best Practices in das Logbuch. Ich füge dazu jeweils zuoberst einen neuen Abschnitt hinzu, nach folgendem Schema
+6. Beende den Dev-Server, bevor du wichtige Änderungen am Code machst. Wache darüber, dass nie parallel mehrere Dev-Server laufen.
+7. Führe ein Commit aller Dateien zu GitHub durch wenn ich "gh" prompte
+8. Wenn ich "log" prompte, schreibe was wir gemacht haben, welche Schwierigkeiten aufgetreten sind, wie wir sie gelöst haben, und erkannte Best Practices in das Logbuch. Ich füge dazu jeweils zuoberst einen neuen Abschnitt hinzu, nach folgendem Schema
 
 # 31.07.2025 - 05:35 - Weiterarbeit an der Extraction Pipeline.
 

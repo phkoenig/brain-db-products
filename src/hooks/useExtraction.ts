@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { FusedResult, WebScrapingResult, AIAnalysisResult } from '@/lib/types/extraction';
 
 // Helper function to safely extract value from FieldData
@@ -29,16 +29,16 @@ export function useExtraction() {
   const [openAIData, setOpenAIData] = useState<any | null>(null);
   const [perplexityData, setPerplexityData] = useState<any | null>(null);
 
-  const resetExtraction = () => {
+  const resetExtraction = useCallback(() => {
     setExtractionState('idle');
     setProgress(0);
     setError(null);
     setEnhancedAnalysisData(null);
     setOpenAIData(null);
     setPerplexityData(null);
-  };
+  }, []);
 
-  const startExtraction = async (
+  const startExtraction = useCallback(async (
     primaryUrl: string,
     screenshotBase64: string,
     sourceType: 'manufacturer' | 'reseller',
@@ -97,7 +97,7 @@ export function useExtraction() {
       setExtractionState('error');
       setProgress(0);
     }
-  };
+  }, [resetExtraction]);
   
   const getProgressMessage = (): string => {
     switch (extractionState) {

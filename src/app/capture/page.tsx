@@ -13,7 +13,7 @@ import { TextArea } from "@/ui/components/TextArea";
 import { Table } from "@/ui/components/Table";
 import { ToggleGroup } from "@/ui/components/ToggleGroup";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useCaptureForm } from "@/hooks/useCaptureForm";
 import { useExtraction } from "@/hooks/useExtraction";
 import { supabase } from "@/lib/supabase";
@@ -62,11 +62,11 @@ function Extractor() {
   } = useExtraction();
 
   // Helper function to add logging messages
-  const addLogMessage = (message: string) => {
+  const addLogMessage = useCallback((message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     const logEntry = `[${timestamp}] ${message}`;
     setLoggingMessages(prev => [...prev, logEntry]);
-  };
+  }, []);
 
   // Update form fields when enhanced analysis data is available
   useEffect(() => {
@@ -250,21 +250,21 @@ function Extractor() {
     }
   }, [capture?.url]);
 
-  const handleManufacturerClick = async () => {
+  const handleManufacturerClick = useCallback(async () => {
     setSourceType("manufacturer");
     setError(null);
     addLogMessage("Manufacturer source type selected - starting extraction...");
     await startExtractionProcess("manufacturer");
-  };
+  }, [addLogMessage, startExtractionProcess]);
 
-  const handleResellerClick = async () => {
+  const handleResellerClick = useCallback(async () => {
     setSourceType("reseller");
     setError(null);
     addLogMessage("Reseller source type selected - starting extraction...");
     await startExtractionProcess("reseller");
-  };
+  }, [addLogMessage, startExtractionProcess]);
 
-  const startExtractionProcess = async (selectedSourceType: "manufacturer" | "reseller") => {
+  const startExtractionProcess = useCallback(async (selectedSourceType: "manufacturer" | "reseller") => {
     if (!capture) {
       setError("No capture data available.");
       return;
@@ -340,7 +340,7 @@ function Extractor() {
       setError(errorMessage);
       addLogMessage(`ERROR: ${errorMessage}`);
     }
-  };
+  }, [capture, addLogMessage, updateField, startExtraction]);
 
   // Helper function to get progress value for each step
   const getProgressValue = (step: string) => {
