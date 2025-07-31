@@ -1,5 +1,15 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 31.12.2024 - 18:00 - Perplexity Sonar Pro API korrekt implementiert
+
+**Problem**: Perplexity API 400 Fehler "Invalid model" + "invalid_message" - Nachrichtenreihenfolge falsch
+**Lösung**: Modell auf "sonar-pro" geändert + System message vor User message verschoben
+**Dateien**: perplexityAnalyzer.ts
+**Ergebnis**: API-Aufrufe erfolgreich, aber noch keine Daten in UI-Feldern sichtbar
+**Nächster Schritt**: Debugging der Datenübertragung von API zu UI
+
+---
+
 ## 31.12.2024 - 17:30 - React Performance-Probleme behoben
 
 **Problem**: "Maximum update depth exceeded" + "Cannot access before initialization" Fehler
@@ -231,7 +241,7 @@ Systematische Analyse der Codebase und Vertrautmachung mit dem BRAIN DB Products
 - **Error Rate**: Häufigkeit von Extraktionsfehlern
 - **User Feedback**: Manuelle Korrekturen benötigt
 
-### 🔧 Technische Details
+### �� Technische Details
 
 #### **Dependencies**
 - Next.js 15.4.4

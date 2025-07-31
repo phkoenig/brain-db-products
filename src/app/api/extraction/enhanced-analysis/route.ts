@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     // Step 4: Use Perplexity result directly (no fusion needed)
     console.log('Enhanced Analysis: Using Perplexity result directly');
     const fusedResult = perplexityResult || {};
+    console.log('Enhanced Analysis: Final fusedResult:', JSON.stringify(fusedResult, null, 2));
     console.log('Enhanced Analysis: Processing complete');
 
     return NextResponse.json({
