@@ -264,7 +264,7 @@ Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
 } 
 
 // Export function for the enhanced analysis API
-export async function analyzeWithPerplexity(url: string, fieldDefinitions: any): Promise<any> {
+export async function analyzeWithPerplexity(url: string, fieldDefinitions: any, customPrompt?: string): Promise<any> {
   console.log('DEBUG: analyzeWithPerplexity called with URL:', url);
   console.log('DEBUG: Field definitions keys:', Object.keys(fieldDefinitions || {}));
   
@@ -279,7 +279,7 @@ export async function analyzeWithPerplexity(url: string, fieldDefinitions: any):
   
   try {
     console.log('DEBUG: Calling analyzer.analyzeUrl...');
-    const result = await analyzer.analyzeUrl(url);
+    const result = await analyzer.analyzeUrl(url, customPrompt);
     console.log('DEBUG: Perplexity analysis completed successfully');
     return result;
   } catch (error) {
