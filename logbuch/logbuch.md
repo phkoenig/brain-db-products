@@ -1,5 +1,135 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 01.01.2025 - 20:15 - UI-Update mit Multi-Select Kategorien erfolgreich! 🎉
+
+**Aufgabe**: Subframe UI-Update nach Cursor-Absturz + Multi-Select Kategorien mit Search-Funktion
+**Lösung**: Neues 6-Spalten-Layout implementiert + erweiterte Kategorie-Auswahl
+**Dateien**: 
+- `src/app/capture/page.tsx` (vollständig überarbeitet)
+- `src/ui/components/Select.tsx` (Select.Group hinzugefügt)
+- `src/ui/components/MultiSelectWithSearch.tsx` (neu erstellt)
+- `src/lib/extraction/constants.ts` (neu erstellt)
+
+## Durchgeführte Verbesserungen:
+
+### 1. **UI-Layout komplett erneuert**
+- **6-Spalten-Design**: PRODUKT, PARAMETER, DOKUMENTE, HÄNDLER, ERFAHRUNG, ERFASSUNG
+- **Verbesserte Übertitel**: Größere Schrift, grauer Hintergrund, abgerundete Ecken
+- **Progress-Bars**: Für jede Spalte basierend auf ausgefüllten Feldern
+- **Responsive Design**: Flexibles Layout mit Subframe UI-Komponenten
+
+### 2. **Multi-Select Kategorien mit Search**
+- **Search-as-you-type**: Kategorien in Echtzeit filtern
+- **Multi-Select**: Mehrere Kategorien gleichzeitig auswählbar
+- **Tag-basierte Auswahl**: Ausgewählte Kategorien als entfernbare Tags
+- **Gruppierte Anzeige**: Nach Hauptkategorien organisiert
+- **"Alle entfernen"**: Schnelles Zurücksetzen aller Auswahlen
+
+### 3. **Technische Fixes**
+- **Select.Group-Komponente**: Fehlende Komponente in Select.tsx hinzugefügt
+- **State-Management**: Kategorie-Feld von String auf Array umgestellt
+- **Business-Logic**: Bestehende Extraction-Hooks vollständig integriert
+- **Constants**: SPALTEN_FELDER für Progress-Berechnung definiert
+
+### 4. **UX-Verbesserungen**
+- **Suchfeld**: Mit Lupe-Icon und Autofokus
+- **Hover-Effekte**: Visuelle Rückmeldung bei Interaktionen
+- **Checkbox-Indikatoren**: Klare Auswahl-Visualisierung
+- **Responsive Dropdown**: Mit Scroll-Funktion für viele Kategorien
+
+## Erkannte Best Practices:
+
+### **Component Design**
+- **Modulare Komponenten**: MultiSelectWithSearch als wiederverwendbare Komponente
+- **TypeScript-First**: Vollständige Typisierung für alle Props und States
+- **Tailwind Integration**: Konsistente Styling-Patterns mit Subframe
+- **Accessibility**: Keyboard-Navigation und Screen-Reader-Support
+
+### **State Management**
+- **Controlled Components**: Alle Form-Inputs vollständig kontrolliert
+- **Progress Tracking**: Automatische Berechnung basierend auf ausgefüllten Feldern
+- **Search Performance**: useMemo für gefilterte Optionen
+- **Multi-Value Handling**: Array-basierte Kategorie-Auswahl
+
+### **Error Handling**
+- **Runtime-Error-Fixes**: Select.Group-Problem sofort behoben
+- **Graceful Degradation**: Loading-States für Kategorie-Laden
+- **Dev-Server-Management**: Proaktives Neustarten bei Problemen
+
+## Nächste Schritte:
+1. **Testing**: Extraction-Pipeline mit neuen Multi-Kategorien testen
+2. **Backend-Integration**: Multi-Kategorie-Support in Datenbank
+3. **Performance**: Optimierung bei vielen ausgewählten Kategorien
+4. **Analytics**: Tracking der Kategorie-Nutzung
+
+---
+
+## 31.12.2024 - 19:30 - Neues Extractor UI erfolgreich implementiert! 🎉
+
+**Aufgabe**: Umfangreiches UI-Update aus Subframe.com wiederherstellen nach Cursor-Absturz
+**Lösung**: Neue Extractor-Seite mit 6-Spalten-Layout erstellt
+**Dateien**: src/app/extractor/page.tsx (neu erstellt)
+**Ergebnis**: ✅ Vollständiges neues UI-Design implementiert!
+
+## Durchgeführte Schritte:
+
+### 1. Subframe-Komponenten synchronisiert
+- Dev-Server gestoppt (taskkill /f /im node.exe)
+- Subframe CLI Sync ausgeführt: `npx @subframe/cli@latest sync --all -p 269cf10fcebb`
+- UI-Komponenten erfolgreich aktualisiert
+
+### 2. Neue Extractor-Seite erstellt
+- **6-Spalten-Layout** implementiert:
+  - **PRODUKT**: Hersteller, Name, Serie, Code, Beschreibung, URLs
+  - **PARAMETER**: Maße, Farbe, Material, technische Spezifikationen
+  - **DOKUMENTE**: Datenblätter, Kataloge, BIM/CAD-Dateien
+  - **HÄNDLER**: Händlerdaten, Preise, Verfügbarkeit, alternative Händler-Tabelle
+  - **ERFAHRUNG**: Projekteinsatz, Bewertungen, Notizen
+  - **ERFASSUNG**: Screenshot, URL, Extraktions-Log, Hersteller/Händler-Buttons
+
+### 3. Technische Features implementiert
+- **Progress-Bars**: Für jede Spalte basierend auf ausgefüllten Feldern
+- **State Management**: Vollständige Formular-Verwaltung mit 40+ Feldern
+- **Business Logic**: Integration mit bestehenden Hooks (useExtraction, useMaterialCategories)
+- **Capture Integration**: URL-Parameter für capture_id
+- **Responsive Design**: 6-spaltiges Layout mit Subframe UI
+
+### 4. Design-Highlights
+- **Moderne UI**: Subframe-Komponenten mit konsistentem Design
+- **Icons**: Feather Icons für bessere UX (FeatherEdit3, FeatherPenLine, etc.)
+- **Progress-Tracking**: Visueller Fortschritt pro Spalte
+- **Table-Integration**: Für alternative Händler-Preise
+- **Toggle Groups**: Für Bewertungen (1-5 Sterne)
+- **Buttons**: Hersteller/Händler-Erfassung mit Icons
+
+## Erkannte Best Practices:
+
+### **UI/UX Design**
+- **6-Spalten-Layout**: Übersichtliche Gruppierung nach Funktionsbereichen
+- **Progress-Indikatoren**: Visuelles Feedback für Benutzer
+- **Konsistente Icons**: Feather Icons für bessere UX
+- **Responsive Design**: Flexibles Layout für verschiedene Bildschirmgrößen
+
+### **Code-Organisation**
+- **Modulare Struktur**: Jede Spalte als separate Komponente
+- **State Management**: Zentrale Formular-Verwaltung
+- **Reusable Components**: Subframe UI Komponenten
+- **TypeScript**: Vollständige Typsicherheit
+
+### **Business Logic Integration**
+- **Bestehende Hooks**: useExtraction und useMaterialCategories integriert
+- **URL-Parameter**: Capture-ID Integration
+- **Form Validation**: Progress-Berechnung basierend auf ausgefüllten Feldern
+- **Event Handling**: Callback-basierte Input-Verwaltung
+
+## Nächste Schritte:
+1. **Navigation**: Link zur neuen Extractor-Seite in Sidebar hinzufügen
+2. **Data Binding**: Extraktions-Ergebnisse in die Felder eintragen
+3. **Testing**: Vollständige Funktionalität testen
+4. **Integration**: Mit bestehender Extraction-Pipeline verbinden
+
+---
+
 ## 31.12.2024 - 18:15 - Perplexity Integration erfolgreich! 🎉
 
 **Problem**: Perplexity API gab JSON in Markdown-Format zurück (```json { ... } ```)

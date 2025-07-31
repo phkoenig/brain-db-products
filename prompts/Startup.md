@@ -1,4 +1,4 @@
-0. Prüfe zunächst, ob das Context7 MCP und das Supabase MCP verfügbar ist. Wenn nicht, unterbreche hier und sag mir bescheid. Wenn beide MCP's laufen, dann fahre mit punkt 1. fort.
+0. Prüfe zunächst, ob das Context7 MCP und das Supabase MCP verfügbar ist. Wenn nicht, unterbreche hier und sag mir bescheid. Nur wenn beide MCP's laufen, insbesondere das Supabase MCP, dann fahre mit punkt 1. fort.
 1. Gehe durch die Codebase und insbesondere alle Dateien im Docs-Ordner, und mache dich mit der Codebase und dem Projekt vertraut.
 2. Benutze das Supabase MCP, um dich mit dem Backend vertraut zu machen.
 3. Suche im Ordner Logbuch in der Datei logbuch.md. Hier kannst du unsere letzten Arbeitsschritte nachvollziehen.
@@ -18,3 +18,4 @@ Das kaputte Dropdown-Menü zu den Kategorisierungen wurde repariert.
 
 ---
 
+9. Wenn größer Mengen Code bearbeitet werden sollen, dann Teile das in kleinere Stücke auf, damit das Kontext-Fenster nicht zu voll wird.

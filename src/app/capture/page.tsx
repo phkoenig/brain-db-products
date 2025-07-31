@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { Progress } from "@/ui/components/Progress";
 import { Select } from "@/ui/components/Select";
@@ -16,123 +16,124 @@ import { FeatherFactory } from "@subframe/core";
 import { FeatherShoppingCart } from "@subframe/core";
 import { useExtraction } from "@/hooks/useExtraction";
 import { useMaterialCategories } from "@/hooks/useMaterialCategories";
-
-// Spalten-spezifische Felddefinitionen
-const SPALTEN_FELDER = {
-  produkt: [
-    'kategorie', 'hersteller', 'name_modell', 'produktlinie_serie', 
-    'code_id', 'anwendungsbereich', 'beschreibung', 'hersteller_webseite', 
-    'hersteller_produkt_url'
-  ],
-  parameter: [
-    'masse', 'farbe', 'hauptmaterial', 'oberflaeche', 'gewicht_pro_einheit',
-    'feuerwiderstand', 'waermeleitfaehigkeit', 'u_wert', 'schalldaemmung',
-    'wasserbestaendigkeit', 'dampfdiffusion', 'einbauart', 'wartung', 'umweltzertifikat'
-  ],
-  dokumente: [
-    'datenblatt', 'technisches_merkblatt', 'produktkatalog', 'weitere_dokumente',
-    'bim_cad_technische_zeichnungen'
-  ],
-  haendler: [
-    'haendlername', 'haendler_webseite', 'haendler_produkt_url', 'verfuegbarkeit',
-    'einheit', 'preis', 'preis_pro_einheit'
-  ]
-};
+import { SPALTEN_FELDER } from "@/lib/extraction/constants";
+import { MultiSelectWithSearch } from "@/ui/components/MultiSelectWithSearch";
 
 function Extractor() {
-  // State für jede Spalte
   const [spaltenProgress, setSpaltenProgress] = useState({
     produkt: 0,
     parameter: 0,
     dokumente: 0,
     haendler: 0,
-    erfassung: 0
+    erfahrung: 0,
+    erfassung: 0,
   });
 
   const [formData, setFormData] = useState({
-    // Produkt-Spalte
-    kategorie: '',
-    hersteller: '',
-    name_modell: '',
-    produktlinie_serie: '',
-    code_id: '',
-    anwendungsbereich: '',
-    beschreibung: '',
-    hersteller_webseite: '',
-    hersteller_produkt_url: '',
-    
-    // Parameter-Spalte
-    masse: '',
-    farbe: '',
-    hauptmaterial: '',
-    oberflaeche: '',
-    gewicht_pro_einheit: '',
-    feuerwiderstand: '',
-    waermeleitfaehigkeit: '',
-    u_wert: '',
-    schalldaemmung: '',
-    wasserbestaendigkeit: '',
-    dampfdiffusion: '',
-    einbauart: '',
-    wartung: '',
-    umweltzertifikat: '',
-    
-    // Dokumente-Spalte
-    datenblatt: '',
-    technisches_merkblatt: '',
-    produktkatalog: '',
-    weitere_dokumente: '',
-    bim_cad_technische_zeichnungen: '',
-    
-    // Händler-Spalte
-    haendlername: '',
-    haendler_webseite: '',
-    haendler_produkt_url: '',
-    verfuegbarkeit: '',
-    einheit: '',
-    preis: '',
-    preis_pro_einheit: '',
-    
-    // Erfahrung-Spalte (händisch)
-    einsatz_in_projekt: '',
-    muster_bestellt: '',
-    muster_abgelegt: '',
-    bewertung: '',
-    bemerkungen_notizen: '',
-    
-    // Erfassung-Spalte
-    quell_url: '',
-    erfassungsdatum: '',
-    erfassung_fuer: 'Deutschland',
-    extraktions_log: ''
+    kategorie: [] as string[],
+    hersteller: "",
+    name_modell: "",
+    produktlinie_serie: "",
+    code_id: "",
+    anwendungsbereich: "",
+    beschreibung: "",
+    hersteller_webseite: "",
+    hersteller_produkt_url: "",
+    masse: "",
+    farbe: "",
+    hauptmaterial: "",
+    oberflaeche: "",
+    gewicht_pro_einheit: "",
+    feuerwiderstand: "",
+    waermeleitfaehigkeit: "",
+    u_wert: "",
+    schalldaemmung: "",
+    wasserbestaendigkeit: "",
+    dampfdiffusion: "",
+    einbauart: "",
+    wartung: "",
+    umweltzertifikat: "",
+    datenblatt: "",
+    technisches_merkblatt: "",
+    produktkatalog: "",
+    weitere_dokumente: "",
+    bim_cad_technische_zeichnungen: "",
+    haendlername: "",
+    haendler_webseite: "",
+    haendler_produkt_url: "",
+    verfuegbarkeit: "",
+    einheit: "",
+    preis: "",
+    preis_pro_einheit: "",
+    einsatz_in_projekt: "",
+    muster_bestellt: "",
+    muster_abgelegt: "",
+    bewertung: "",
+    bemerkungen_notizen: "",
+    quell_url: "",
+    erfassungsdatum: "",
+    erfassung_fuer: "Deutschland",
+    extraktions_log: "",
   });
 
-  const { categories: kategorien, loading: categoriesLoading } = useMaterialCategories();
-  const [currentUrl, setCurrentUrl] = useState('');
-  const [extractionLog, setExtractionLog] = useState('');
+  const { categories, loading: categoriesLoading, getGroupedCategories } = useMaterialCategories();
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [extractionLog, setExtractionLog] = useState("");
 
-  // Schrittweise Perplexity-API-Abfragen
-  const startSpaltenExtraction = useCallback(async (spalte: string, url: string) => {
+  // Transform categories for MultiSelectWithSearch
+  const multiSelectOptions = useMemo(() => {
+    return categories.map(category => ({
+      id: category.id,
+      label: category.label,
+      group: category.main_category
+    }));
+  }, [categories]);
+
+  // Helper function to update form field and recalculate progress
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      updateAllProgress(newData);
+      return newData;
+    });
+  };
+
+  const updateProgress = (fields, data) => {
+    const filledFields = fields.filter((field) => !!data[field]);
+    return (filledFields.length / fields.length) * 100;
+  };
+  
+  const updateAllProgress = (data) => {
+    setSpaltenProgress({
+      produkt: updateProgress(SPALTEN_FELDER.produkt, data),
+      parameter: updateProgress(SPALTEN_FELDER.parameter, data),
+      dokumente: updateProgress(SPALTEN_FELDER.dokumente, data),
+      haendler: updateProgress(SPALTEN_FELDER.haendler, data),
+      erfahrung: updateProgress(SPALTEN_FELDER.erfahrung, data),
+      erfassung: updateProgress(SPALTEN_FELDER.erfassung, data),
+    });
+  };
+  
+  const startSpaltenExtraction = useCallback(async (spalte, url) => {
     const felder = SPALTEN_FELDER[spalte];
     if (!felder) return;
 
-    setExtractionLog(prev => prev + `\n=== STARTE ${spalte.toUpperCase()}-ANALYSE ===`);
+    setExtractionLog((prev) => prev + `\n=== STARTE ${spalte.toUpperCase()}-ANALYSE ===`);
     
     try {
-      const response = await fetch('/api/extraction/spalten-analysis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          url, 
-          spalte, 
-          felder 
+      const response = await fetch("/api/extraction/spalten-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url,
+          spalte,
+          felder,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
         
-        // Update form data mit den extrahierten Werten
         const updates = {};
         Object.entries(data).forEach(([field, value]) => {
           if (value && value.value) {
@@ -140,85 +141,95 @@ function Extractor() {
           }
         });
         
-        setFormData(prev => ({ ...prev, ...updates }));
+        setFormData((prev) => {
+            const newData = { ...prev, ...updates };
+            updateAllProgress(newData);
+            return newData;
+        });
         
-        // Progress auf 25% setzen
-        setSpaltenProgress(prev => ({ 
-          ...prev, 
-          [spalte]: 25,
-          erfassung: Math.min(100, prev.erfassung + 25)
-        }));
-        
-        setExtractionLog(prev => prev + `\n✅ ${spalte.toUpperCase()}-Analyse abgeschlossen`);
+        setExtractionLog((prev) => prev + `\n✅ ${spalte.toUpperCase()}-Analyse abgeschlossen`);
       }
     } catch (error) {
-      setExtractionLog(prev => prev + `\n❌ Fehler bei ${spalte}-Analyse: ${error.message}`);
+      setExtractionLog((prev) => prev + `\n❌ Fehler bei ${spalte}-Analyse: ${error.message}`);
     }
   }, []);
 
   const handleManufacturerClick = useCallback(async () => {
     if (!currentUrl) return;
     
-    setExtractionLog('=== STARTE HERSTELLER-ANALYSE ===\n');
+    setExtractionLog("=== STARTE HERSTELLER-ANALYSE ===\n");
     
-    // Alle 4 Spalten nacheinander abfragen
-    await startSpaltenExtraction('produkt', currentUrl);
-    await startSpaltenExtraction('parameter', currentUrl);
-    await startSpaltenExtraction('dokumente', currentUrl);
-    await startSpaltenExtraction('haendler', currentUrl);
+    await startSpaltenExtraction("produkt", currentUrl);
+    await startSpaltenExtraction("parameter", currentUrl);
+    await startSpaltenExtraction("dokumente", currentUrl);
     
-    setExtractionLog(prev => prev + '\n=== ALLE ANALYSEN ABGESCHLOSSEN ===');
+    setExtractionLog((prev) => prev + "\n=== HERSTELLER-ANALYSE ABGESCHLOSSEN ===");
   }, [currentUrl, startSpaltenExtraction]);
 
   const handleResellerClick = useCallback(async () => {
     if (!currentUrl) return;
     
-    setExtractionLog('=== STARTE HÄNDLER-ANALYSE ===\n');
+    setExtractionLog("=== STARTE HÄNDLER-ANALYSE ===\n");
     
-    // Alle 4 Spalten nacheinander abfragen
-    await startSpaltenExtraction('produkt', currentUrl);
-    await startSpaltenExtraction('parameter', currentUrl);
-    await startSpaltenExtraction('dokumente', currentUrl);
-    await startSpaltenExtraction('haendler', currentUrl);
+    await startSpaltenExtraction("produkt", currentUrl);
+    await startSpaltenExtraction("parameter", currentUrl);
+    await startSpaltenExtraction("dokumente", currentUrl);
+    await startSpaltenExtraction("haendler", currentUrl);
     
-    setExtractionLog(prev => prev + '\n=== ALLE ANALYSEN ABGESCHLOSSEN ===');
+    setExtractionLog((prev) => prev + "\n=== HÄNDLER-ANALYSE ABGESCHLOSSEN ===");
   }, [currentUrl, startSpaltenExtraction]);
+
+
+  useEffect(() => {
+    // Set initial URL from search params on component mount
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get('url');
+    if (url) {
+        setCurrentUrl(url);
+        handleFormChange('quell_url', url);
+    }
+    // Set current date
+    handleFormChange('erfassungsdatum', new Date().toLocaleString('de-DE'));
+
+  }, []);
 
   return (
     <DefaultPageLayout>
       <div className="flex h-full w-full flex-col items-start gap-4 bg-default-background px-4 py-4">
         <div className="flex w-full grow shrink-0 basis-0 items-start gap-4">
-          
-          {/* PRODUKT-SPALTE */}
+          {/* PRODUKT */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
-                {"PRODUKT\n"}
+              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
+                {"PRODUKT"}
               </span>
-              <Progress value={spaltenProgress.produkt} />
-              
-              {/* Kategorie */}
+              <Progress value={spaltenProgress.produkt}/>
+              <div className="flex w-full flex-col items-start gap-1">
+                  <div className="flex flex-col items-start gap-1 pt-4">
+                    <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                      {"Produktbild\n"}
+                    </span>
+                    <img
+                      className="w-full grow shrink-0 basis-0 rounded-md border border-solid border-neutral-border object-cover shadow-md"
+                      src="https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png"
+                    />
+                  </div>
+                </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Kategorie"}
                 </span>
-                <Select
-                  className="h-auto w-full flex-none"
+                <MultiSelectWithSearch
+                  className="w-full"
                   variant="filled"
-                  label=""
-                  placeholder="Auswahl"
-                  helpText=""
-                  icon={<FeatherSearch />}
-                  value={formData.kategorie}
-                  onValueChange={(value: string) => setFormData(prev => ({ ...prev, kategorie: value }))}
-                >
-                  {kategorien.map(kat => (
-                    <Select.Item key={kat.id} value={kat.name}>{kat.name}</Select.Item>
-                  ))}
-                </Select>
+                  options={multiSelectOptions}
+                  selectedValues={formData.kategorie}
+                  onSelectionChange={(values) => handleFormChange('kategorie', values)}
+                  placeholder="Kategorien auswählen..."
+                  searchPlaceholder="Kategorien durchsuchen..."
+                  disabled={categoriesLoading}
+                />
               </div>
-
-              {/* Hersteller */}
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Hersteller\n"}
@@ -233,14 +244,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.hersteller}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, hersteller: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('hersteller', e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Name / Modell */}
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Name / Modell\n"}
@@ -255,15 +262,28 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.name_modell}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, name_modell: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('name_modell', e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Weitere Produkt-Felder... */}
-              {/* Code (ID) */}
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Produktlinie, Serie\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.produktlinie_serie}
+                    onChange={(e) => handleFormChange('produktlinie_serie', e.target.value)}
+                  />
+                </TextField>
+              </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Code (ID)\n"}
@@ -278,14 +298,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.code_id}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, code_id: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('code_id', e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Anwendungsbereich */}
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Anwendungsbereich"}
@@ -300,36 +316,28 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.anwendungsbereich}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, anwendungsbereich: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('anwendungsbereich', e.target.value)}
                   />
                 </TextField>
+                <div className="flex w-full flex-col items-start gap-1 pt-4">
+                  <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                    {"Beschreibung\n"}
+                  </span>
+                  <TextArea
+                    className="h-auto w-full flex-none"
+                    variant="filled"
+                    label=""
+                    helpText=""
+                  >
+                    <TextArea.Input
+                      className="h-28 w-full flex-none"
+                      placeholder="..."
+                      value={formData.beschreibung}
+                      onChange={(e) => handleFormChange('beschreibung', e.target.value)}
+                    />
+                  </TextArea>
+                </div>
               </div>
-
-              {/* Beschreibung */}
-              <div className="flex w-full flex-col items-start gap-1 pt-4">
-                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
-                  {"Beschreibung\n"}
-                </span>
-                <TextArea
-                  className="h-auto w-full flex-none"
-                  variant="filled"
-                  label=""
-                  helpText=""
-                >
-                  <TextArea.Input
-                    className="h-28 w-full flex-none"
-                    placeholder="..."
-                    value={formData.beschreibung}
-                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => 
-                      setFormData(prev => ({ ...prev, beschreibung: event.target.value }))
-                    }
-                  />
-                </TextArea>
-              </div>
-
-              {/* Hersteller URLs */}
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Hersteller Webseite"}
@@ -344,13 +352,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.hersteller_webseite}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, hersteller_webseite: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('hersteller_webseite', e.target.value)}
                   />
                 </TextField>
               </div>
-
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Hersteller Produkt URL"}
@@ -365,24 +370,19 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.hersteller_produkt_url}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, hersteller_produkt_url: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('hersteller_produkt_url', e.target.value)}
                   />
                 </TextField>
               </div>
             </div>
           </div>
-
-          {/* PARAMETER-SPALTE */}
+          {/* PARAMETER */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
+              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
                 {"PARAMETER"}
               </span>
-              <Progress value={spaltenProgress.parameter} />
-              
-              {/* Parameter-Felder */}
+              <Progress value={spaltenProgress.parameter}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Maße"}
@@ -397,13 +397,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.masse}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, masse: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('masse', e.target.value)}
                   />
                 </TextField>
               </div>
-
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Farbe\n"}
@@ -418,14 +415,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.farbe}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, farbe: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('farbe', e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Weitere Parameter-Felder... */}
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Hauptmaterial\n"}
@@ -440,13 +433,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.hauptmaterial}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, hauptmaterial: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('hauptmaterial', e.target.value)}
                   />
                 </TextField>
               </div>
-
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Oberfläche"}
@@ -461,26 +451,199 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.oberflaeche}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, oberflaeche: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('oberflaeche', e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Weitere Parameter-Felder... */}
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Gewicht pro Einheit"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.gewicht_pro_einheit}
+                    onChange={(e) => handleFormChange('gewicht_pro_einheit', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Feuerwiderstand\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.feuerwiderstand}
+                    onChange={(e) => handleFormChange('feuerwiderstand', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Wärmeleitfähigkeit\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.waermeleitfaehigkeit}
+                    onChange={(e) => handleFormChange('waermeleitfaehigkeit', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"U-Wert"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.u_wert}
+                    onChange={(e) => handleFormChange('u_wert', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Schalldämmung\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.schalldaemmung}
+                    onChange={(e) => handleFormChange('schalldaemmung', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Wasserbeständigkeit\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.wasserbestaendigkeit}
+                    onChange={(e) => handleFormChange('wasserbestaendigkeit', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Dampfdiffusion"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.dampfdiffusion}
+                    onChange={(e) => handleFormChange('dampfdiffusion', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Einbauart"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.einbauart}
+                    onChange={(e) => handleFormChange('einbauart', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Wartung"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.wartung}
+                    onChange={(e) => handleFormChange('wartung', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Umweltzertifikat"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.umweltzertifikat}
+                    onChange={(e) => handleFormChange('umweltzertifikat', e.target.value)}
+                  />
+                </TextField>
+              </div>
             </div>
           </div>
-
-          {/* DOKUMENTE-SPALTE */}
+          {/* DOKUMENTE */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
+              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
                 {"DOKUMENTE"}
               </span>
-              <Progress value={spaltenProgress.dokumente} />
-              
-              {/* Dokumente-Felder */}
+              <Progress value={spaltenProgress.dokumente}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Datenblatt"}
@@ -495,13 +658,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.datenblatt}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, datenblatt: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('datenblatt', e.target.value)}
                   />
                 </TextField>
               </div>
-
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Technisches Merkblatt"}
@@ -516,26 +676,73 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.technisches_merkblatt}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, technisches_merkblatt: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('technisches_merkblatt', e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Weitere Dokumente-Felder... */}
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Produktkatalog\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.produktkatalog}
+                    onChange={(e) => handleFormChange('produktkatalog', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Weitere Dokumente"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.weitere_dokumente}
+                    onChange={(e) => handleFormChange('weitere_dokumente', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"BIM / CAD / Technische Zeichnungen"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.bim_cad_technische_zeichnungen}
+                    onChange={(e) => handleFormChange('bim_cad_technische_zeichnungen', e.target.value)}
+                  />
+                </TextField>
+              </div>
             </div>
           </div>
-
-          {/* HÄNDLER-SPALTE */}
+          {/* HÄNDLER */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
+              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
                 {"HÄNDLER"}
               </span>
-              <Progress value={spaltenProgress.haendler} />
-              
-              {/* Händler-Felder */}
+              <Progress value={spaltenProgress.haendler}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Händlername"}
@@ -550,13 +757,10 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.haendlername}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, haendlername: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('haendlername', e.target.value)}
                   />
                 </TextField>
               </div>
-
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Händler-Webseite\n"}
@@ -571,13 +775,64 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={formData.haendler_webseite}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, haendler_webseite: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('haendler_webseite', e.target.value)}
                   />
                 </TextField>
               </div>
-
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Handler product URL"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.haendler_produkt_url}
+                    onChange={(e) => handleFormChange('haendler_produkt_url', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Verfügbarkeit\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.verfuegbarkeit}
+                    onChange={(e) => handleFormChange('verfuegbarkeit', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Einheit\n"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.einheit}
+                    onChange={(e) => handleFormChange('einheit', e.target.value)}
+                  />
+                </TextField>
+              </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Preis\n"}
@@ -593,26 +848,97 @@ function Extractor() {
                     className="text-right"
                     placeholder="€ 123,00"
                     value={formData.preis}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setFormData(prev => ({ ...prev, preis: event.target.value }))
-                    }
+                    onChange={(e) => handleFormChange('preis', e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Weitere Händler-Felder... */}
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Preis pro Einheit"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    className="text-right"
+                    placeholder="€ 123,00"
+                    value={formData.preis_pro_einheit}
+                    onChange={(e) => handleFormChange('preis_pro_einheit', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-2">
+                <div className="flex w-full flex-col items-start gap-1 pt-4">
+                  <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                    {"Weitere Händler und Preise"}
+                  </span>
+                  <div className="flex w-full flex-col items-start gap-1 bg-neutral-50">
+                    <Table>
+                      <Table.Row>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500">
+                            Retailer 02
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
+                            152,59
+                          </span>
+                        </Table.Cell>
+                      </Table.Row>
+                      <Table.Row>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500">
+                            Retailer 03
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
+                            152,59
+                          </span>
+                        </Table.Cell>
+                      </Table.Row>
+                      <Table.Row>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500">
+                            Retailer 04
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
+                            152,59
+                          </span>
+                        </Table.Cell>
+                      </Table.Row>
+                      <Table.Row>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-pre-wrap text-body font-body text-neutral-500">
+                            {"Retailer 05\n"}
+                          </span>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-500 text-right">
+                            152,59
+                          </span>
+                        </Table.Cell>
+                      </Table.Row>
+                    </Table>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* ERFAHRUNG-SPALTE */}
+          {/* ERFAHRUNG */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-title font-title text-default-font text-center">
+              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
                 {"ERFAHRUNG"}
               </span>
-              <Progress value={0} /> {/* Keine API-Abfrage für Erfahrung */}
-              
-              {/* Erfahrung-Felder (händisch) */}
+              <Progress value={spaltenProgress.erfahrung}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Einsatz in Projekt"}
@@ -625,13 +951,48 @@ function Extractor() {
                   helpText=""
                   icon={<FeatherSearch />}
                   value={formData.einsatz_in_projekt}
-                  onValueChange={(value: string) => setFormData(prev => ({ ...prev, einsatz_in_projekt: value }))}
+                  onValueChange={(value) => handleFormChange('einsatz_in_projekt', value)}
                 >
                   <Select.Item value="projekt1">Projekt 1</Select.Item>
                   <Select.Item value="projekt2">Projekt 2</Select.Item>
                 </Select>
               </div>
-
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Muster bestellt"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.muster_bestellt}
+                    onChange={(e) => handleFormChange('muster_bestellt', e.target.value)}
+                  />
+                </TextField>
+              </div>
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Muster abgelegt"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                  iconRight={<FeatherPenLine />}
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.muster_abgelegt}
+                    onChange={(e) => handleFormChange('muster_abgelegt', e.target.value)}
+                  />
+                </TextField>
+              </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Bewertung\n"}
@@ -639,7 +1000,7 @@ function Extractor() {
                 <ToggleGroup
                   className="h-auto w-full flex-none"
                   value={formData.bewertung}
-                  onValueChange={(value: string) => setFormData(prev => ({ ...prev, bewertung: value }))}
+                  onValueChange={(value) => handleFormChange('bewertung', value)}
                 >
                   <ToggleGroup.Item value="1">1</ToggleGroup.Item>
                   <ToggleGroup.Item value="2">2</ToggleGroup.Item>
@@ -648,20 +1009,44 @@ function Extractor() {
                   <ToggleGroup.Item value="5">5</ToggleGroup.Item>
                 </ToggleGroup>
               </div>
-
-              {/* Weitere Erfahrung-Felder... */}
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Bemerkungen und Notizen"}
+                </span>
+                <TextArea
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextArea.Input
+                    className="h-28 w-full flex-none"
+                    placeholder="..."
+                    value={formData.bemerkungen_notizen}
+                    onChange={(e) => handleFormChange('bemerkungen_notizen', e.target.value)}
+                  />
+                </TextArea>
+              </div>
             </div>
           </div>
-
-          {/* ERFASSUNG-SPALTE */}
+          {/* ERFASSUNG */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full grow shrink-0 basis-0 flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full text-title font-title text-default-font text-center">
+              <span className="w-full text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
                 ERFASSUNG
               </span>
-              <Progress value={spaltenProgress.erfassung} />
-              
-              {/* Quell-URL */}
+              <Progress value={spaltenProgress.erfassung}/>
+              <div className="flex w-full flex-col items-start gap-1">
+                <div className="flex flex-col items-start gap-1 pt-4">
+                  <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                    {"Quell-Screenshot\n"}
+                  </span>
+                </div>
+                <img
+                  className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md"
+                  src="https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png"
+                />
+              </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Quell-URL\n"}
@@ -675,14 +1060,27 @@ function Extractor() {
                   <TextField.Input
                     placeholder=""
                     value={currentUrl}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => 
-                      setCurrentUrl(event.target.value)
-                    }
+                    onChange={(e) => setCurrentUrl(e.target.value)}
                   />
                 </TextField>
               </div>
-
-              {/* Erfassung für */}
+              <div className="flex w-full flex-col items-start gap-1 pt-4">
+                <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
+                  {"Erfassungsdatum / -zeit"}
+                </span>
+                <TextField
+                  className="h-auto w-full flex-none"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder=""
+                    value={formData.erfassungsdatum}
+                    readOnly
+                  />
+                </TextField>
+              </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Erfassung für:\n"}
@@ -695,15 +1093,13 @@ function Extractor() {
                   helpText=""
                   icon={<FeatherSearch />}
                   value={formData.erfassung_fuer}
-                  onValueChange={(value: string) => setFormData(prev => ({ ...prev, erfassung_fuer: value }))}
+                  onValueChange={(value) => handleFormChange('erfassung_fuer', value)}
                 >
                   <Select.Item value="Deutschland">Deutschland</Select.Item>
                   <Select.Item value="Österreich">Österreich</Select.Item>
                   <Select.Item value="Schweiz">Schweiz</Select.Item>
                 </Select>
               </div>
-
-              {/* Erfassen als Buttons */}
               <div className="flex w-full flex-col items-start justify-end gap-1 pt-4">
                 <div className="flex w-full items-center gap-2">
                   <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2">
@@ -729,8 +1125,6 @@ function Extractor() {
                   </div>
                 </div>
               </div>
-
-              {/* Extraktions-Log */}
               <div className="flex w-full grow shrink-0 basis-0 flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Extraktions-Log\n"}
@@ -745,9 +1139,6 @@ function Extractor() {
                     className="w-full grow shrink-0 basis-0"
                     placeholder="..."
                     value={extractionLog}
-                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => 
-                      setExtractionLog(event.target.value)
-                    }
                     readOnly
                   />
                 </TextArea>
@@ -760,4 +1151,5 @@ function Extractor() {
   );
 }
 
-export default Extractor; 
+export default Extractor;
+
