@@ -1,5 +1,34 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 14.01.2025 - 22:15 - Strukturierte JSON-Schema-Prompts implementiert
+
+**Aufgabe:** Optimierung der AI-Prompts von einfachen Text-Prompts zu strukturierten JSON-Schema-basierten Prompts für bessere Performance und Konsistenz.
+
+**Durchgeführte Änderungen:**
+- `dynamicPrompts.ts`: Komplette Überarbeitung der Prompt-Generierung
+  - Neue `generateJsonSchema()` Funktion für automatische Schema-Erstellung
+  - Strukturierter Prompt-Aufbau mit klaren Rollen, Felddefinitionen und JSON-Schema
+  - Intelligente Typerkennung (String, Number, Array) basierend auf Feldnamen
+- `capture/page.tsx`: Robuste Datentyp-Behandlung für AI-Antworten
+  - Fix für `value.trim is not a function` Fehler bei Arrays/Numbers
+  - Unterstützung für Arrays, Numbers, Booleans, Strings
+  - Verbesserte Kategorie-Array-Behandlung
+
+**Schwierigkeiten:** 
+- AI-Antworten enthalten jetzt strukturierte Objekte statt nur Strings
+- Frontend erwartete nur String-Werte und rief `.trim()` auf allen Datentypen auf
+
+**Lösung:** 
+- Robuste Typprüfung vor String-Operationen implementiert
+- Spezielle Behandlung für jeden Datentyp (Array, Number, Boolean, String)
+
+**Ergebnis:** 
+- Strukturierte Prompts werden korrekt generiert und angezeigt
+- AI-Extraktion funktioniert ohne Fehler
+- Bessere Performance durch klare JSON-Schema-Vorgaben
+
+---
+
 ## 01.01.2025 - 23:30 - Products-Tabelle Neuaufbau mit Präfix-Notation erfolgreich! 🎯
 
 **Aufgabe**: Database Schema komplett neu aufbauen mit Präfix-Notation (PRODUKT_, PARAMETER_, etc.)

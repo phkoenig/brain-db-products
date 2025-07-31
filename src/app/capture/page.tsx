@@ -246,9 +246,16 @@ function Extractor() {
     }
     setExtractionLog((prev) => prev + `  • Hersteller-Produkt-URL: ${currentUrl}\n\n`);
     
-    await startSpaltenExtraction("produkt", currentUrl);
-    await startSpaltenExtraction("parameter", currentUrl);
-    await startSpaltenExtraction("dokumente", currentUrl);
+    // PARALLEL-Analyse für maximale Geschwindigkeit! 🚀
+    setExtractionLog((prev) => prev + "🚀 STARTE PARALLEL-ANALYSE (produkt, parameter, dokumente)...\n");
+    
+    const herstellerPromises = [
+      startSpaltenExtraction("produkt", currentUrl),
+      startSpaltenExtraction("parameter", currentUrl),
+      startSpaltenExtraction("dokumente", currentUrl)
+    ];
+    
+    await Promise.all(herstellerPromises);
     
     setExtractionLog((prev) => prev + "\n=== HERSTELLER-ANALYSE ABGESCHLOSSEN ===");
   }, [currentUrl, startSpaltenExtraction]);
@@ -275,10 +282,17 @@ function Extractor() {
     }
     setExtractionLog((prev) => prev + `  • Händler-Produkt-URL: ${currentUrl}\n\n`);
     
-    await startSpaltenExtraction("produkt", currentUrl);
-    await startSpaltenExtraction("parameter", currentUrl);
-    await startSpaltenExtraction("dokumente", currentUrl);
-    await startSpaltenExtraction("haendler", currentUrl);
+    // PARALLEL-Analyse für maximale Geschwindigkeit! 🚀
+    setExtractionLog((prev) => prev + "🚀 STARTE PARALLEL-ANALYSE (produkt, parameter, dokumente, haendler)...\n");
+    
+    const haendlerPromises = [
+      startSpaltenExtraction("produkt", currentUrl),
+      startSpaltenExtraction("parameter", currentUrl),
+      startSpaltenExtraction("dokumente", currentUrl),
+      startSpaltenExtraction("haendler", currentUrl)
+    ];
+    
+    await Promise.all(haendlerPromises);
     
     setExtractionLog((prev) => prev + "\n=== HÄNDLER-ANALYSE ABGESCHLOSSEN ===");
   }, [currentUrl, startSpaltenExtraction]);
