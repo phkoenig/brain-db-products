@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: result,
-      spalte: spalte
+      spalte: spalte,
+      generatedPrompt: prompt // Füge den generierten Prompt zur Antwort hinzu
     });
 
   } catch (error) {

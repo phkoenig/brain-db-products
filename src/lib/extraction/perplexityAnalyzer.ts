@@ -263,7 +263,7 @@ Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
   }
 } 
 
-// Export function for the enhanced analysis API
+// Export function for the enhanced analysis API with dynamic prompts
 export async function analyzeWithPerplexity(url: string, fieldDefinitions: any, customPrompt?: string): Promise<any> {
   console.log('DEBUG: analyzeWithPerplexity called with URL:', url);
   console.log('DEBUG: Field definitions keys:', Object.keys(fieldDefinitions || {}));
@@ -275,13 +275,69 @@ export async function analyzeWithPerplexity(url: string, fieldDefinitions: any, 
   
   console.log('DEBUG: PERPLEXITY_API_KEY is set');
   
-  const analyzer = new PerplexityAnalyzer(apiKey);
+  // Verwende den dynamischen Prompt direkt
+  const prompt = customPrompt || `Analysiere die Webseite ${url} und extrahiere relevante Produktinformationen als JSON.`;
+  
+  console.log('DEBUG: Perplexity prompt length:', prompt.length);
+  console.log('DEBUG: Perplexity prompt preview:', prompt.substring(0, 200) + '...');
+  
+  const requestBody = {
+    model: 'sonar-pro',
+    messages: [
+      {
+        role: 'system',
+        content: `URL: ${url}`
+      },
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    temperature: 0.1,
+    max_tokens: 4000
+  };
+  
+  console.log('DEBUG: Perplexity request body:', JSON.stringify(requestBody, null, 2));
   
   try {
-    console.log('DEBUG: Calling analyzer.analyzeUrl...');
-    const result = await analyzer.analyzeUrl(url, customPrompt);
-    console.log('DEBUG: Perplexity analysis completed successfully');
-    return result;
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    console.log('DEBUG: Perplexity response status:', response.status);
+    console.log('DEBUG: Perplexity response headers:', Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('DEBUG: Perplexity error response body:', errorText);
+      throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('DEBUG: Perplexity success response preview:', JSON.stringify(data).substring(0, 500) + '...');
+    
+    // Parse die JSON-Antwort
+    const content = data.choices[0].message.content;
+    console.log('DEBUG: Raw content from Perplexity:', content.substring(0, 300) + '...');
+    
+    try {
+      // Bereinige den Content für JSON-Parsing
+      const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      console.log('DEBUG: Cleaned content for JSON parsing:', cleanedContent.substring(0, 300) + '...');
+      
+      const parsedResult = JSON.parse(cleanedContent);
+      console.log('DEBUG: Perplexity analysis completed successfully');
+      return parsedResult;
+    } catch (parseError) {
+      console.error('DEBUG: Failed to parse JSON response:', parseError);
+      console.error('DEBUG: Raw content that failed to parse:', content);
+      throw new Error(`Failed to parse Perplexity response as JSON: ${parseError}`);
+    }
   } catch (error) {
     console.error('DEBUG: Perplexity analysis failed:', error);
     throw error;

@@ -143,14 +143,72 @@ function Extractor() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        console.log(`Spalten-Analyse ${spalte} Antwort:`, result);
+        
+        // Zeige den generierten Prompt im Log an
+        if (result.generatedPrompt) {
+          const promptPreview = result.generatedPrompt.length > 800 
+            ? result.generatedPrompt.substring(0, 800) + '\n\n[... Prompt gekürzt - Vollständiger Prompt in Browser-Console ...]'
+            : result.generatedPrompt;
+          
+          setExtractionLog((prev) => prev + `\n\n📝 GENERIERTER ${spalte.toUpperCase()}-PROMPT:\n${'='.repeat(60)}\n${promptPreview}\n${'='.repeat(60)}\n`);
+          console.log(`📝 Vollständiger ${spalte.toUpperCase()}-Prompt:`, result.generatedPrompt);
+        }
+        
+        // Die API gibt { success: true, data: {...} } zurück
+        const data = result.data || result;
         
         const updates = {};
-        Object.entries(data).forEach(([field, value]) => {
-          if (value && value.value) {
-            updates[field] = value.value;
+        Object.entries(data).forEach(([field, fieldData]) => {
+          // fieldData kann ein Objekt mit { value, confidence, reasoning } sein
+          // oder direkt ein Wert
+          if (fieldData) {
+            let value = '';
+            if (typeof fieldData === 'object' && fieldData.value !== undefined) {
+              value = fieldData.value;
+            } else if (typeof fieldData === 'string') {
+              value = fieldData;
+            }
+            
+            // Nur nicht-leere Werte setzen
+            if (value !== null && value !== undefined && value !== '') {
+              // Spezielle Behandlung für verschiedene Datentypen
+              if (field === 'produkt_kategorie') {
+                // Kategorie-Arrays behandeln
+                if (Array.isArray(value)) {
+                  updates[field] = value.filter(v => v && v.trim && v.trim());
+                } else if (typeof value === 'string') {
+                  try {
+                    const parsed = JSON.parse(value);
+                    updates[field] = Array.isArray(parsed) ? parsed : [value.trim()];
+                  } catch {
+                    updates[field] = [value.trim()];
+                  }
+                }
+              } else if (Array.isArray(value)) {
+                // Andere Arrays
+                updates[field] = value.filter(v => v !== null && v !== undefined && v !== '');
+              } else if (typeof value === 'string' && value.trim()) {
+                // String-Werte
+                updates[field] = value.trim();
+              } else if (typeof value === 'number') {
+                // Numerische Werte
+                updates[field] = value;
+              } else if (typeof value === 'boolean') {
+                // Boolean-Werte
+                updates[field] = value;
+              }
+              
+              // Nur loggen wenn tatsächlich ein Wert gesetzt wurde
+              if (updates[field] !== undefined) {
+                console.log(`Setze ${field} = "${JSON.stringify(updates[field])}"`);
+              }
+            }
           }
         });
+        
+        console.log('Updates für Formular:', updates);
         
         setFormData((prev) => {
             const newData = { ...prev, ...updates };
@@ -158,7 +216,8 @@ function Extractor() {
             return newData;
         });
         
-        setExtractionLog((prev) => prev + `\n✅ ${spalte.toUpperCase()}-Analyse abgeschlossen`);
+        setExtractionLog((prev) => prev + `\n🎯 KI-ANTWORT erhalten - ${Object.keys(updates).length} Felder extrahiert`);
+        setExtractionLog((prev) => prev + `\n✅ ${spalte.toUpperCase()}-Analyse abgeschlossen\n`);
       }
     } catch (error) {
       setExtractionLog((prev) => prev + `\n❌ Fehler bei ${spalte}-Analyse: ${error.message}`);

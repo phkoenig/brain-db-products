@@ -31,48 +31,82 @@ export async function generateDynamicPrompt({ url, spalte }: DynamicPromptOption
 
     console.log(`generateDynamicPrompt: ${fieldDefinitions.length} Felddefinitionen geladen`);
 
-    // Erstelle Feld-Beschreibungen
-    const fieldDescriptions = fieldDefinitions.map(field => {
-      const examples = field.examples && field.examples.length > 0 
-        ? ` (Beispiele: ${field.examples.join(', ')})` 
-        : '';
-      const hints = field.extraction_hints && field.extraction_hints.length > 0 
-        ? ` (Hinweise: ${field.extraction_hints.join(', ')})` 
-        : '';
-      const description = field.description || `${field.label || field.field_name}`;
+    // Lade Materialkategorien für bessere Kontextualisierung (nur für produkt-Spalte)
+    let materialCategoriesContext = '';
+    if (spalte === 'produkt') {
+      const { data: categories } = await supabase
+        .from('material_categories')
+        .select('main_category, sub_category, label')
+        .order('main_category, sub_category');
       
-      return `- ${field.field_name}: ${description}${examples}${hints}`;
+      if (categories && categories.length > 0) {
+        const categoryGroups = categories.reduce((acc: Record<string, string[]>, cat) => {
+          if (!acc[cat.main_category]) acc[cat.main_category] = [];
+          acc[cat.main_category].push(cat.label);
+          return acc;
+        }, {});
+
+        const categoryList = Object.entries(categoryGroups)
+          .map(([main, subs]) => `  ${main}: ${subs.join(', ')}`)
+          .join('\n');
+
+        materialCategoriesContext = `
+VERFÜGBARE MATERIALKATEGORIEN (für produkt_kategorie):
+${categoryList}
+`;
+        console.log(`generateDynamicPrompt: ${categories.length} Materialkategorien geladen`);
+      }
+    }
+
+    // Erstelle erweiterte Feld-Beschreibungen
+    const fieldDescriptions = fieldDefinitions.map(field => {
+      // Verwende erweiterte Beschreibung falls verfügbar
+      let description = getEnhancedFieldDescription(field.field_name, field.label, field.description);
+      
+      // Füge Beispiele hinzu, falls vorhanden
+      if (field.examples && Array.isArray(field.examples) && field.examples.length > 0) {
+        description += ` (Beispiele: ${field.examples.join(', ')})`;
+      } else if (field.examples && typeof field.examples === 'object' && field.examples !== null) {
+        const examples = Object.values(field.examples).filter(v => v).join(', ');
+        if (examples) description += ` (Beispiele: ${examples})`;
+      }
+      
+      // Füge Extraktionshinweise hinzu, falls vorhanden
+      if (field.extraction_hints && Array.isArray(field.extraction_hints) && field.extraction_hints.length > 0) {
+        description += ` [Hinweise: ${field.extraction_hints.join('; ')}]`;
+      }
+      
+      return `- ${field.field_name}: ${description}`;
     }).join('\n');
 
-    // Generiere spalten-spezifischen Prompt
+    // Generiere JSON-Schema für strukturierte Antwort
+    const jsonSchema = generateJsonSchema(fieldDefinitions, spalte);
+    
+    // Generiere spalten-spezifischen strukturierten Prompt
     const spaltenName = spalte.toUpperCase();
     
-    const prompt = `
-Analysiere die folgende Webseite: ${url}
+    const prompt = `Du bist ein Experte für Produktdatenextraktion aus Webseiten. Analysiere die folgende Webseite und extrahiere strukturierte ${spaltenName}-Informationen.
 
-Extrahiere die folgenden ${spaltenName}-Informationen und gib sie als JSON zurück:
+WEBSEITE: ${url}
+${materialCategoriesContext}
+AUFGABE: Extrahiere die folgenden ${spaltenName}-Informationen und gib sie im exakten JSON-Format zurück.
 
-Ziel-Felder:
+FELD-DEFINITIONEN:
 ${fieldDescriptions}
 
-JSON-Format für jedes Feld:
-{
-  "value": "extrahierter Wert",
-  "confidence": 0.0-1.0,
-  "reasoning": "Begründung für die Extraktion"
-}
+ERFORDERLICHES JSON-SCHEMA:
+${jsonSchema}
 
-Wichtige Hinweise:
-- Gib nur gültiges JSON zurück
-- Verwende confidence-Werte zwischen 0.0 und 1.0
-- Bei unsicheren Werten verwende niedrige confidence-Werte
-- Bei fehlenden Informationen verwende leere Strings und confidence 0.0
-- Bei numerischen Werten (Preis, Gewicht, etc.) extrahiere nur die Zahl ohne Einheiten
-- Verwende die angegebenen Hinweise und Beispiele zur besseren Extraktion
-- Analysiere den gesamten Inhalt der Webseite, nicht nur den sichtbaren Text
+EXTRAKTIONS-REGELN:
+1. Analysiere den gesamten Webseiteninhalt sorgfältig
+2. Extrahiere nur korrekte, auf der Webseite gefundene Informationen
+3. Verwende confidence-Werte: 1.0 = sicher gefunden, 0.5 = wahrscheinlich, 0.0 = nicht gefunden
+4. Bei numerischen Werten: nur Zahlen ohne Einheiten (z.B. "29.90" statt "29,90 €")
+5. Bei Arrays (produkt_kategorie): wähle aus verfügbaren Kategorien
+6. Bei fehlenden Informationen: leere Strings verwenden
+7. Gib eine kurze Begründung für jeden extrahierten Wert
 
-Antworte ausschließlich mit gültigem JSON.
-    `.trim();
+ANTWORT-FORMAT: Antworte ausschließlich mit gültigem JSON entsprechend dem Schema oben.`.trim();
 
     console.log(`generateDynamicPrompt: Prompt für Spalte '${spalte}' generiert (${prompt.length} Zeichen)`);
     return prompt;
@@ -82,6 +116,101 @@ Antworte ausschließlich mit gültigem JSON.
     // Fallback zu statischem Prompt bei Fehlern
     return buildFallbackPrompt(url, spalte);
   }
+}
+
+/**
+ * Generiert ein JSON-Schema für strukturierte AI-Antworten
+ */
+function generateJsonSchema(fieldDefinitions: any[], spalte: string): string {
+  const schemaFields = fieldDefinitions.map(field => {
+    const fieldName = field.field_name;
+    let type = 'string';
+    let example = '';
+    
+    // Bestimme Datentyp basierend auf Feldname
+    if (fieldName.includes('preis') || fieldName.includes('gewicht') || fieldName.includes('u_wert')) {
+      type = 'number';
+      example = '29.90';
+    } else if (fieldName === 'produkt_kategorie') {
+      type = 'array';
+      example = '["Fußbodenbeläge", "Fliesen"]';
+    } else {
+      example = '"extrahierter Wert"';
+    }
+    
+    return `  "${fieldName}": {
+    "value": ${example},
+    "confidence": 0.8,
+    "reasoning": "Kurze Begründung"
+  }`;
+  }).join(',\n');
+  
+  return `{
+${schemaFields}
+}`;
+}
+
+/**
+ * Erweitert die Feldbeschreibung mit kontextspezifischen Informationen
+ */
+function getEnhancedFieldDescription(fieldName: string, label?: string, originalDescription?: string): string {
+  // Spezifische Beschreibungen für wichtige Felder
+  const enhancedDescriptions: Record<string, string> = {
+    'produkt_kategorie': 'Materialkategorie(n) des Produkts - wähle aus verfügbaren Kategorien (Multi-Select möglich)',
+    'produkt_hersteller': 'Name des Herstellers/Produzenten des Materials',
+    'produkt_name_modell': 'Vollständiger Produktname oder Modellbezeichnung',
+    'produkt_produktlinie_serie': 'Produktlinie, Serie oder Kollektion des Materials',
+    'produkt_code_id': 'Produktcode, Artikelnummer oder eindeutige Identifikation',
+    'produkt_anwendungsbereich': 'Einsatzgebiet und Verwendungszweck des Materials (z.B. Innenbereich, Außenbereich)',
+    'produkt_beschreibung': 'Detaillierte Produktbeschreibung und Eigenschaften',
+    'produkt_hersteller_webseite': 'Hauptwebseite des Herstellers (Domain ohne Produktseite)',
+    'produkt_hersteller_produkt_url': 'Direkte URL zur Produktseite beim Hersteller',
+    
+    'parameter_farbe': 'Farbe oder Farbbezeichnung des Materials',
+    'parameter_masse': 'Abmessungen, Größe oder Maße (z.B. 60x60cm, 1200x800mm, Dicke)',
+    'parameter_hauptmaterial': 'Grundmaterial oder Hauptbestandteil (z.B. Keramik, Holz, Metall, Beton)',
+    'parameter_oberflaeche': 'Oberflächenbeschaffenheit oder -behandlung (z.B. matt, glänzend, strukturiert)',
+    'parameter_gewicht_pro_einheit': 'Gewicht pro Einheit oder spezifisches Gewicht',
+    'parameter_feuerwiderstand': 'Brandschutzklasse oder Feuerwiderstandsdauer (z.B. A1, B1, REI 60)',
+    'parameter_waermeleitfaehigkeit': 'Wärmeleitfähigkeit in W/mK',
+    'parameter_u_wert': 'U-Wert für Wärmedämmung in W/m²K',
+    'parameter_schalldaemmung': 'Schallschutzwerte oder Lärmschutzklasse',
+    'parameter_wasserbestaendigkeit': 'Wasserdichtigkeit oder Feuchtigkeitsresistenz',
+    'parameter_dampfdiffusion': 'Dampfdiffusionswiderstand oder μ-Wert',
+    'parameter_einbauart': 'Art der Installation oder Verlegung',
+    'parameter_wartung': 'Wartungsanforderungen und Pflegehinweise',
+    'parameter_umweltzertifikat': 'Umweltzertifikate oder Nachhaltigkeitssiegel',
+    
+    'dokumente_datenblatt': 'Link oder Verweis auf technisches Datenblatt',
+    'dokumente_technisches_merkblatt': 'Link zu technischem Merkblatt oder Spezifikation',
+    'dokumente_produktkatalog': 'Link zum Produktkatalog oder Broschüre',
+    'dokumente_weitere_dokumente': 'Weitere relevante Dokumente oder Downloads',
+    'dokumente_bim_cad_technische_zeichnungen': 'BIM-Objekte, CAD-Dateien oder technische Zeichnungen',
+    
+    'haendler_haendlername': 'Name des Händlers oder Verkäufers',
+    'haendler_haendler_webseite': 'Hauptwebseite des Händlers (Domain)',
+    'haendler_haendler_produkt_url': 'Direkte URL zur Produktseite beim Händler',
+    'haendler_verfuegbarkeit': 'Verfügbarkeitsstatus oder Lieferzeit',
+    'haendler_einheit': 'Verkaufseinheit (z.B. m², Stück, m, kg)',
+    'haendler_preis': 'Verkaufspreis beim Händler (nur Zahl ohne Währungszeichen)',
+    'haendler_preis_pro_einheit': 'Preis pro Einheit (nur Zahl ohne Währungszeichen)',
+    
+    'erfahrung_einsatz_in_projekt': 'Projektname oder -referenz wo das Material eingesetzt wurde',
+    'erfahrung_muster_bestellt': 'Status der Musterbestellung (ja/nein/geplant)',
+    'erfahrung_muster_abgelegt': 'Ort oder Status der Musterablage',
+    'erfahrung_bewertung': 'Persönliche Bewertung oder Einschätzung des Materials',
+    'erfahrung_bemerkungen_notizen': 'Zusätzliche Notizen oder Erfahrungen',
+    
+    'erfassung_quell_url': 'Ursprungs-URL der Datenerfassung',
+    'erfassung_erfassungsdatum': 'Datum und Zeit der Erfassung',
+    'erfassung_erfassung_fuer': 'Land oder Region für die Erfassung',
+    'erfassung_extraktions_log': 'Log der Extraktionsprozesse'
+  };
+
+  // Verwende erweiterte Beschreibung falls verfügbar, sonst Original oder Label
+  return enhancedDescriptions[fieldName] || 
+         originalDescription || 
+         `${label || fieldName} - extrahiere relevante Informationen`;
 }
 
 /**
