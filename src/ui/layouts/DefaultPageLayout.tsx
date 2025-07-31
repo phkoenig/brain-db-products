@@ -31,10 +31,12 @@ const DefaultPageLayoutRoot = React.forwardRef<
   const pathname = usePathname();
 
   // Memoize the selected states to prevent unnecessary re-renders
-  const isSettingsSelected = pathname === "/settings";
-  const isHomeSelected = pathname === "/";
-  const isDatabaseSelected = pathname === "/database";
-  const isCaptureSelected = pathname === "/capture";
+  const selectedStates = React.useMemo(() => ({
+    isSettingsSelected: pathname === "/settings",
+    isHomeSelected: pathname === "/",
+    isDatabaseSelected: pathname === "/database",
+    isCaptureSelected: pathname === "/capture"
+  }), [pathname]);
 
   return (
     <div
@@ -57,7 +59,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
             <Link href="/settings" className="w-full">
               <SidebarRailWithLabels.NavItem 
                 icon={<FeatherSettings />}
-                selected={isSettingsSelected}
+                selected={selectedStates.isSettingsSelected}
               >
                 Settings
               </SidebarRailWithLabels.NavItem>
@@ -65,7 +67,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
             <Link href="/" className="w-full">
               <SidebarRailWithLabels.NavItem 
                 icon={<FeatherUserCircle />}
-                selected={isHomeSelected}
+                selected={selectedStates.isHomeSelected}
               >
                 User
               </SidebarRailWithLabels.NavItem>
@@ -76,7 +78,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
         <Link href="/database" className="w-full">
           <SidebarRailWithLabels.NavItem
             icon={<FeatherDatabase />}
-            selected={isDatabaseSelected}
+            selected={selectedStates.isDatabaseSelected}
           >
             DB
           </SidebarRailWithLabels.NavItem>
@@ -84,7 +86,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
         <Link href="/capture" className="w-full">
           <SidebarRailWithLabels.NavItem 
             icon={<FeatherPlus />}
-            selected={isCaptureSelected}
+            selected={selectedStates.isCaptureSelected}
           >
             New
           </SidebarRailWithLabels.NavItem>
