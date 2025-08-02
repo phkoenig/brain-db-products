@@ -4,12 +4,15 @@ interface DynamicPromptOptions {
   url: string;
   spalte: string;
   buttonType?: 'hersteller' | 'haendler'; // Neuer Parameter für Button-Typ
+  manufacturer?: string; // Hersteller aus Request-Parametern
+  productName?: string; // Produktname aus Request-Parametern  
+  productCode?: string; // Produktcode aus Request-Parametern
 }
 
 /**
  * Generiert dynamische Prompts basierend auf Datenbank-Felddefinitionen
  */
-export async function generateDynamicPrompt({ url, spalte, buttonType }: DynamicPromptOptions): Promise<string> {
+export async function generateDynamicPrompt({ url, spalte, buttonType, manufacturer, productName, productCode }: DynamicPromptOptions): Promise<string> {
   try {
     console.log(`generateDynamicPrompt: Lade Felddefinitionen für Spalte: ${spalte}`);
     
@@ -111,14 +114,14 @@ FORMAT:
 Suche nach mindestens 3-5 alternativen Händlern, die das gleiche Produkt anbieten.
 `;
       } else if (buttonType === 'hersteller') {
-        // Hersteller-Button: Suche Händler für das identifizierte Produkt
-        const manufacturer = productContext.match(/Hersteller: ([^\n]+)/)?.[1] || 'Unbekannt';
-        const productName = productContext.match(/Produktname: ([^\n]+)/)?.[1] || 'Unbekannt';
-        const productCode = productContext.match(/Produktcode: ([^\n]+)/)?.[1] || '';
+        // Hersteller-Button: Verwende die direkt übergebenen Parameter
+        const currentManufacturer = manufacturer || 'Unbekannt';
+        const currentProductName = productName || 'Unbekannt';
+        const currentProductCode = productCode || '';
         
         retailerPrompt = `
 SPEZIELLE HÄNDLER-SUCHE (Hersteller-Seite):
-Suche für das genannte Produkt: ${manufacturer} ${productName} ${productCode ? `(${productCode})` : ''}
+Suche für das genannte Produkt: ${currentManufacturer} ${currentProductName} ${currentProductCode ? `(${currentProductCode})` : ''}
 
 Händler und gib Händlernamen, URL zum Produkt beim Händler und Preis als JSON zurück.
 

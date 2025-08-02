@@ -391,32 +391,24 @@ function Extractor() {
             // Verarbeite die Ergebnisse
             if (retailersResult.data) {
               const updates = {};
-              const additionalRetailers = [];
+              
+              // DEBUG: Logge jeden Schritt der Verarbeitung
+              setExtractionLog((prev) => prev + `🔍 DEBUG: Verarbeite ${Object.keys(retailersResult.data).length} Felder\n`);
+              
               Object.entries(retailersResult.data).forEach(([field, fieldData]) => {
+                setExtractionLog((prev) => prev + `🔍 DEBUG: Verarbeite Feld "${field}" = ${JSON.stringify(fieldData)}\n`);
+                
                 if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
                   const value = fieldData.value;
                   if (value && value !== '') {
                     updates[field] = value;
-                    // Zusätzliche Händler sammeln (nur wenn nicht identisch mit Haupthändler)
-                    if (field === 'haendler_haendlername' && value !== formData.haendler_haendlername) {
-                      additionalRetailers.push({
-                        name: value,
-                        website: retailersResult.data.haendler_haendler_webseite?.value || '',
-                        productUrl: retailersResult.data.haendler_haendler_produkt_url?.value || '',
-                        price: retailersResult.data.haendler_preis?.value || '',
-                        unit: retailersResult.data.haendler_einheit?.value || ''
-                      });
-                    }
+                    setExtractionLog((prev) => prev + `✅ Setze ${field} = "${value}"\n`);
                   }
                 }
               });
-              // Füge zusätzliche Händler zu den bestehenden hinzu
-              if (additionalRetailers.length > 0) {
-                const existingRetailers = formData.haendler_weitere_haendler_und_preise || [];
-                const allRetailers = [...existingRetailers, ...additionalRetailers];
-                updates.haendler_weitere_haendler_und_preise = allRetailers;
-                setExtractionLog((prev) => prev + `🏪 Zusätzliche Händler gefunden: ${additionalRetailers.map(r => r.name).join(', ')}\n`);
-              }
+              
+              setExtractionLog((prev) => prev + `🔍 DEBUG: Finale Updates = ${JSON.stringify(updates, null, 2)}\n`);
+              
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
                 updateAllProgress(newData);
@@ -586,31 +578,29 @@ function Extractor() {
             // Verarbeite die Ergebnisse
             if (retailersResult.data) {
               const updates = {};
-              const additionalRetailers = [];
+              
+              // DEBUG: Logge jeden Schritt der Verarbeitung
+              setExtractionLog((prev) => prev + `🔍 DEBUG: Verarbeite ${Object.keys(retailersResult.data).length} Felder\n`);
+              
               Object.entries(retailersResult.data).forEach(([field, fieldData]) => {
+                setExtractionLog((prev) => prev + `🔍 DEBUG: Verarbeite Feld "${field}" = ${JSON.stringify(fieldData)}\n`);
+                
                 if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
                   const value = fieldData.value;
                   if (value && value !== '') {
                     updates[field] = value;
-                    // Zusätzliche Händler sammeln (nur wenn nicht identisch mit Haupthändler)
-                    if (field === 'haendler_haendlername' && value !== formData.haendler_haendlername) {
-                      additionalRetailers.push({
-                        name: value,
-                        website: retailersResult.data.haendler_haendler_webseite?.value || '',
-                        productUrl: retailersResult.data.haendler_haendler_produkt_url?.value || '',
-                        price: retailersResult.data.haendler_preis?.value || '',
-                        unit: retailersResult.data.haendler_einheit?.value || ''
-                      });
-                    }
+                    setExtractionLog((prev) => prev + `✅ Feld "${field}" gesetzt: ${Array.isArray(value) ? `${value.length} Einträge` : value}\n`);
                   }
                 }
               });
-              // Füge zusätzliche Händler zu den bestehenden hinzu
-              if (additionalRetailers.length > 0) {
+              
+              // Spezielle Behandlung für weitere Händler
+              if (updates.haendler_weitere_haendler_und_preise && Array.isArray(updates.haendler_weitere_haendler_und_preise)) {
                 const existingRetailers = formData.haendler_weitere_haendler_und_preise || [];
-                const allRetailers = [...existingRetailers, ...additionalRetailers];
+                const newRetailers = updates.haendler_weitere_haendler_und_preise;
+                const allRetailers = [...existingRetailers, ...newRetailers];
                 updates.haendler_weitere_haendler_und_preise = allRetailers;
-                setExtractionLog((prev) => prev + `🏪 Zusätzliche Händler gefunden: ${additionalRetailers.map(r => r.name).join(', ')}\n`);
+                setExtractionLog((prev) => prev + `🏪 ${newRetailers.length} weitere Händler gefunden: ${newRetailers.map(r => `${r.name} (${r.price || 'Kein Preis'})`).join(', ')}\n`);
               }
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
