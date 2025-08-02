@@ -1,5 +1,28 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 02.08.2025 - 07:18 - URL-Felder mit klickbaren Globe-Icons erweitert
+
+**Aufgabe:** Implementierung von klickbaren URL-Icons in den vier URL-Eingabefeldern für bessere UX.
+
+**Umgesetzt:**
+- ✅ **Globe-Icon (links)**: Klickbar, öffnet URLs in neuem Tab
+- ✅ **Pen-Icon (rechts)**: Beibehalten für Edit-Indikation
+- ✅ **URL-Konstruktion verbessert**: Automatisches "https://" hinzufügen bei fehlenden Protokollen
+- ✅ **Vier Felder erweitert**: Hersteller-Webseite, Hersteller-Produkt-URL, Händler-Webseite, Händler-Produkt-URL
+
+**Aufgetretene Probleme:**
+- Erste Implementierung verwechselte Icon-Rollen (External-Link statt Globe klickbar)
+- Localhost-URLs wurden fälschlicherweise mitgeöffnet bei relativen URLs
+
+**Lösung:**
+- Icon-Konfiguration korrigiert: Globe-Icon (links) = klickbar, Pen-Icon (rechts) = visuell
+- Smart URL-Konstruktion: Prüfung auf vorhandenes Protokoll, automatisches "https://" ergänzen
+- Subframe TextField-Komponente aktualisiert mit `npx @subframe/cli@latest sync`
+
+**Best Practice erkannt:** Bei URL-Feldern sollte das semantisch korrekte Icon (Globe) die Interaktion übernehmen, während visuelle Indikatoren (Pen) getrennt bleiben.
+
+---
+
 ## 02.08.2025 - 06:58 - Händler-Suche Pipeline-Modi korrekt implementiert
 
 **Aufgabe:** Behebung der leeren Preisfelder bei Händler-Suche und korrekte Unterscheidung zwischen HÄNDLER- und HERSTELLER-Modi.

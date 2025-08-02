@@ -6,7 +6,6 @@ import { Progress } from "@/ui/components/Progress";
 import { Select } from "@/ui/components/Select";
 import { FeatherSearch } from "@subframe/core";
 import { TextField } from "@/ui/components/TextField";
-import { FeatherEdit3 } from "@subframe/core";
 import { FeatherPenLine } from "@subframe/core";
 import { TextArea } from "@/ui/components/TextArea";
 import { Table } from "@/ui/components/Table";
@@ -15,6 +14,7 @@ import { Button } from "@/ui/components/Button";
 import { FeatherFactory } from "@subframe/core";
 import { FeatherShoppingCart } from "@subframe/core";
 import { FeatherGlobe } from "@subframe/core";
+import { FeatherLock } from "@subframe/core";
 import { useExtraction } from "@/hooks/useExtraction";
 import { useMaterialCategories } from "@/hooks/useMaterialCategories";
 import { useCaptures } from "@/hooks/useCaptures";
@@ -32,6 +32,7 @@ function Extractor() {
     erfassung: 0,
   });
 
+  const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     // PRODUKT-Spalte
     produkt_kategorie: [] as string[],
@@ -123,6 +124,19 @@ function Extractor() {
     }
   };
 
+  // Toggle-Funktion für Lock/Unlock von Feldern
+  const toggleFieldLock = (fieldName: string) => {
+    setLockedFields(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(fieldName)) {
+        newSet.delete(fieldName);
+      } else {
+        newSet.add(fieldName);
+      }
+      return newSet;
+    });
+  };
+
   const updateProgress = (fields: string[], data: any) => {
     const filledFields = fields.filter((field) => !!data[field]);
     return (filledFields.length / fields.length) * 100;
@@ -140,7 +154,7 @@ function Extractor() {
   };
   
   const startSpaltenExtraction = useCallback(async (spalte: string, url: string) => {
-    const felder = SPALTEN_FELDER[spalte];
+    const felder = SPALTEN_FELDER[spalte as keyof typeof SPALTEN_FELDER];
     if (!felder) return null;
 
     setExtractionLog((prev) => prev + `\n=== STARTE ${spalte.toUpperCase()}-ANALYSE ===`);
@@ -173,14 +187,14 @@ function Extractor() {
         // Die API gibt { success: true, data: {...} } zurück
         const data = result.data || result;
         
-        const updates = {};
+        const updates: any = {};
         Object.entries(data).forEach(([field, fieldData]) => {
           // fieldData kann ein Objekt mit { value, confidence, reasoning } sein
           // oder direkt ein Wert
           if (fieldData) {
             let value = '';
-            if (typeof fieldData === 'object' && fieldData.value !== undefined) {
-              value = fieldData.value;
+            if (typeof fieldData === 'object' && fieldData !== null && 'value' in fieldData) {
+              value = (fieldData as any).value;
             } else if (typeof fieldData === 'string') {
               value = fieldData;
             }
@@ -190,9 +204,9 @@ function Extractor() {
               // Spezielle Behandlung für verschiedene Datentypen
               if (field === 'produkt_kategorie') {
                 // Kategorie-Arrays behandeln
-                let categoryValues = [];
+                let categoryValues: string[] = [];
                 if (Array.isArray(value)) {
-                  categoryValues = value.filter(v => v && v.trim && v.trim());
+                  categoryValues = value.filter((v: any) => v && v.trim && v.trim());
                 } else if (typeof value === 'string') {
                   try {
                     const parsed = JSON.parse(value);
@@ -221,24 +235,24 @@ function Extractor() {
                   return trimmedCat; // Fallback: Original-Wert beibehalten
                 });
                 
-                updates[field] = mappedCategories.filter(c => c);
+                (updates as any)[field] = mappedCategories.filter(c => c);
               } else if (Array.isArray(value)) {
                 // Andere Arrays
-                updates[field] = value.filter(v => v !== null && v !== undefined && v !== '');
+                (updates as any)[field] = value.filter(v => v !== null && v !== undefined && v !== '');
               } else if (typeof value === 'string' && value.trim()) {
                 // String-Werte
-                updates[field] = value.trim();
+                (updates as any)[field] = value.trim();
               } else if (typeof value === 'number') {
                 // Numerische Werte
-                updates[field] = value;
+                (updates as any)[field] = value;
               } else if (typeof value === 'boolean') {
                 // Boolean-Werte
-                updates[field] = value;
+                (updates as any)[field] = value;
               }
               
               // Nur loggen wenn tatsächlich ein Wert gesetzt wurde
-              if (updates[field] !== undefined) {
-                console.log(`Setze ${field} = "${JSON.stringify(updates[field])}"`);
+              if ((updates as any)[field] !== undefined) {
+                console.log(`Setze ${field} = "${JSON.stringify((updates as any)[field])}"`);
               }
             }
           }
@@ -259,7 +273,7 @@ function Extractor() {
         return { data: updates };
       }
     } catch (error) {
-      setExtractionLog((prev) => prev + `\n❌ Fehler bei ${spalte}-Analyse: ${error.message}`);
+      setExtractionLog((prev) => prev + `\n❌ Fehler bei ${spalte}-Analyse: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)}`);
       return null;
     }
   }, []);
@@ -312,9 +326,9 @@ function Extractor() {
         Object.entries(result.data).forEach(([field, value]) => {
           console.log(`🔍 DEBUG: field="${field}", value="${value}"`);
           if (value) {
-            if (field === 'produkt_hersteller' && value) manufacturer = value;
-            if (field === 'produkt_name_modell' && value) productName = value;
-            if (field === 'produkt_code_id' && value) productCode = value;
+            if (field === 'produkt_hersteller' && value) manufacturer = String(value);
+            if (field === 'produkt_name_modell' && value) productName = String(value);
+            if (field === 'produkt_code_id' && value) productCode = String(value);
           }
         });
       }
@@ -356,7 +370,7 @@ function Extractor() {
                 if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
                   const value = fieldData.value;
                   if (value && value !== '') {
-                    updates[field] = value;
+                    (updates as any)[field] = value;
                     console.log(`Setze ${field} = "${value}"`);
                   }
                 }
@@ -375,7 +389,7 @@ function Extractor() {
           }
         } catch (error) {
           console.error('Enhanced Documents Search Error:', error);
-          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error.message}\n`);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
         }
         
         // PHASE 2B: Erweiterte Händler-Suche mit Web-Suche
@@ -414,7 +428,7 @@ function Extractor() {
                 if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
                   const value = fieldData.value;
                   if (value && value !== '') {
-                    updates[field] = value;
+                    (updates as any)[field] = value;
                     setExtractionLog((prev) => prev + `✅ Setze ${field} = "${value}"\n`);
                   }
                 }
@@ -434,7 +448,7 @@ function Extractor() {
           }
         } catch (error) {
           console.error('Enhanced Retailers Search Error:', error);
-          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error.message}\n`);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
         }
         
       } else {
@@ -445,7 +459,7 @@ function Extractor() {
       }
     } catch (error) {
       console.error('Enhanced Search Error:', error);
-      setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Suche: ${error.message}\n`);
+      setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Suche: ${error instanceof Error ? error.message : String(error)}\n`);
     }
     
     setExtractionLog((prev) => prev + "\n=== HÄNDLER-ANALYSE ABGESCHLOSSEN ===");
@@ -499,9 +513,9 @@ function Extractor() {
         Object.entries(result.data).forEach(([field, value]) => {
           console.log(`🔍 DEBUG: field="${field}", value="${value}"`);
           if (value) {
-            if (field === 'produkt_hersteller' && value) manufacturer = value;
-            if (field === 'produkt_name_modell' && value) productName = value;
-            if (field === 'produkt_code_id' && value) productCode = value;
+            if (field === 'produkt_hersteller' && value) manufacturer = String(value);
+            if (field === 'produkt_name_modell' && value) productName = String(value);
+            if (field === 'produkt_code_id' && value) productCode = String(value);
           }
         });
       }
@@ -543,7 +557,7 @@ function Extractor() {
                 if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
                   const value = fieldData.value;
                   if (value && value !== '') {
-                    updates[field] = value;
+                    (updates as any)[field] = value;
                     console.log(`Setze ${field} = "${value}"`);
                   }
                 }
@@ -562,7 +576,7 @@ function Extractor() {
           }
         } catch (error) {
           console.error('Enhanced Documents Search Error:', error);
-          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error.message}\n`);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
         }
         
         // PHASE 2B: Erweiterte Händler-Suche mit Web-Suche
@@ -601,19 +615,19 @@ function Extractor() {
                 if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
                   const value = fieldData.value;
                   if (value && value !== '') {
-                    updates[field] = value;
+                    (updates as any)[field] = value;
                     setExtractionLog((prev) => prev + `✅ Feld "${field}" gesetzt: ${Array.isArray(value) ? `${value.length} Einträge` : value}\n`);
                   }
                 }
               });
               
               // Spezielle Behandlung für weitere Händler
-              if (updates.haendler_weitere_haendler_und_preise && Array.isArray(updates.haendler_weitere_haendler_und_preise)) {
-                const existingRetailers = formData.haendler_weitere_haendler_und_preise || [];
-                const newRetailers = updates.haendler_weitere_haendler_und_preise;
+              if ((updates as any).haendler_weitere_haendler_und_preise && Array.isArray((updates as any).haendler_weitere_haendler_und_preise)) {
+                const existingRetailers = (formData as any).haendler_weitere_haendler_und_preise || [];
+                const newRetailers = (updates as any).haendler_weitere_haendler_und_preise;
                 const allRetailers = [...existingRetailers, ...newRetailers];
-                updates.haendler_weitere_haendler_und_preise = allRetailers;
-                setExtractionLog((prev) => prev + `🏪 ${newRetailers.length} weitere Händler gefunden: ${newRetailers.map(r => `${r.name} (${r.price || 'Kein Preis'})`).join(', ')}\n`);
+                (updates as any).haendler_weitere_haendler_und_preise = allRetailers;
+                setExtractionLog((prev) => prev + `🏪 ${newRetailers.length} weitere Händler gefunden: ${newRetailers.map((r: any) => `${r.name} (${r.price || 'Kein Preis'})`).join(', ')}\n`);
               }
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
@@ -627,7 +641,7 @@ function Extractor() {
           }
         } catch (error) {
           console.error('Enhanced Retailers Search Error:', error);
-          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error.message}\n`);
+          setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
         }
         
       } else {
@@ -638,7 +652,7 @@ function Extractor() {
       }
     } catch (error) {
       console.error('Enhanced Search Error:', error);
-      setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Suche: ${error.message}\n`);
+      setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Suche: ${error instanceof Error ? error.message : String(error)}\n`);
     }
     
     setExtractionLog((prev) => prev + "\n=== HÄNDLER-ANALYSE ABGESCHLOSSEN ===");
@@ -750,12 +764,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherEdit3 />}
+                  iconRight={
+                    lockedFields.has('produkt_hersteller') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('produkt_hersteller')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('produkt_hersteller')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.produkt_hersteller}
                     onChange={(e) => handleFormChange('produkt_hersteller', e.target.value)}
+                    disabled={lockedFields.has('produkt_hersteller')}
                   />
                 </TextField>
               </div>
@@ -768,12 +787,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('produkt_name_modell') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('produkt_name_modell')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('produkt_name_modell')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.produkt_name_modell}
                     onChange={(e) => handleFormChange('produkt_name_modell', e.target.value)}
+                    disabled={lockedFields.has('produkt_name_modell')}
                   />
                 </TextField>
               </div>
@@ -786,12 +810,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('produkt_produktlinie_serie') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('produkt_produktlinie_serie')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('produkt_produktlinie_serie')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.produkt_produktlinie_serie}
                     onChange={(e) => handleFormChange('produkt_produktlinie_serie', e.target.value)}
+                    disabled={lockedFields.has('produkt_produktlinie_serie')}
                   />
                 </TextField>
               </div>
@@ -804,12 +833,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('produkt_code_id') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('produkt_code_id')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('produkt_code_id')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.produkt_code_id}
                     onChange={(e) => handleFormChange('produkt_code_id', e.target.value)}
+                    disabled={lockedFields.has('produkt_code_id')}
                   />
                 </TextField>
               </div>
@@ -822,12 +856,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('produkt_anwendungsbereich') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('produkt_anwendungsbereich')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('produkt_anwendungsbereich')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.produkt_anwendungsbereich}
                     onChange={(e) => handleFormChange('produkt_anwendungsbereich', e.target.value)}
+                    disabled={lockedFields.has('produkt_anwendungsbereich')}
                   />
                 </TextField>
                 <div className="flex w-full flex-col items-start gap-1 pt-4">
@@ -859,12 +898,17 @@ function Extractor() {
                   label=""
                   helpText=""
                   icon={<FeatherGlobe onClick={() => openUrl(formData.produkt_hersteller_webseite)} style={{cursor: 'pointer'}} />}
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('produkt_hersteller_webseite') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('produkt_hersteller_webseite')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('produkt_hersteller_webseite')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.produkt_hersteller_webseite}
                     onChange={(e) => handleFormChange('produkt_hersteller_webseite', e.target.value)}
+                    disabled={lockedFields.has('produkt_hersteller_webseite')}
                   />
                 </TextField>
               </div>
@@ -878,12 +922,17 @@ function Extractor() {
                   label=""
                   helpText=""
                   icon={<FeatherGlobe onClick={() => openUrl(formData.produkt_hersteller_produkt_url)} style={{cursor: 'pointer'}} />}
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('produkt_hersteller_produkt_url') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('produkt_hersteller_produkt_url')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('produkt_hersteller_produkt_url')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.produkt_hersteller_produkt_url}
                     onChange={(e) => handleFormChange('produkt_hersteller_produkt_url', e.target.value)}
+                    disabled={lockedFields.has('produkt_hersteller_produkt_url')}
                   />
                 </TextField>
               </div>
@@ -905,12 +954,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_masse') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_masse')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_masse')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_masse}
                     onChange={(e) => handleFormChange('parameter_masse', e.target.value)}
+                    disabled={lockedFields.has('parameter_masse')}
                   />
                 </TextField>
               </div>
@@ -923,12 +977,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_farbe') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_farbe')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_farbe')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_farbe}
                     onChange={(e) => handleFormChange('parameter_farbe', e.target.value)}
+                    disabled={lockedFields.has('parameter_farbe')}
                   />
                 </TextField>
               </div>
@@ -941,12 +1000,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_hauptmaterial') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_hauptmaterial')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_hauptmaterial')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_hauptmaterial}
                     onChange={(e) => handleFormChange('parameter_hauptmaterial', e.target.value)}
+                    disabled={lockedFields.has('parameter_hauptmaterial')}
                   />
                 </TextField>
               </div>
@@ -959,12 +1023,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_oberflaeche') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_oberflaeche')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_oberflaeche')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_oberflaeche}
                     onChange={(e) => handleFormChange('parameter_oberflaeche', e.target.value)}
+                    disabled={lockedFields.has('parameter_oberflaeche')}
                   />
                 </TextField>
               </div>
@@ -977,12 +1046,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_gewicht_pro_einheit') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_gewicht_pro_einheit')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_gewicht_pro_einheit')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_gewicht_pro_einheit}
                     onChange={(e) => handleFormChange('parameter_gewicht_pro_einheit', e.target.value)}
+                    disabled={lockedFields.has('parameter_gewicht_pro_einheit')}
                   />
                 </TextField>
               </div>
@@ -995,12 +1069,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_feuerwiderstand') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_feuerwiderstand')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_feuerwiderstand')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_feuerwiderstand}
                     onChange={(e) => handleFormChange('parameter_feuerwiderstand', e.target.value)}
+                    disabled={lockedFields.has('parameter_feuerwiderstand')}
                   />
                 </TextField>
               </div>
@@ -1013,12 +1092,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_waermeleitfaehigkeit') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_waermeleitfaehigkeit')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_waermeleitfaehigkeit')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_waermeleitfaehigkeit}
                     onChange={(e) => handleFormChange('parameter_waermeleitfaehigkeit', e.target.value)}
+                    disabled={lockedFields.has('parameter_waermeleitfaehigkeit')}
                   />
                 </TextField>
               </div>
@@ -1031,12 +1115,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_u_wert') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_u_wert')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_u_wert')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_u_wert}
                     onChange={(e) => handleFormChange('parameter_u_wert', e.target.value)}
+                    disabled={lockedFields.has('parameter_u_wert')}
                   />
                 </TextField>
               </div>
@@ -1049,12 +1138,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_schalldaemmung') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_schalldaemmung')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_schalldaemmung')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_schalldaemmung}
                     onChange={(e) => handleFormChange('parameter_schalldaemmung', e.target.value)}
+                    disabled={lockedFields.has('parameter_schalldaemmung')}
                   />
                 </TextField>
               </div>
@@ -1067,12 +1161,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_wasserbestaendigkeit') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_wasserbestaendigkeit')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_wasserbestaendigkeit')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_wasserbestaendigkeit}
                     onChange={(e) => handleFormChange('parameter_wasserbestaendigkeit', e.target.value)}
+                    disabled={lockedFields.has('parameter_wasserbestaendigkeit')}
                   />
                 </TextField>
               </div>
@@ -1085,12 +1184,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_dampfdiffusion') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_dampfdiffusion')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_dampfdiffusion')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_dampfdiffusion}
                     onChange={(e) => handleFormChange('parameter_dampfdiffusion', e.target.value)}
+                    disabled={lockedFields.has('parameter_dampfdiffusion')}
                   />
                 </TextField>
               </div>
@@ -1103,12 +1207,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_einbauart') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_einbauart')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_einbauart')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_einbauart}
                     onChange={(e) => handleFormChange('parameter_einbauart', e.target.value)}
+                    disabled={lockedFields.has('parameter_einbauart')}
                   />
                 </TextField>
               </div>
@@ -1121,12 +1230,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_wartung') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_wartung')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_wartung')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_wartung}
                     onChange={(e) => handleFormChange('parameter_wartung', e.target.value)}
+                    disabled={lockedFields.has('parameter_wartung')}
                   />
                 </TextField>
               </div>
@@ -1139,12 +1253,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('parameter_umweltzertifikat') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('parameter_umweltzertifikat')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('parameter_umweltzertifikat')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.parameter_umweltzertifikat}
                     onChange={(e) => handleFormChange('parameter_umweltzertifikat', e.target.value)}
+                    disabled={lockedFields.has('parameter_umweltzertifikat')}
                   />
                 </TextField>
               </div>
@@ -1166,12 +1285,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('dokumente_datenblatt') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('dokumente_datenblatt')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('dokumente_datenblatt')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.dokumente_datenblatt}
                     onChange={(e) => handleFormChange('dokumente_datenblatt', e.target.value)}
+                    disabled={lockedFields.has('dokumente_datenblatt')}
                   />
                 </TextField>
               </div>
@@ -1184,12 +1308,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('dokumente_technisches_merkblatt') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('dokumente_technisches_merkblatt')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('dokumente_technisches_merkblatt')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.dokumente_technisches_merkblatt}
                     onChange={(e) => handleFormChange('dokumente_technisches_merkblatt', e.target.value)}
+                    disabled={lockedFields.has('dokumente_technisches_merkblatt')}
                   />
                 </TextField>
               </div>
@@ -1202,12 +1331,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('dokumente_produktkatalog') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('dokumente_produktkatalog')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('dokumente_produktkatalog')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.dokumente_produktkatalog}
                     onChange={(e) => handleFormChange('dokumente_produktkatalog', e.target.value)}
+                    disabled={lockedFields.has('dokumente_produktkatalog')}
                   />
                 </TextField>
               </div>
@@ -1220,12 +1354,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('dokumente_weitere_dokumente') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('dokumente_weitere_dokumente')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('dokumente_weitere_dokumente')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.dokumente_weitere_dokumente}
                     onChange={(e) => handleFormChange('dokumente_weitere_dokumente', e.target.value)}
+                    disabled={lockedFields.has('dokumente_weitere_dokumente')}
                   />
                 </TextField>
               </div>
@@ -1238,12 +1377,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('dokumente_bim_cad_technische_zeichnungen') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('dokumente_bim_cad_technische_zeichnungen')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('dokumente_bim_cad_technische_zeichnungen')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.dokumente_bim_cad_technische_zeichnungen}
                     onChange={(e) => handleFormChange('dokumente_bim_cad_technische_zeichnungen', e.target.value)}
+                    disabled={lockedFields.has('dokumente_bim_cad_technische_zeichnungen')}
                   />
                 </TextField>
               </div>
@@ -1265,12 +1409,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('haendler_haendlername') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('haendler_haendlername')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('haendler_haendlername')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.haendler_haendlername}
                     onChange={(e) => handleFormChange('haendler_haendlername', e.target.value)}
+                    disabled={lockedFields.has('haendler_haendlername')}
                   />
                 </TextField>
               </div>
@@ -1284,12 +1433,17 @@ function Extractor() {
                   label=""
                   helpText=""
                   icon={<FeatherGlobe onClick={() => openUrl(formData.haendler_haendler_webseite)} style={{cursor: 'pointer'}} />}
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('haendler_haendler_webseite') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('haendler_haendler_webseite')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('haendler_haendler_webseite')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.haendler_haendler_webseite}
                     onChange={(e) => handleFormChange('haendler_haendler_webseite', e.target.value)}
+                    disabled={lockedFields.has('haendler_haendler_webseite')}
                   />
                 </TextField>
               </div>
@@ -1303,12 +1457,17 @@ function Extractor() {
                   label=""
                   helpText=""
                   icon={<FeatherGlobe onClick={() => openUrl(formData.haendler_haendler_produkt_url)} style={{cursor: 'pointer'}} />}
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('haendler_haendler_produkt_url') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('haendler_haendler_produkt_url')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('haendler_haendler_produkt_url')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.haendler_haendler_produkt_url}
                     onChange={(e) => handleFormChange('haendler_haendler_produkt_url', e.target.value)}
+                    disabled={lockedFields.has('haendler_haendler_produkt_url')}
                   />
                 </TextField>
               </div>
@@ -1321,12 +1480,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('haendler_verfuegbarkeit') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('haendler_verfuegbarkeit')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('haendler_verfuegbarkeit')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.haendler_verfuegbarkeit}
                     onChange={(e) => handleFormChange('haendler_verfuegbarkeit', e.target.value)}
+                    disabled={lockedFields.has('haendler_verfuegbarkeit')}
                   />
                 </TextField>
               </div>
@@ -1339,12 +1503,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('haendler_einheit') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('haendler_einheit')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('haendler_einheit')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.haendler_einheit}
                     onChange={(e) => handleFormChange('haendler_einheit', e.target.value)}
+                    disabled={lockedFields.has('haendler_einheit')}
                   />
                 </TextField>
               </div>
@@ -1357,13 +1526,18 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('haendler_preis') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('haendler_preis')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('haendler_preis')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     className="text-right"
                     placeholder="€ 123,00"
                     value={formData.haendler_preis}
                     onChange={(e) => handleFormChange('haendler_preis', e.target.value)}
+                    disabled={lockedFields.has('haendler_preis')}
                   />
                 </TextField>
               </div>
@@ -1376,13 +1550,18 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('haendler_preis_pro_einheit') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('haendler_preis_pro_einheit')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('haendler_preis_pro_einheit')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     className="text-right"
                     placeholder="€ 123,00"
                     value={formData.haendler_preis_pro_einheit}
                     onChange={(e) => handleFormChange('haendler_preis_pro_einheit', e.target.value)}
+                    disabled={lockedFields.has('haendler_preis_pro_einheit')}
                   />
                 </TextField>
               </div>
@@ -1476,12 +1655,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('erfahrung_muster_bestellt') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('erfahrung_muster_bestellt')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('erfahrung_muster_bestellt')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.erfahrung_muster_bestellt}
                     onChange={(e) => handleFormChange('erfahrung_muster_bestellt', e.target.value)}
+                    disabled={lockedFields.has('erfahrung_muster_bestellt')}
                   />
                 </TextField>
               </div>
@@ -1494,12 +1678,17 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
-                  iconRight={<FeatherPenLine />}
+                  iconRight={
+                    lockedFields.has('erfahrung_muster_abgelegt') ? 
+                      <FeatherLock onClick={() => toggleFieldLock('erfahrung_muster_abgelegt')} style={{cursor: 'pointer'}} /> : 
+                      <FeatherPenLine onClick={() => toggleFieldLock('erfahrung_muster_abgelegt')} style={{cursor: 'pointer'}} />
+                  }
                 >
                   <TextField.Input
                     placeholder=""
                     value={formData.erfahrung_muster_abgelegt}
                     onChange={(e) => handleFormChange('erfahrung_muster_abgelegt', e.target.value)}
+                    disabled={lockedFields.has('erfahrung_muster_abgelegt')}
                   />
                 </TextField>
               </div>
@@ -1512,11 +1701,11 @@ function Extractor() {
                   value={formData.erfahrung_bewertung}
                   onValueChange={(value) => handleFormChange('erfahrung_bewertung', value)}
                 >
-                  <ToggleGroup.Item value="1">1</ToggleGroup.Item>
-                  <ToggleGroup.Item value="2">2</ToggleGroup.Item>
-                  <ToggleGroup.Item value="3">3</ToggleGroup.Item>
-                  <ToggleGroup.Item value="4">4</ToggleGroup.Item>
-                  <ToggleGroup.Item value="5">5</ToggleGroup.Item>
+                  <ToggleGroup.Item {...({ value: "1" } as any)}>1</ToggleGroup.Item>
+                  <ToggleGroup.Item {...({ value: "2" } as any)}>2</ToggleGroup.Item>
+                  <ToggleGroup.Item {...({ value: "3" } as any)}>3</ToggleGroup.Item>
+                  <ToggleGroup.Item {...({ value: "4" } as any)}>4</ToggleGroup.Item>
+                  <ToggleGroup.Item {...({ value: "5" } as any)}>5</ToggleGroup.Item>
                 </ToggleGroup>
               </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
