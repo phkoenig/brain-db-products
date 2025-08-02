@@ -14,6 +14,7 @@ import { ToggleGroup } from "@/ui/components/ToggleGroup";
 import { Button } from "@/ui/components/Button";
 import { FeatherFactory } from "@subframe/core";
 import { FeatherShoppingCart } from "@subframe/core";
+import { FeatherGlobe } from "@subframe/core";
 import { useExtraction } from "@/hooks/useExtraction";
 import { useMaterialCategories } from "@/hooks/useMaterialCategories";
 import { useCaptures } from "@/hooks/useCaptures";
@@ -108,6 +109,18 @@ function Extractor() {
       updateAllProgress(newData);
       return newData;
     });
+  };
+
+  // Hilfsfunktion um URLs zu öffnen
+  const openUrl = (url: string) => {
+    if (url) {
+      // Prüfen ob URL bereits ein Protokoll hat
+      let fullUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        fullUrl = 'https://' + url;
+      }
+      window.open(fullUrl, '_blank');
+    }
   };
 
   const updateProgress = (fields: string[], data: any) => {
@@ -845,6 +858,7 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
+                  icon={<FeatherGlobe onClick={() => openUrl(formData.produkt_hersteller_webseite)} style={{cursor: 'pointer'}} />}
                   iconRight={<FeatherPenLine />}
                 >
                   <TextField.Input
@@ -863,6 +877,7 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
+                  icon={<FeatherGlobe onClick={() => openUrl(formData.produkt_hersteller_produkt_url)} style={{cursor: 'pointer'}} />}
                   iconRight={<FeatherPenLine />}
                 >
                   <TextField.Input
@@ -1268,6 +1283,7 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
+                  icon={<FeatherGlobe onClick={() => openUrl(formData.haendler_haendler_webseite)} style={{cursor: 'pointer'}} />}
                   iconRight={<FeatherPenLine />}
                 >
                   <TextField.Input
@@ -1286,6 +1302,7 @@ function Extractor() {
                   variant="filled"
                   label=""
                   helpText=""
+                  icon={<FeatherGlobe onClick={() => openUrl(formData.haendler_haendler_produkt_url)} style={{cursor: 'pointer'}} />}
                   iconRight={<FeatherPenLine />}
                 >
                   <TextField.Input

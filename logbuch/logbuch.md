@@ -1,5 +1,29 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 02.08.2025 - 06:58 - Händler-Suche Pipeline-Modi korrekt implementiert
+
+**Aufgabe:** Behebung der leeren Preisfelder bei Händler-Suche und korrekte Unterscheidung zwischen HÄNDLER- und HERSTELLER-Modi.
+
+**Problem:** 
+- HÄNDLER-Modus ließ Primärhändler-Felder (Preis, Einheit) leer
+- Parameter-Weiterleitung fehlerhaft (alte DB-Daten statt Request-Parameter)
+- Große Händler wie Megabad wurden nicht konsistent gefunden
+
+**Lösung:**
+- ✅ **Pipeline-Modi korrigiert**: Beide Modi füllen jetzt Primärhändler-Felder
+- ✅ **Parameter-Weiterleitung behoben**: manufacturer, productName, productCode korrekt übertragen
+- ✅ **Preis-Extraktion verbessert**: "Preis auf Anfrage" → leer, bessere Regex
+- ✅ **UI-Debug-Logging erweitert**: Detaillierte Nachverfolgung der Datenverarbeitung
+
+**Test-Ergebnisse:**
+- HÄNDLER-Modus: Megabad (295,99€) + SHKShop (348,85€) ✅
+- HERSTELLER-Modus: SHKshop (348,85€) + weitere Händler ✅
+- Beide Modi füllen alle Preisfelder korrekt aus
+
+**Best Practice:** Pipeline-Modi müssen klar unterschieden werden - beide sollen Primärhändler setzen, aber unterschiedliche Suchstrategien verwenden.
+
+---
+
 ## 31.01.2025 - 22:45 - Vollständige AI-Pipeline erfolgreich implementiert und getestet
 
 **Aufgabe:** Finalisierung der zweistufigen AI-Extraktions-Pipeline mit vollständiger Händler-Suche und dynamischer UI.
