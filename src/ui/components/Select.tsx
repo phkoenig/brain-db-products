@@ -158,37 +158,6 @@ const ItemText = React.forwardRef<HTMLSpanElement, ItemTextProps>(
   }
 );
 
-interface GroupProps {
-  label?: string;
-  children?: React.ReactNode;
-  className?: string;
-}
-
-const Group = React.forwardRef<HTMLDivElement, GroupProps>(function Group(
-  { label, children, className, ...otherProps }: GroupProps,
-  ref
-) {
-  return (
-    <div
-      className={SubframeUtils.twClassNames(
-        "flex w-full flex-col items-start",
-        className
-      )}
-      ref={ref}
-      {...otherProps}
-    >
-      {label ? (
-        <div className="px-3 py-1">
-          <span className="text-caption-bold font-caption-bold text-subtext-color">
-            {label}
-          </span>
-        </div>
-      ) : null}
-      {children}
-    </div>
-  );
-});
-
 interface SelectRootProps
   extends React.ComponentProps<typeof SubframeCore.Select.Root> {
   disabled?: boolean;
@@ -301,5 +270,4 @@ export const Select = Object.assign(SelectRoot, {
   Content,
   Trigger,
   ItemText,
-  Group,
 });

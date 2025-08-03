@@ -21,8 +21,8 @@ import { useCaptures } from "@/hooks/useCaptures";
 import { useProducts } from "@/hooks/useProducts";
 import { useCaptureForm } from "@/hooks/useCaptureForm";
 import { SPALTEN_FELDER } from "@/lib/extraction/constants";
-import { MultiSelectWithSearch } from "@/ui/components/MultiSelectWithSearch";
 import { Capture } from "@/types/captures";
+import { useSearchParams } from "next/navigation";
 
 // Hilfsfunktion für deutsche Preisformatierung
 const formatGermanPrice = (price: string | number): string => {
@@ -91,6 +91,9 @@ const debugLog = (message: string, data?: any) => {
 };
 
 function Extractor() {
+  const searchParams = useSearchParams();
+  const productIdFromUrl = searchParams.get('id');
+  
   const [spaltenProgress, setSpaltenProgress] = useState({
     produkt: 0,
     parameter: 0,
@@ -110,6 +113,7 @@ function Extractor() {
 
   const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
   const [currentProductId, setCurrentProductId] = useState<string | null>(null);
+  const [currentCapture, setCurrentCapture] = useState<Capture | null>(null);
   const [extractedData, setExtractedData] = useState({
     produkt: {},
     parameter: {},
@@ -213,6 +217,95 @@ function Extractor() {
         setExtractionLog((prev) => prev + `\n✅ ALLE DATEN ERFOLGREICH IN DATENBANK GESPEICHERT!\n`);
         setExtractionLog((prev) => prev + `📊 Produkt-ID: ${result.productId}\n`);
         setExtractionLog((prev) => prev + `🎯 Operation: ${result.operation}\n`);
+
+        // Debug: Prüfe currentCapture Status
+        setExtractionLog((prev) => prev + `\n🔍 DEBUG: currentCapture Status\n`);
+        setExtractionLog((prev) => prev + `📋 currentCapture vorhanden: ${currentCapture ? 'JA' : 'NEIN'}\n`);
+        if (currentCapture) {
+          setExtractionLog((prev) => prev + `📋 currentCapture.id: ${currentCapture.id}\n`);
+          setExtractionLog((prev) => prev + `📋 currentCapture.url: ${currentCapture.url || 'Keine URL'}\n`);
+          setExtractionLog((prev) => prev + `📋 currentCapture.screenshot_url: ${currentCapture.screenshot_url ? 'Vorhanden' : 'Fehlt'}\n`);
+          setExtractionLog((prev) => prev + `📋 currentCapture.thumbnail_url: ${currentCapture.thumbnail_url ? 'Vorhanden' : 'Fehlt'}\n`);
+        } else {
+          setExtractionLog((prev) => prev + `❌ currentCapture ist null/undefined - Bildübertragung wird übersprungen!\n`);
+        }
+
+        // Transfer images from capture to product-files bucket
+        if (currentCapture?.id) {
+          setExtractionLog((prev) => prev + `\n🖼️ STARTE BILDÜBERTRAGUNG...\n`);
+          setExtractionLog((prev) => prev + `📋 Capture ID: ${currentCapture.id}\n`);
+          setExtractionLog((prev) => prev + `📋 Product ID: ${result.productId}\n`);
+          setExtractionLog((prev) => prev + `📋 Current URL: ${currentUrl}\n`);
+          
+          // Debug: Check if capture has image URLs
+          if (currentCapture.screenshot_url) {
+            setExtractionLog((prev) => prev + `📸 Screenshot URL verfügbar: ${currentCapture.screenshot_url.substring(0, 50)}...\n`);
+          } else {
+            setExtractionLog((prev) => prev + `❌ Screenshot URL fehlt in Capture\n`);
+          }
+          
+          if (currentCapture.thumbnail_url) {
+            setExtractionLog((prev) => prev + `🖼️ Thumbnail URL verfügbar: ${currentCapture.thumbnail_url.substring(0, 50)}...\n`);
+          } else {
+            setExtractionLog((prev) => prev + `❌ Thumbnail URL fehlt in Capture\n`);
+          }
+          
+          try {
+            setExtractionLog((prev) => prev + `🔄 Sende API-Request an /api/products/transfer-images...\n`);
+            
+            const imageTransferResponse = await fetch('/api/products/transfer-images', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                productId: result.productId,
+                captureId: currentCapture.id,
+                url: currentUrl
+              }),
+            });
+
+            setExtractionLog((prev) => prev + `📡 API Response Status: ${imageTransferResponse.status}\n`);
+
+            if (imageTransferResponse.ok) {
+              const transferResult = await imageTransferResponse.json();
+              setExtractionLog((prev) => prev + `✅ BILDER ERFOLGREICH ÜBERTRAGEN!\n`);
+              setExtractionLog((prev) => prev + `📊 Übertragene Bilder: ${Object.keys(transferResult.uploadedImages).length}\n`);
+              setExtractionLog((prev) => prev + `📸 Screenshot: ${transferResult.uploadedImages.screenshot_path ? '✅' : '❌'}\n`);
+              setExtractionLog((prev) => prev + `🖼️ Thumbnail: ${transferResult.uploadedImages.thumbnail_path ? '✅' : '❌'}\n`);
+              if (transferResult.uploadedImages.screenshot_path) {
+                setExtractionLog((prev) => prev + `🔗 Screenshot URL: ${transferResult.uploadedImages.screenshot_path}\n`);
+              }
+              if (transferResult.uploadedImages.thumbnail_path) {
+                setExtractionLog((prev) => prev + `🔗 Thumbnail URL: ${transferResult.uploadedImages.thumbnail_path}\n`);
+              }
+              // Debug-Infos anzeigen
+              if (transferResult.debug) {
+                setExtractionLog((prev) => prev +
+                  `\n--- DEBUG API ---\n` +
+                  `Angeforderte Capture-ID: ${transferResult.debug.requestedCaptureId}\n` +
+                  `Geladene Capture-ID: ${transferResult.debug.loadedCaptureId}\n` +
+                  `Screenshot-URL (Anfang): ${transferResult.debug.screenshotUrlStart}\n` +
+                  `Thumbnail-URL (Anfang): ${transferResult.debug.thumbnailUrlStart}\n` +
+                  `created_at: ${transferResult.debug.createdAt}\n`
+                );
+              }
+            } else {
+              const errorData = await imageTransferResponse.json();
+              setExtractionLog((prev) => prev + `⚠️ BILDÜBERTRAGUNG FEHLGESCHLAGEN: ${errorData.error}\n`);
+              if (errorData.details) {
+                setExtractionLog((prev) => prev + `📝 Details: ${errorData.details}\n`);
+              }
+            }
+          } catch (transferError) {
+            setExtractionLog((prev) => prev + `⚠️ BILDÜBERTRAGUNG FEHLER: ${transferError instanceof Error ? transferError.message : 'Unbekannter Fehler'}\n`);
+            setExtractionLog((prev) => prev + `📝 Error Type: ${transferError instanceof Error ? transferError.constructor.name : typeof transferError}\n`);
+          }
+        } else {
+          setExtractionLog((prev) => prev + `\nℹ️ Keine Capture-Daten für Bildübertragung verfügbar\n`);
+          setExtractionLog((prev) => prev + `📋 Current Capture: ${currentCapture ? 'Vorhanden' : 'Nicht vorhanden'}\n`);
+          if (currentCapture) {
+            setExtractionLog((prev) => prev + `📋 Capture ID: ${currentCapture.id || 'Keine ID'}\n`);
+          }
+        }
       } else {
         const errorText = await response.text();
         console.error('❌ Fehler beim Speichern aller Daten:', errorText);
@@ -222,7 +315,7 @@ function Extractor() {
       console.error('❌ Save All Error:', error);
       setExtractionLog((prev) => prev + `\n❌ FEHLER BEIM SPEICHERN: ${error instanceof Error ? error.message : String(error)}\n`);
     }
-  }, [currentProductId, extractedData, currentUrl]);
+  }, [currentProductId, extractedData, currentUrl, currentCapture]);
 
   // Überwache den Progress aller Spalten und speichere am Ende
   useEffect(() => {
@@ -260,7 +353,6 @@ function Extractor() {
   const { loadCaptureById } = useCaptures();
   const { createProduct, loading: productLoading } = useProducts();
   const { validateForm, toProductData } = useCaptureForm();
-  const [currentCapture, setCurrentCapture] = useState<Capture | null>(null);
   const [captureLoading, setCaptureLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -275,14 +367,7 @@ function Extractor() {
   const [showAnalysisTable, setShowAnalysisTable] = useState(false);
   const [selectedValues, setSelectedValues] = useState<{[key: string]: any}>({});
 
-  // Transform categories for MultiSelectWithSearch
-  const multiSelectOptions = useMemo(() => {
-    return categories.map(category => ({
-      id: category.id,
-      label: category.label,
-      group: category.main_category
-    }));
-  }, [categories]);
+
 
   // Helper function to update form field and recalculate progress
   const handleFormChange = (field: string, value: any) => {
@@ -1336,7 +1421,7 @@ function Extractor() {
       const productData = toProductData();
       
       // Add current URL and timestamp
-      productData.source_url = currentUrl;
+      productData.source_url = currentUrl || undefined;
       productData.source_type = formData.erfassung_erfassung_fuer || 'Deutschland';
       productData.erfassung_erfassungsdatum = new Date().toISOString();
       productData.erfassung_quell_url = currentUrl;
@@ -1345,11 +1430,102 @@ function Extractor() {
       const newProduct = await createProduct(productData);
       
       if (newProduct) {
-        setSaveSuccess(true);
         setExtractionLog((prev) => prev + `\n✅ PRODUKT ERFOLGREICH GESPEICHERT!\n`);
         setExtractionLog((prev) => prev + `📄 Product ID: ${newProduct.id}\n`);
         setExtractionLog((prev) => prev + `🏷️ Name: ${newProduct.produkt_name_modell || 'Unbekannt'}\n`);
-        setExtractionLog((prev) => prev + `🏭 Hersteller: ${newProduct.produkt_hersteller || 'Unbekannt'}\n\n`);
+        setExtractionLog((prev) => prev + `🏭 Hersteller: ${newProduct.produkt_hersteller || 'Unbekannt'}\n`);
+        
+        // Debug: Prüfe currentCapture Status
+        setExtractionLog((prev) => prev + `\n🔍 DEBUG: currentCapture Status\n`);
+        setExtractionLog((prev) => prev + `📋 currentCapture vorhanden: ${currentCapture ? 'JA' : 'NEIN'}\n`);
+        if (currentCapture) {
+          setExtractionLog((prev) => prev + `📋 currentCapture.id: ${currentCapture.id}\n`);
+          setExtractionLog((prev) => prev + `📋 currentCapture.url: ${currentCapture.url || 'Keine URL'}\n`);
+          setExtractionLog((prev) => prev + `📋 currentCapture.screenshot_url: ${currentCapture.screenshot_url ? 'Vorhanden' : 'Fehlt'}\n`);
+          setExtractionLog((prev) => prev + `📋 currentCapture.thumbnail_url: ${currentCapture.thumbnail_url ? 'Vorhanden' : 'Fehlt'}\n`);
+        } else {
+          setExtractionLog((prev) => prev + `❌ currentCapture ist null/undefined - Bildübertragung wird übersprungen!\n`);
+        }
+        
+        // Transfer images from capture to product-files bucket
+        if (currentCapture?.id) {
+          setExtractionLog((prev) => prev + `\n🖼️ STARTE BILDÜBERTRAGUNG...\n`);
+          setExtractionLog((prev) => prev + `📋 Capture ID: ${currentCapture.id}\n`);
+          setExtractionLog((prev) => prev + `📋 Product ID: ${newProduct.id}\n`);
+          setExtractionLog((prev) => prev + `📋 Current URL: ${currentUrl}\n`);
+          
+          // Debug: Check if capture has image URLs
+          if (currentCapture.screenshot_url) {
+            setExtractionLog((prev) => prev + `📸 Screenshot URL verfügbar: ${currentCapture.screenshot_url.substring(0, 50)}...\n`);
+          } else {
+            setExtractionLog((prev) => prev + `❌ Screenshot URL fehlt in Capture\n`);
+          }
+          
+          if (currentCapture.thumbnail_url) {
+            setExtractionLog((prev) => prev + `🖼️ Thumbnail URL verfügbar: ${currentCapture.thumbnail_url.substring(0, 50)}...\n`);
+          } else {
+            setExtractionLog((prev) => prev + `❌ Thumbnail URL fehlt in Capture\n`);
+          }
+          
+          try {
+            setExtractionLog((prev) => prev + `🔄 Sende API-Request an /api/products/transfer-images...\n`);
+            
+            const imageTransferResponse = await fetch('/api/products/transfer-images', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                productId: newProduct.id,
+                captureId: currentCapture.id,
+                url: currentUrl
+              }),
+            });
+
+            setExtractionLog((prev) => prev + `📡 API Response Status: ${imageTransferResponse.status}\n`);
+
+            if (imageTransferResponse.ok) {
+              const transferResult = await imageTransferResponse.json();
+              setExtractionLog((prev) => prev + `✅ BILDER ERFOLGREICH ÜBERTRAGEN!\n`);
+              setExtractionLog((prev) => prev + `📊 Übertragene Bilder: ${Object.keys(transferResult.uploadedImages).length}\n`);
+              setExtractionLog((prev) => prev + `📸 Screenshot: ${transferResult.uploadedImages.screenshot_path ? '✅' : '❌'}\n`);
+              setExtractionLog((prev) => prev + `🖼️ Thumbnail: ${transferResult.uploadedImages.thumbnail_path ? '✅' : '❌'}\n`);
+              if (transferResult.uploadedImages.screenshot_path) {
+                setExtractionLog((prev) => prev + `🔗 Screenshot URL: ${transferResult.uploadedImages.screenshot_path}\n`);
+              }
+              if (transferResult.uploadedImages.thumbnail_path) {
+                setExtractionLog((prev) => prev + `🔗 Thumbnail URL: ${transferResult.uploadedImages.thumbnail_path}\n`);
+              }
+              // Debug-Infos anzeigen
+              if (transferResult.debug) {
+                setExtractionLog((prev) => prev +
+                  `\n--- DEBUG API ---\n` +
+                  `Angeforderte Capture-ID: ${transferResult.debug.requestedCaptureId}\n` +
+                  `Geladene Capture-ID: ${transferResult.debug.loadedCaptureId}\n` +
+                  `Screenshot-URL (Anfang): ${transferResult.debug.screenshotUrlStart}\n` +
+                  `Thumbnail-URL (Anfang): ${transferResult.debug.thumbnailUrlStart}\n` +
+                  `created_at: ${transferResult.debug.createdAt}\n`
+                );
+              }
+            } else {
+              const errorData = await imageTransferResponse.json();
+              setExtractionLog((prev) => prev + `⚠️ BILDÜBERTRAGUNG FEHLGESCHLAGEN: ${errorData.error}\n`);
+              if (errorData.details) {
+                setExtractionLog((prev) => prev + `📝 Details: ${errorData.details}\n`);
+              }
+            }
+          } catch (transferError) {
+            setExtractionLog((prev) => prev + `⚠️ BILDÜBERTRAGUNG FEHLER: ${transferError instanceof Error ? transferError.message : 'Unbekannter Fehler'}\n`);
+            setExtractionLog((prev) => prev + `📝 Error Type: ${transferError instanceof Error ? transferError.constructor.name : typeof transferError}\n`);
+          }
+        } else {
+          setExtractionLog((prev) => prev + `\nℹ️ Keine Capture-Daten für Bildübertragung verfügbar\n`);
+          setExtractionLog((prev) => prev + `📋 Current Capture: ${currentCapture ? 'Vorhanden' : 'Nicht vorhanden'}\n`);
+          if (currentCapture) {
+            setExtractionLog((prev) => prev + `📋 Capture ID: ${currentCapture.id || 'Keine ID'}\n`);
+          }
+        }
+        
+        setExtractionLog((prev) => prev + `\n`);
+        setSaveSuccess(true);
         
         // Auto-clear success message after 5 seconds
         setTimeout(() => setSaveSuccess(false), 5000);
@@ -1362,7 +1538,7 @@ function Extractor() {
       setSaveError(errorMessage);
       setExtractionLog((prev) => prev + `\n❌ SPEICHER-FEHLER: ${errorMessage}\n`);
     }
-  }, [formData, currentUrl, validateForm, toProductData, createProduct]);
+  }, [formData, currentUrl, currentCapture, validateForm, toProductData, createProduct]);
 
   // Screenshot Zoom Handlers
   const openImageZoom = useCallback((imageUrl: string) => {
@@ -1616,17 +1792,60 @@ function Extractor() {
   }, [selectedValues, updateAllProgress]);
 
   useEffect(() => {
+    console.log('🔍 DEBUG: useEffect loadCaptureData wird ausgeführt');
     const loadCaptureData = async () => {
       const params = new URLSearchParams(window.location.search);
       const captureId = params.get('capture_id');
       const url = params.get('url');
       
-      // If capture_id is provided, load from database
-      if (captureId) {
+      // Debug: Prüfe URL-Parameter
+      console.log('🔍 DEBUG: URL-Parameter');
+      console.log('  captureId:', captureId);
+      console.log('  productIdFromUrl:', productIdFromUrl);
+      console.log('  url:', url);
+      
+      // If product_id is provided, load from database
+      if (productIdFromUrl) {
         setCaptureLoading(true);
         try {
+          const { getProduct } = useProducts();
+          const product = await getProduct(productIdFromUrl);
+          if (product) {
+            setCurrentProductId(productIdFromUrl);
+            setFormData(product);
+            setCurrentUrl(product.erfassung_quell_url || '');
+            handleFormChange('erfassung_quell_url', product.erfassung_quell_url || '');
+            
+            // Set capture date if available
+            if (product.erfassung_erfassungsdatum) {
+              handleFormChange('erfassung_erfassungsdatum', product.erfassung_erfassungsdatum);
+            } else {
+              handleFormChange('erfassung_erfassungsdatum', new Date().toLocaleString('de-DE'));
+            }
+          }
+        } catch (error) {
+          console.error('Error loading product:', error);
+        } finally {
+          setCaptureLoading(false);
+        }
+      }
+      // If capture_id is provided, load from database
+      else if (captureId) {
+        setCaptureLoading(true);
+        try {
+          console.log('🔍 DEBUG: Lade Capture mit ID:', parseInt(captureId));
           const capture = await loadCaptureById(parseInt(captureId));
+          console.log('🔍 DEBUG: loadCaptureById Ergebnis:', capture);
+          
           if (capture) {
+            console.log('🔍 DEBUG: Capture gefunden, setze currentCapture');
+            console.log('🔍 DEBUG: Capture Daten:', {
+              id: capture.id,
+              url: capture.url,
+              screenshot_url: capture.screenshot_url ? 'Vorhanden' : 'Fehlt',
+              thumbnail_url: capture.thumbnail_url ? 'Vorhanden' : 'Fehlt',
+              created_at: capture.created_at
+            });
             setCurrentCapture(capture);
             setCurrentUrl(capture.url);
             handleFormChange('erfassung_quell_url', capture.url);
@@ -1636,6 +1855,8 @@ function Extractor() {
               const captureDate = new Date(capture.created_at).toLocaleString('de-DE');
               handleFormChange('erfassung_erfassungsdatum', captureDate);
             }
+          } else {
+            console.log('🔍 DEBUG: Capture NICHT gefunden für ID:', captureId);
           }
         } catch (error) {
           console.error('Error loading capture:', error);
@@ -1656,7 +1877,7 @@ function Extractor() {
     };
 
     loadCaptureData();
-  }, [loadCaptureById]);
+  }, [loadCaptureById, productIdFromUrl]);
 
   return (
     <DefaultPageLayout>
@@ -1701,16 +1922,20 @@ function Extractor() {
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
                   {"Kategorie"}
                 </span>
-                <MultiSelectWithSearch
+                <Select
                   className="w-full"
                   variant="filled"
-                  options={multiSelectOptions}
-                  selectedValues={formData.produkt_kategorie}
-                  onSelectionChange={(values) => handleFormChange('produkt_kategorie', values)}
-                  placeholder="Kategorien auswählen..."
-                  searchPlaceholder="Kategorien durchsuchen..."
+                  value={formData.produkt_kategorie?.[0] || ''}
+                  onValueChange={(value) => handleFormChange('produkt_kategorie', [value])}
                   disabled={categoriesLoading}
-                />
+                  placeholder="Kategorie auswählen..."
+                >
+                  {categories.map((category) => (
+                    <Select.Item key={category.id} value={category.id}>
+                      {category.label}
+                    </Select.Item>
+                  ))}
+                </Select>
               </div>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">

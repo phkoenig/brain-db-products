@@ -1,3 +1,32 @@
+# BRAIN DB - Entwicklungslogbuch
+
+## 2025-08-03 21:18 - Perplexity API 401 Fehler behoben - KI-Analyse funktioniert wieder
+
+### Aufgaben durchgeführt:
+- **Perplexity API Key erneuert** (Credits nachgekauft)
+- **401 Unauthorized Fehler behoben** - API funktioniert wieder
+- **KI-Analyse getestet** - erfolgreich Händler-Daten extrahiert
+- **Debug-Logging hinzugefügt** für bessere Fehlerdiagnose
+
+### Schwierigkeiten und Lösungen:
+- **Problem:** Perplexity API Key war abgelaufen/ungültig (401 Unauthorized)
+- **Lösung:** Neuen API Key von perplexity.ai geholt und Credits nachgekauft
+- **Ergebnis:** KI-Analyse extrahiert erfolgreich Händler-Daten (Welter und Welter, ILVE, Winnings)
+
+### Erkannte Best Practices:
+- **API Key Management:** Regelmäßige Überprüfung der API Keys und Credits
+- **Error Handling:** 401 Fehler sind oft API Key/Authorization Probleme
+- **Debug-Logging:** Terminal-Logs sind entscheidend für Backend-Debugging
+- **Hybrid-Debugging:** Simple Browser + Terminal-Logs für vollständige Diagnose
+
+### Technische Details:
+- **Perplexity API:** Funktioniert wieder mit neuem API Key
+- **Auto-Save:** onBlur Funktionalität funktioniert korrekt
+- **Händler-Extraktion:** Findet erfolgreich alternative Händler und Preise
+- **Server-Logs:** Zeigen erfolgreiche 200 Responses statt 401 Fehler
+
+---
+
 # Logbuch - BRAIN DB Products
 
 ## 2025-08-03 20:45 - Navigation mit Seiten verbinden

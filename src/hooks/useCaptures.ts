@@ -35,16 +35,21 @@ export function useCaptures() {
     setError(null);
     
     try {
+      console.log('🔍 DEBUG: loadCaptureById aufgerufen mit ID:', id);
       const { data, error: supabaseError } = await supabase
         .from('captures')
         .select('*')
         .eq('id', id)
         .single();
 
+      console.log('🔍 DEBUG: Supabase Query Ergebnis:', { data, error: supabaseError });
+
       if (supabaseError) {
+        console.log('🔍 DEBUG: Supabase Fehler:', supabaseError);
         throw new Error(supabaseError.message);
       }
 
+      console.log('🔍 DEBUG: Capture Daten gefunden:', data);
       return data;
     } catch (err) {
       console.error('Error loading capture by ID:', err);
