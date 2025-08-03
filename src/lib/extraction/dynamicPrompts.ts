@@ -97,21 +97,31 @@ Nutze diese Informationen für gezielte Suche nach Dokumenten und Händlern.
       let retailerPrompt = '';
       
       if (buttonType === 'haendler') {
-        // Händler-Button: Suche alternative Händler für das Produkt auf der Quell-URL
+        // Händler-Button: ZUERST Preis auf aktueller URL extrahieren, DANN alternative Händler
         retailerPrompt = `
 SPEZIELLE HÄNDLER-SUCHE (Händler-Seite):
-Suche für das Produkt unter ${url}: alternative Händler und gib Händlernamen, URL zum Produkt beim Händler und Preis als JSON zurück.
+Du analysierst eine Händler-Produktseite: ${url}
 
-FORMAT:
+WICHTIGE AUFGABEN:
+1. PRIMÄRHÄNDLER-PREIS: Extrahiere den Verkaufspreis des Produkts von der angegebenen URL
+2. ALTERNATIVE HÄNDLER: Suche zusätzlich nach anderen Händlern, die das gleiche Produkt anbieten
+
+AUSGABEFORMAT (JSON-Array):
 [
   {
-    "name": "Händlername",
-    "url": "https://händler.de/produkt-url",
-    "price": "180,00 € pro m²"
+    "name": "Händlername von der URL",
+    "url": "${url}",
+    "price": "PREIS VON DER URL (z.B. 5.399,00 €)"
+  },
+  {
+    "name": "Alternative Händler 1",
+    "url": "https://andere-händler.de/produkt-url", 
+    "price": "Preis falls verfügbar"
   }
 ]
 
-Suche nach mindestens 3-5 alternativen Händlern, die das gleiche Produkt anbieten.
+PRIORITÄT: Der Preis von der angegebenen URL ${url} ist KRITISCH wichtig!
+Suche nach mindestens 3-5 zusätzlichen alternativen Händlern.
 `;
       } else if (buttonType === 'hersteller') {
         // Hersteller-Button: Verwende die direkt übergebenen Parameter

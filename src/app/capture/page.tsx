@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { Progress } from "@/ui/components/Progress";
 import { Select } from "@/ui/components/Select";
@@ -18,6 +18,8 @@ import { FeatherLock } from "@subframe/core";
 import { useExtraction } from "@/hooks/useExtraction";
 import { useMaterialCategories } from "@/hooks/useMaterialCategories";
 import { useCaptures } from "@/hooks/useCaptures";
+import { useProducts } from "@/hooks/useProducts";
+import { useCaptureForm } from "@/hooks/useCaptureForm";
 import { SPALTEN_FELDER } from "@/lib/extraction/constants";
 import { MultiSelectWithSearch } from "@/ui/components/MultiSelectWithSearch";
 import { Capture } from "@/types/captures";
@@ -30,6 +32,14 @@ function Extractor() {
     haendler: 0,
     erfahrung: 0,
     erfassung: 0,
+  });
+
+  // KI-Progress-Status für jede Spalte
+  const [aiProgress, setAiProgress] = useState({
+    produkt: { stage: 'idle', progress: 0 },
+    parameter: { stage: 'idle', progress: 0 },
+    dokumente: { stage: 'idle', progress: 0 },
+    haendler: { stage: 'idle', progress: 0 },
   });
 
   const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
@@ -89,10 +99,14 @@ function Extractor() {
 
   const { categories, loading: categoriesLoading, getGroupedCategories } = useMaterialCategories();
   const { loadCaptureById } = useCaptures();
+  const { createProduct, loading: productLoading } = useProducts();
+  const { validateForm, toProductData } = useCaptureForm();
   const [currentUrl, setCurrentUrl] = useState("");
   const [extractionLog, setExtractionLog] = useState("");
   const [currentCapture, setCurrentCapture] = useState<Capture | null>(null);
   const [captureLoading, setCaptureLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Transform categories for MultiSelectWithSearch
   const multiSelectOptions = useMemo(() => {
@@ -107,7 +121,16 @@ function Extractor() {
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
-      updateAllProgress(newData);
+      
+      // Nur für ERFAHRUNG-Felder Progress berechnen (AI-Spalten verwenden exklusiv AI-Progress)
+      const erfahrungFields = SPALTEN_FELDER.erfahrung || [];
+      if (erfahrungFields.includes(field)) {
+        console.log(`📝 User input in Erfahrung field: ${field} → updating progress`);
+        updateAllProgress(newData, true); // Preserve AI progress, nur Erfahrung neu berechnen
+      } else {
+        console.log(`📝 User input in non-Erfahrung field: ${field} → no progress update`);
+      }
+      
       return newData;
     });
   };
@@ -137,19 +160,196 @@ function Extractor() {
     });
   };
 
-  const updateProgress = (fields: string[], data: any) => {
+  // KI-Progress-Update-Funktionen
+  const updateAiProgress = (spalte: string, stage: string, progress?: number) => {
+    console.log(`🔥🔥🔥 AI-Progress Update CALLED: ${spalte} → ${stage} (${progress}%)`);
+    
+    setAiProgress(prev => {
+      console.log(`🔥 setAiProgress BEFORE:`, prev);
+      const newAiProgress = {
+        ...prev,
+        [spalte]: { 
+          stage, 
+          progress: progress !== undefined ? progress : prev[spalte as keyof typeof prev]?.progress || 0 
+        }
+      };
+      console.log(`🔥 setAiProgress AFTER:`, newAiProgress);
+      return newAiProgress;
+    });
+    
+    // Progress auch direkt in UI aktualisieren - ABER NUR für AI-Spalten
+    if (progress !== undefined && ['produkt', 'parameter', 'dokumente', 'haendler'].includes(spalte)) {
+      console.log(`🔥🔥 setSpaltenProgress WILL BE CALLED for ${spalte} with ${progress}%`);
+      setSpaltenProgress(prevSpalten => {
+        console.log(`🔥 setSpaltenProgress BEFORE:`, prevSpalten);
+        const newProgress = {
+          ...prevSpalten,
+          [spalte]: progress
+        };
+        
+        // ERFASSUNG neu berechnen wenn AI-Spalte 100% erreicht
+        if (progress >= 100) {
+          const completedSpalten = [];
+          if (newProgress.produkt >= 100) completedSpalten.push('produkt');
+          if (newProgress.parameter >= 100) completedSpalten.push('parameter');
+          if (newProgress.dokumente >= 100) completedSpalten.push('dokumente');
+          if (newProgress.haendler >= 100) completedSpalten.push('haendler');
+          newProgress.erfassung = completedSpalten.length * 25;
+          
+          console.log(`🎯 AI-Spalte ${spalte} erreicht 100% → Erfassung jetzt ${newProgress.erfassung}% (${completedSpalten.length}/4 completed)`);
+        }
+        
+        console.log(`🔥 setSpaltenProgress AFTER:`, newProgress);
+        return newProgress;
+      });
+    } else {
+      console.log(`🔥❌ setSpaltenProgress NOT CALLED: progress=${progress}, spalte=${spalte}`);
+    }
+  };
+
+  // Sanfte Progress-Animation während des Wartens mit Stopp-Mechanismus
+  const animationTimers = useRef<{ [key: string]: NodeJS.Timeout[] }>({});
+
+  const animateProgressWhileWaiting = (spalten: string[], startProgress: number, maxProgress: number, duration: number = 3000) => {
+    const steps = 20;
+    const stepDuration = duration / steps;
+    const progressIncrement = (maxProgress - startProgress) / steps;
+    
+    let currentStep = 0;
+    
+    const animate = () => {
+      if (currentStep < steps) {
+        const currentProgress = startProgress + (progressIncrement * currentStep);
+        spalten.forEach(spalte => {
+          // Nur animieren wenn noch im 'waiting' Zustand
+          setAiProgress(prev => {
+            if (prev[spalte as keyof typeof prev]?.stage === 'waiting') {
+              const newProgress = Math.min(currentProgress, maxProgress);
+              
+              // Direkt Progress Bar aktualisieren
+              setSpaltenProgress(prevSpalten => ({
+                ...prevSpalten,
+                [spalte]: newProgress
+              }));
+              
+              return {
+                ...prev,
+                [spalte]: { 
+                  stage: 'waiting', 
+                  progress: newProgress
+                }
+              };
+            }
+            return prev;
+          });
+        });
+        currentStep++;
+        
+        const timer = setTimeout(animate, stepDuration);
+        spalten.forEach(spalte => {
+          if (!animationTimers.current[spalte]) animationTimers.current[spalte] = [];
+          animationTimers.current[spalte].push(timer);
+        });
+      }
+    };
+    
+    animate();
+  };
+
+  const stopAnimation = (spalte: string) => {
+    console.log(`🛑 Stopping animation for ${spalte}`);
+    if (animationTimers.current[spalte]) {
+      animationTimers.current[spalte].forEach(timer => clearTimeout(timer));
+      animationTimers.current[spalte] = [];
+      console.log(`🛑 Cleared ${animationTimers.current[spalte].length} timers for ${spalte}`);
+    }
+  };
+
+  const resetAllProgress = () => {
+    console.log('🔄 COMPLETE RESET: Stopping animations and resetting progress');
+    
+    // Alle Animationen stoppen
+    ['produkt', 'parameter', 'dokumente', 'haendler'].forEach(spalte => {
+      stopAnimation(spalte);
+    });
+    
+    // ZUERST KI-Progress zurücksetzen
+    setAiProgress({
+      produkt: { stage: 'idle', progress: 0 },
+      parameter: { stage: 'idle', progress: 0 },
+      dokumente: { stage: 'idle', progress: 0 },
+      haendler: { stage: 'idle', progress: 0 },
+    });
+    
+    // DANN alle Progress Bars auf 0% setzen (und dort halten!)
+    setSpaltenProgress({
+      produkt: 0,
+      parameter: 0,
+      dokumente: 0,
+      haendler: 0,
+      erfahrung: 0,
+      erfassung: 0,
+    });
+    
+    console.log('🔄 Reset completed - all progress bars should be at 0%');
+  };
+
+  // Berechne finalen Progress für eine Spalte - NUR ERFAHRUNG verwendet Field-Progress
+  const getFinalProgress = (spalte: string, data: any, currentProgress?: { [key: string]: number }) => {
+    // Verwende bereits berechneten Progress wenn vorhanden
+    const existingProgress = currentProgress ? currentProgress[spalte] : undefined;
+    if (existingProgress !== undefined) {
+      return existingProgress;
+    }
+    
+    // NUR ERFAHRUNG verwendet Field-based Progress
+    if (spalte === 'erfahrung') {
+      const erfahrungFields = SPALTEN_FELDER.erfahrung;
+      const filledFields = erfahrungFields.filter((field) => !!data[field]);
+      return filledFields.length * 20; // 20% pro Feld
+    }
+    
+    if (spalte === 'erfassung') {
+      // Erfassung wird separat berechnet
+      return 0;
+    }
+    
+    // AI-SPALTEN: NIEMALS field-based progress - nur AI bestimmt Progress!
+    if (['produkt', 'parameter', 'dokumente', 'haendler'].includes(spalte)) {
+      console.log(`📊 AI-Spalte ${spalte}: Field-Progress DEAKTIVIERT - nur AI-Progress zählt`);
+      return 0; // AI-Spalten verwenden exklusiv updateAiProgress()
+    }
+    
+    // Fallback für andere Spalten
+    const fields = SPALTEN_FELDER[spalte as keyof typeof SPALTEN_FELDER];
+    if (!fields) return 0;
     const filledFields = fields.filter((field) => !!data[field]);
     return (filledFields.length / fields.length) * 100;
   };
   
-  const updateAllProgress = (data: any) => {
-    setSpaltenProgress({
-      produkt: updateProgress(SPALTEN_FELDER.produkt, data),
-      parameter: updateProgress(SPALTEN_FELDER.parameter, data),
-      dokumente: updateProgress(SPALTEN_FELDER.dokumente, data),
-      haendler: updateProgress(SPALTEN_FELDER.haendler, data),
-      erfahrung: updateProgress(SPALTEN_FELDER.erfahrung, data),
-      erfassung: updateProgress(SPALTEN_FELDER.erfassung, data),
+  const updateAllProgress = (data: any, preserveAiProgress = false) => {
+    console.log(`📊 UpdateAllProgress called, preserveAi: ${preserveAiProgress}`);
+    
+    setSpaltenProgress(prev => {
+      const newProgress = { ...prev };
+      
+      // NUR ERFAHRUNG verwendet Field-based Progress
+      newProgress.erfahrung = getFinalProgress('erfahrung', data);
+      console.log(`📊 Erfahrung progress: ${newProgress.erfahrung}%`);
+      
+      // AI-SPALTEN: NIEMALS field-based progress - nur AI-Progress zählt!
+      console.log(`📊 AI-Spalten verwenden exklusiv AI-Progress (kein Field-Progress)`);
+      
+      // Erfassung basierend auf aktuellen Progress-Werten berechnen
+      const completedSpalten = [];
+      if (newProgress.produkt >= 100) completedSpalten.push('produkt');
+      if (newProgress.parameter >= 100) completedSpalten.push('parameter');
+      if (newProgress.dokumente >= 100) completedSpalten.push('dokumente');
+      if (newProgress.haendler >= 100) completedSpalten.push('haendler');
+      newProgress.erfassung = completedSpalten.length * 25;
+      
+      console.log(`📊 Final progress: Erfahrung=${newProgress.erfahrung}%, Erfassung=${newProgress.erfassung}%`);
+      return newProgress;
     });
   };
   
@@ -262,7 +462,7 @@ function Extractor() {
         
         setFormData((prev) => {
             const newData = { ...prev, ...updates };
-            updateAllProgress(newData);
+            updateAllProgress(newData, true); // Preserve AI progress during data extraction
             return newData;
         });
         
@@ -280,6 +480,22 @@ function Extractor() {
 
   const handleManufacturerClick = useCallback(async () => {
     if (!currentUrl) return;
+    
+    // Progress Bars zurücksetzen
+    resetAllProgress();
+    
+    // Kurz warten, dann sicherstellen dass Progress wirklich bei 0% ist
+    setTimeout(() => {
+      console.log('🔄 Final reset to 0% for all columns');
+      setSpaltenProgress({
+        produkt: 0,
+        parameter: 0,
+        dokumente: 0,
+        haendler: 0,
+        erfahrung: 0,
+        erfassung: 0,
+      });
+    }, 100);
     
     // Sofort URL-Felder setzen BEVOR KI-Analyse startet
     handleFormChange('erfassung_quell_url', currentUrl);
@@ -303,12 +519,48 @@ function Extractor() {
     // STUFE 1: Genaue Produkt-Identifikation auf Basis der URL
     setExtractionLog((prev) => prev + "🚀 STUFE 1: PRODUKT-IDENTIFIKATION (produkt, parameter)...\n");
     
+    // Produkt/Parameter Progress: SOFORT auf 25% (wie bei Händler)
+    console.log('🚀🚀🚀 CRITICAL: Starting AI Progress for produkt & parameter');
+    console.log('🚀🚀🚀 CALLING updateAiProgress for PRODUKT');
+    updateAiProgress('produkt', 'prompt_sent', 25);
+    console.log('🚀🚀🚀 CALLING updateAiProgress for PARAMETER');
+    updateAiProgress('parameter', 'prompt_sent', 25);
+    console.log('🚀🚀🚀 BOTH updateAiProgress CALLS COMPLETED');
+    
+    // Animation verzögert starten (wie bei Händler)
+    setTimeout(() => {
+      console.log('🎬🎬🎬 ANIMATION TIMEOUT: Starting animation for produkt & parameter (25% → 50%)');
+      console.log('🎬 CALLING updateAiProgress WAITING for PRODUKT');
+      updateAiProgress('produkt', 'waiting', 25);
+      console.log('🎬 CALLING updateAiProgress WAITING for PARAMETER');
+      updateAiProgress('parameter', 'waiting', 25);
+      console.log('🎬 CALLING animateProgressWhileWaiting');
+      animateProgressWhileWaiting(['produkt', 'parameter'], 25, 50, 3000);
+    }, 100);
+    
     const stage1Promises = [
       startSpaltenExtraction("produkt", currentUrl),
       startSpaltenExtraction("parameter", currentUrl)
     ];
     
     const stage1Results = await Promise.all(stage1Promises);
+    
+    // Animation SOFORT und EXPLIZIT stoppen
+    console.log('🛑 STOPPING animations for produkt & parameter');
+    stopAnimation('produkt');
+    stopAnimation('parameter');
+    
+    // Antwort erhalten: 75%
+    console.log('📈 Setting produkt & parameter to 75% (response received)');
+    updateAiProgress('produkt', 'response_received', 75);
+    updateAiProgress('parameter', 'response_received', 75);
+    
+    // Kurz warten, dann auf 100%
+    setTimeout(() => {
+      console.log('✅ Setting produkt & parameter to 100% (completed)');
+      updateAiProgress('produkt', 'completed', 100);
+      updateAiProgress('parameter', 'completed', 100);
+    }, 500);
     
     // Extrahiere Produktdaten direkt aus den KI-Ergebnissen
     let manufacturer = "";
@@ -363,6 +615,10 @@ function Extractor() {
             const documentsResult = await documentsResponse.json();
             console.log('Enhanced Documents Search Result:', documentsResult);
             
+            // Animation stoppen und finale Progress setzen
+            stopAnimation('dokumente');
+            updateAiProgress('dokumente', 'response_received', 75);
+            
             // Verarbeite die Ergebnisse
             if (documentsResult.data) {
               const updates = {};
@@ -378,22 +634,45 @@ function Extractor() {
               
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
-                updateAllProgress(newData);
+                updateAllProgress(newData, true); // Preserve AI progress during enhanced search
                 return newData;
               });
               
               setExtractionLog((prev) => prev + `🎯 Erweiterte Dokumente-Suche: ${Object.keys(updates).length} Dokumente gefunden\n`);
+            } else {
+              // Auch bei leeren Ergebnissen (aber erfolgreicher API-Antwort) Progress auf 100%
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Dokumente-Suche: 0 Dokumente gefunden (leere Antwort)\n`);
             }
+            
+            // Felder befüllt: 100% (egal ob Daten gefunden oder nicht)
+            setTimeout(() => {
+              updateAiProgress('dokumente', 'completed', 100);
+            }, 500);
           } else {
             setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche\n`);
+            // Auch bei Fehlern Progress auf 100% setzen (API-Call abgeschlossen)
+            setTimeout(() => {
+              updateAiProgress('dokumente', 'completed', 100);
+            }, 500);
           }
         } catch (error) {
           console.error('Enhanced Documents Search Error:', error);
           setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
+          // Auch bei Exceptions Progress auf 100% setzen (API-Call abgeschlossen)
+          setTimeout(() => {
+            updateAiProgress('dokumente', 'completed', 100);
+          }, 500);
         }
         
         // PHASE 2B: Erweiterte Händler-Suche mit Web-Suche
         setExtractionLog((prev) => prev + "\n🏪 PHASE 2B: HÄNDLER-SUCHE (mit Web-Suche) - NEUE ERWEITERTE API...\n");
+        
+        // Händler Progress: Prompt gesendet (25%)
+        updateAiProgress('haendler', 'prompt_sent', 25);
+        setTimeout(() => {
+          updateAiProgress('haendler', 'waiting', 25);
+          animateProgressWhileWaiting(['haendler'], 25, 50, 3000);
+        }, 100);
         try {
           const retailersResponse = await fetch("/api/extraction/enhanced-retailers-search", {
             method: "POST",
@@ -410,6 +689,10 @@ function Extractor() {
           if (retailersResponse.ok) {
             const retailersResult = await retailersResponse.json();
             console.log('Enhanced Retailers Search Result:', retailersResult);
+            
+            // Animation stoppen und finale Progress setzen
+            stopAnimation('haendler');
+            updateAiProgress('haendler', 'response_received', 75);
             
             // Logge die Rohdaten für Debugging
             setExtractionLog((prev) => prev + `🔍 ROHDATEN von erweiterter Händler-Suche:\n`);
@@ -438,17 +721,33 @@ function Extractor() {
               
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
-                updateAllProgress(newData);
+                updateAllProgress(newData, true); // Preserve AI progress during enhanced search
                 return newData;
               });
               setExtractionLog((prev) => prev + `🎯 Erweiterte Händler-Suche: ${Object.keys(updates).length} Felder aktualisiert\n`);
+            } else {
+              // Auch bei leeren Ergebnissen (aber erfolgreicher API-Antwort) Progress auf 100%
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Händler-Suche: 0 Felder aktualisiert (leere Antwort)\n`);
             }
+            
+            // Felder befüllt: 100% (egal ob Daten gefunden oder nicht)
+            setTimeout(() => {
+              updateAiProgress('haendler', 'completed', 100);
+            }, 500);
           } else {
             setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche\n`);
+            // Auch bei Fehlern Progress auf 100% setzen (API-Call abgeschlossen)
+            setTimeout(() => {
+              updateAiProgress('haendler', 'completed', 100);
+            }, 500);
           }
         } catch (error) {
           console.error('Enhanced Retailers Search Error:', error);
           setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
+          // Auch bei Exceptions Progress auf 100% setzen (API-Call abgeschlossen)
+          setTimeout(() => {
+            updateAiProgress('haendler', 'completed', 100);
+          }, 500);
         }
         
       } else {
@@ -490,12 +789,64 @@ function Extractor() {
     // STUFE 1: Genaue Produkt-Identifikation auf Basis der URL
     setExtractionLog((prev) => prev + "🚀 STUFE 1: PRODUKT-IDENTIFIKATION (produkt, parameter)...\n");
     
+    // Progress Bars zurücksetzen
+    resetAllProgress();
+    
+    // Kurz warten, dann sicherstellen dass Progress wirklich bei 0% ist
+    setTimeout(() => {
+      console.log('🔄 Final reset to 0% for all columns');
+      setSpaltenProgress({
+        produkt: 0,
+        parameter: 0,
+        dokumente: 0,
+        haendler: 0,
+        erfahrung: 0,
+        erfassung: 0,
+      });
+    }, 100);
+    
+    // Produkt/Parameter Progress: SOFORT auf 25% (wie bei Händler)
+    console.log('🚀🚀🚀 CRITICAL: Starting AI Progress for produkt & parameter (RESELLER)');
+    console.log('🚀🚀🚀 CALLING updateAiProgress for PRODUKT');
+    updateAiProgress('produkt', 'prompt_sent', 25);
+    console.log('🚀🚀🚀 CALLING updateAiProgress for PARAMETER');
+    updateAiProgress('parameter', 'prompt_sent', 25);
+    console.log('🚀🚀🚀 BOTH updateAiProgress CALLS COMPLETED');
+    
+    // Animation verzögert starten (wie bei Händler)
+    setTimeout(() => {
+      console.log('🎬🎬🎬 ANIMATION TIMEOUT: Starting animation for produkt & parameter (25% → 50%)');
+      console.log('🎬 CALLING updateAiProgress WAITING for PRODUKT');
+      updateAiProgress('produkt', 'waiting', 25);
+      console.log('🎬 CALLING updateAiProgress WAITING for PARAMETER');
+      updateAiProgress('parameter', 'waiting', 25);
+      console.log('🎬 CALLING animateProgressWhileWaiting');
+      animateProgressWhileWaiting(['produkt', 'parameter'], 25, 50, 3000);
+    }, 100);
+    
     const stage1Promises = [
       startSpaltenExtraction("produkt", currentUrl),
       startSpaltenExtraction("parameter", currentUrl)
     ];
     
     const stage1Results = await Promise.all(stage1Promises);
+    
+    // Animation SOFORT und EXPLIZIT stoppen
+    console.log('🛑 STOPPING animations for produkt & parameter');
+    stopAnimation('produkt');
+    stopAnimation('parameter');
+    
+    // Antwort erhalten: 75%
+    console.log('📈 Setting produkt & parameter to 75% (response received)');
+    updateAiProgress('produkt', 'response_received', 75);
+    updateAiProgress('parameter', 'response_received', 75);
+    
+    // Kurz warten, dann auf 100%
+    setTimeout(() => {
+      console.log('✅ Setting produkt & parameter to 100% (completed)');
+      updateAiProgress('produkt', 'completed', 100);
+      updateAiProgress('parameter', 'completed', 100);
+    }, 500);
     
     // Extrahiere Produktdaten direkt aus den KI-Ergebnissen
     let manufacturer = "";
@@ -550,6 +901,10 @@ function Extractor() {
             const documentsResult = await documentsResponse.json();
             console.log('Enhanced Documents Search Result:', documentsResult);
             
+            // Animation stoppen und finale Progress setzen
+            stopAnimation('dokumente');
+            updateAiProgress('dokumente', 'response_received', 75);
+            
             // Verarbeite die Ergebnisse
             if (documentsResult.data) {
               const updates = {};
@@ -565,22 +920,45 @@ function Extractor() {
               
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
-                updateAllProgress(newData);
+                updateAllProgress(newData, true); // Preserve AI progress during enhanced search
                 return newData;
               });
               
               setExtractionLog((prev) => prev + `🎯 Erweiterte Dokumente-Suche: ${Object.keys(updates).length} Dokumente gefunden\n`);
+            } else {
+              // Auch bei leeren Ergebnissen (aber erfolgreicher API-Antwort) Progress auf 100%
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Dokumente-Suche: 0 Dokumente gefunden (leere Antwort)\n`);
             }
+            
+            // Felder befüllt: 100% (egal ob Daten gefunden oder nicht)
+            setTimeout(() => {
+              updateAiProgress('dokumente', 'completed', 100);
+            }, 500);
           } else {
             setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche\n`);
+            // Auch bei Fehlern Progress auf 100% setzen (API-Call abgeschlossen)
+            setTimeout(() => {
+              updateAiProgress('dokumente', 'completed', 100);
+            }, 500);
           }
         } catch (error) {
           console.error('Enhanced Documents Search Error:', error);
           setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Dokumente-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
+          // Auch bei Exceptions Progress auf 100% setzen (API-Call abgeschlossen)
+          setTimeout(() => {
+            updateAiProgress('dokumente', 'completed', 100);
+          }, 500);
         }
         
         // PHASE 2B: Erweiterte Händler-Suche mit Web-Suche
         setExtractionLog((prev) => prev + "\n🏪 PHASE 2B: HÄNDLER-SUCHE (mit Web-Suche) - NEUE ERWEITERTE API...\n");
+        
+        // Händler Progress: Prompt gesendet (25%)
+        updateAiProgress('haendler', 'prompt_sent', 25);
+        setTimeout(() => {
+          updateAiProgress('haendler', 'waiting', 25);
+          animateProgressWhileWaiting(['haendler'], 25, 50, 3000);
+        }, 100);
         try {
           const retailersResponse = await fetch("/api/extraction/enhanced-retailers-search", {
             method: "POST",
@@ -597,6 +975,10 @@ function Extractor() {
           if (retailersResponse.ok) {
             const retailersResult = await retailersResponse.json();
             console.log('Enhanced Retailers Search Result:', retailersResult);
+            
+            // Animation stoppen und finale Progress setzen
+            stopAnimation('haendler');
+            updateAiProgress('haendler', 'response_received', 75);
             
             // Logge die Rohdaten für Debugging
             setExtractionLog((prev) => prev + `🔍 ROHDATEN von erweiterter Händler-Suche:\n`);
@@ -631,17 +1013,33 @@ function Extractor() {
               }
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
-                updateAllProgress(newData);
+                updateAllProgress(newData, true); // Preserve AI progress during enhanced search
                 return newData;
               });
               setExtractionLog((prev) => prev + `🎯 Erweiterte Händler-Suche: ${Object.keys(updates).length} Felder aktualisiert\n`);
+            } else {
+              // Auch bei leeren Ergebnissen (aber erfolgreicher API-Antwort) Progress auf 100%
+              setExtractionLog((prev) => prev + `🎯 Erweiterte Händler-Suche: 0 Felder aktualisiert (leere Antwort)\n`);
             }
+            
+            // Felder befüllt: 100% (egal ob Daten gefunden oder nicht)
+            setTimeout(() => {
+              updateAiProgress('haendler', 'completed', 100);
+            }, 500);
           } else {
             setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche\n`);
+            // Auch bei Fehlern Progress auf 100% setzen (API-Call abgeschlossen)
+            setTimeout(() => {
+              updateAiProgress('haendler', 'completed', 100);
+            }, 500);
           }
         } catch (error) {
           console.error('Enhanced Retailers Search Error:', error);
           setExtractionLog((prev) => prev + `❌ Fehler bei erweiterter Händler-Suche: ${error instanceof Error ? error.message : String(error)}\n`);
+          // Auch bei Exceptions Progress auf 100% setzen (API-Call abgeschlossen)
+          setTimeout(() => {
+            updateAiProgress('haendler', 'completed', 100);
+          }, 500);
         }
         
       } else {
@@ -658,6 +1056,50 @@ function Extractor() {
     setExtractionLog((prev) => prev + "\n=== HÄNDLER-ANALYSE ABGESCHLOSSEN ===");
   }, [currentUrl, startSpaltenExtraction]);
 
+  // Save to Database Function
+  const handleSaveToDatabase = useCallback(async () => {
+    setSaveSuccess(false);
+    setSaveError(null);
+    
+    try {
+      // Validate form data
+      const { isValid, errors } = validateForm();
+      if (!isValid) {
+        setSaveError(`Validierungsfehler: ${errors.join(', ')}`);
+        return;
+      }
+
+      // Convert form data to database format
+      const productData = toProductData();
+      
+      // Add current URL and timestamp
+      productData.source_url = currentUrl;
+      productData.source_type = formData.erfassung_erfassung_fuer || 'Deutschland';
+      productData.erfassung_erfassungsdatum = new Date().toISOString();
+      productData.erfassung_quell_url = currentUrl;
+      
+      // Save to database
+      const newProduct = await createProduct(productData);
+      
+      if (newProduct) {
+        setSaveSuccess(true);
+        setExtractionLog((prev) => prev + `\n✅ PRODUKT ERFOLGREICH GESPEICHERT!\n`);
+        setExtractionLog((prev) => prev + `📄 Product ID: ${newProduct.id}\n`);
+        setExtractionLog((prev) => prev + `🏷️ Name: ${newProduct.produkt_name_modell || 'Unbekannt'}\n`);
+        setExtractionLog((prev) => prev + `🏭 Hersteller: ${newProduct.produkt_hersteller || 'Unbekannt'}\n\n`);
+        
+        // Auto-clear success message after 5 seconds
+        setTimeout(() => setSaveSuccess(false), 5000);
+      } else {
+        setSaveError('Fehler beim Speichern in der Datenbank');
+      }
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      setSaveError(errorMessage);
+      setExtractionLog((prev) => prev + `\n❌ SPEICHER-FEHLER: ${errorMessage}\n`);
+    }
+  }, [formData, currentUrl, validateForm, toProductData, createProduct]);
 
   useEffect(() => {
     const loadCaptureData = async () => {
@@ -1577,11 +2019,11 @@ function Extractor() {
                           <Table.Row key={index}>
                             <Table.Cell>
                               <div className="flex flex-col">
-                                <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-700">
+                                <span className="grow shrink-0 basis-0 text-body font-body text-neutral-700">
                                   {retailer.name}
                                 </span>
                                 {retailer.website && (
-                                  <span className="grow shrink-0 basis-0 whitespace-nowrap text-caption font-caption text-neutral-400">
+                                  <span className="grow shrink-0 basis-0 text-caption font-caption text-neutral-400">
                                     {retailer.website}
                                   </span>
                                 )}
@@ -1589,7 +2031,7 @@ function Extractor() {
                             </Table.Cell>
                             <Table.Cell>
                               <div className="flex flex-col items-end">
-                                <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-700 text-right">
+                                <span className="grow shrink-0 basis-0 text-body font-body text-neutral-700 text-right">
                                   {retailer.price} {retailer.unit && `/ ${retailer.unit}`}
                                 </span>
                                 {retailer.productUrl && (
@@ -1609,7 +2051,7 @@ function Extractor() {
                       ) : (
                         <Table.Row>
                           <Table.Cell colSpan={2}>
-                            <span className="grow shrink-0 basis-0 whitespace-nowrap text-body font-body text-neutral-400 text-center">
+                            <span className="grow shrink-0 basis-0 text-body font-body text-neutral-400 text-center">
                               Keine weiteren Händler gefunden
                             </span>
                           </Table.Cell>

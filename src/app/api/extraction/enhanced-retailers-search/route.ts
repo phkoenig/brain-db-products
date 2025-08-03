@@ -50,10 +50,43 @@ export async function POST(request: NextRequest) {
         console.log('Converting simplified array format to field format');
         console.log('🔍 DEBUG: Array length =', result.data.length);
         
-        // Nehme den ersten Händler mit Preis als Haupt-Händler
-        const retailerWithPrice = result.data.find(r => r.price && r.price !== null && r.price !== 'null');
-        const firstRetailer = result.data[0];
-        const mainRetailer = retailerWithPrice || firstRetailer;
+        // WICHTIG: Im HÄNDLER-Modus ist die ursprüngliche URL der Primärhändler!
+        let mainRetailer;
+        
+        if (buttonType === 'haendler') {
+          // Händler-Modus: Der erste KI-Eintrag sollte die ursprüngliche URL + Preis sein
+          // Falls nicht gefunden, fallback zur URL-basierten Logik
+          const urlHostname = new URL(url).hostname;
+          const originalRetailerName = urlHostname.replace('www.', '').split('.')[0];
+          
+          // Suche nach KI-Eintrag mit der ursprünglichen URL
+          const originalUrlEntry = result.data.find(r => 
+            r.url && (r.url === url || r.url.includes(urlHostname))
+          );
+          
+          if (originalUrlEntry) {
+            // Verwende KI-Eintrag mit Preis von der ursprünglichen URL
+            mainRetailer = {
+              name: originalUrlEntry.name || originalRetailerName,
+              url: url,
+              price: originalUrlEntry.price || ''
+            };
+            console.log('🎯 PRIMÄRHÄNDLER mit KI-Preis gefunden:', mainRetailer);
+          } else {
+            // Fallback: URL-basierte Logik ohne Preis
+            mainRetailer = {
+              name: originalRetailerName,
+              url: url,
+              price: ''
+            };
+            console.log('⚠️ PRIMÄRHÄNDLER ohne KI-Preis (Fallback):', mainRetailer);
+          }
+        } else {
+          // Hersteller-Modus: Nehme besten gefundenen Händler als Primärhändler
+          const retailerWithPrice = result.data.find(r => r.price && r.price !== null && r.price !== 'null');
+          const firstRetailer = result.data[0];
+          mainRetailer = retailerWithPrice || firstRetailer;
+        }
         
         console.log('🔍 DEBUG: mainRetailer =', mainRetailer);
         console.log('🔍 DEBUG: buttonType =', buttonType);
@@ -115,9 +148,9 @@ export async function POST(request: NextRequest) {
               haendler_preis_pro_einheit: { value: price || '' }
             };
             
-            // Alle ANDEREN Händler als "weitere Händler" hinzufügen
+            // Alle KI-gefundenen Händler sind alternative Händler (da mainRetailer = ursprüngliche URL)
             const additionalRetailers = result.data
-              .filter(r => r.name !== mainRetailer.name)
+              .filter(r => r.name !== mainRetailer.name)  // Entferne Duplikate des Primärhändlers
               .map(r => ({
                 name: r.name,
                 website: r.url ? new URL(r.url).hostname : '',
