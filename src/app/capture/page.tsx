@@ -111,6 +111,12 @@ function Extractor() {
   // Screenshot Zoom Modal State
   const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
   const [zoomedImageUrl, setZoomedImageUrl] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // AI Analysis Results State
+  const [aiAnalysisResults, setAiAnalysisResults] = useState<any>(null);
+  const [showAnalysisTable, setShowAnalysisTable] = useState(false);
+  const [selectedValues, setSelectedValues] = useState<{[key: string]: any}>({});
 
   // Transform categories for MultiSelectWithSearch
   const multiSelectOptions = useMemo(() => {
@@ -1135,6 +1141,226 @@ function Extractor() {
       document.body.style.overflow = 'unset';
     };
   }, [isImageZoomOpen, closeImageZoom]);
+
+  // KI Screenshot Analysis Function
+  const handleScreenshotAnalysis = useCallback(async () => {
+    if (!currentCapture?.screenshot_url || !currentUrl) {
+      setExtractionLog((prev) => prev + `\n❌ KI-Analyse nicht möglich: Screenshot oder URL fehlt\n`);
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setExtractionLog((prev) => prev + `\n🤖 STARTE KI-SCREENSHOT-ANALYSE...\n`);
+
+    try {
+      // Fetch screenshot as base64
+      const screenshotResponse = await fetch(currentCapture.screenshot_url);
+      const screenshotBlob = await screenshotResponse.blob();
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(screenshotBlob);
+      });
+      
+      // Remove data:image/...;base64, prefix
+      const base64Data = base64.split(',')[1];
+
+      // Determine source type based on current form data or URL
+      const sourceType = formData.erfassung_erfassung_fuer === 'Deutschland' ? 'reseller' : 'manufacturer';
+
+      // Call AI analysis API
+      const analysisResponse = await fetch('/api/extraction/ai-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: currentUrl,
+          screenshotBase64: base64Data,
+          sourceType
+        }),
+      });
+
+      if (!analysisResponse.ok) {
+        throw new Error(`AI analysis failed: ${analysisResponse.statusText}`);
+      }
+
+      const analysisResult = await analysisResponse.json();
+      
+      if (analysisResult.success && analysisResult.data) {
+        // Process extracted data and prepare for user review
+        const analysisResults: any = {};
+        
+        Object.entries(analysisResult.data).forEach(([field, fieldData]: [string, any]) => {
+          if (fieldData && typeof fieldData === 'object' && 'value' in fieldData) {
+            const value = fieldData.value;
+            const confidence = fieldData.confidence || 0.5;
+            
+            if (value && value !== '') {
+              // Map AI fields to form fields
+              const fieldMapping: { [key: string]: string } = {
+                'product_name': 'produkt_name_modell',
+                'manufacturer': 'produkt_hersteller',
+                'price': 'haendler_preis',
+                'description': 'produkt_beschreibung',
+                'specifications': 'parameter_masse'
+              };
+              
+              const formField = fieldMapping[field];
+              if (formField) {
+                const currentValue = formData[formField];
+                const shouldUpdate = shouldUpdateField(formField, currentValue, value, confidence);
+                
+                analysisResults[formField] = {
+                  currentValue,
+                  newValue: value,
+                  confidence,
+                  shouldUpdate,
+                  fieldName: formField
+                };
+                
+                setExtractionLog((prev) => prev + `🔍 KI-Analyse: ${formField} gefunden (Konfidenz: ${(confidence * 100).toFixed(0)}%)\n`);
+              }
+            }
+          }
+        });
+
+        // Show analysis results table for user review
+        if (Object.keys(analysisResults).length > 0) {
+          setAiAnalysisResults(analysisResults);
+          setShowAnalysisTable(true);
+          // Close screenshot modal when analysis table opens
+          setIsImageZoomOpen(false);
+          setExtractionLog((prev) => prev + `📊 KI-ANALYSE ERFOLGREICH: ${Object.keys(analysisResults).length} Felder zur Überprüfung bereit\n`);
+        } else {
+          setExtractionLog((prev) => prev + `⚠️ KI-Analyse: Keine verwertbaren Daten gefunden\n`);
+        }
+      } else {
+        throw new Error('AI analysis returned no data');
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setExtractionLog((prev) => prev + `❌ KI-ANALYSE-FEHLER: ${errorMessage}\n`);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [currentCapture, currentUrl, formData.erfassung_erfassung_fuer, updateAllProgress]);
+
+  // Confidence-based field update decision
+  const shouldUpdateField = useCallback((fieldName: string, currentValue: any, newValue: any, confidence: number): boolean => {
+    // If field is empty, always update
+    if (!currentValue || currentValue === '') {
+      return true;
+    }
+
+    // Field-specific confidence thresholds and rules
+    const fieldRules = {
+      'produkt_name_modell': {
+        minConfidence: 0.7,
+        urlAdvantage: 0.2, // URL extraction gets +20% confidence bonus
+        lengthBonus: 0.1 // Longer names get +10% confidence bonus
+      },
+      'produkt_hersteller': {
+        minConfidence: 0.6,
+        urlAdvantage: 0.15
+      },
+      'haendler_preis': {
+        minConfidence: 0.8,
+        urlAdvantage: 0.25, // URL prices are usually more accurate
+        numericBonus: 0.1 // Numeric values get +10% confidence
+      },
+      'produkt_beschreibung': {
+        minConfidence: 0.6,
+        screenshotAdvantage: 0.2, // Screenshot descriptions are usually more complete
+        lengthBonus: 0.15, // Longer descriptions get +15% confidence
+        structureBonus: 0.1 // Structured text gets +10% confidence
+      },
+      'parameter_masse': {
+        minConfidence: 0.7,
+        screenshotAdvantage: 0.25, // Technical specs better visible in screenshot
+        structureBonus: 0.15
+      }
+    };
+
+    const rules = fieldRules[fieldName as keyof typeof fieldRules];
+    if (!rules) {
+      // Default rule for unknown fields
+      return confidence > 0.6;
+    }
+
+    // Calculate adjusted confidence
+    let adjustedConfidence = confidence;
+
+    // Apply field-specific advantages
+    if (fieldName === 'produkt_beschreibung' || fieldName === 'parameter_masse') {
+      adjustedConfidence += rules.screenshotAdvantage || 0;
+    } else {
+      adjustedConfidence += rules.urlAdvantage || 0;
+    }
+
+    // Apply length bonus for text fields
+    if (fieldName === 'produkt_beschreibung' || fieldName === 'produkt_name_modell') {
+      const currentLength = String(currentValue).length;
+      const newLength = String(newValue).length;
+      
+      if (newLength > currentLength) {
+        adjustedConfidence += rules.lengthBonus || 0;
+      }
+    }
+
+    // Apply numeric bonus for price fields
+    if (fieldName === 'haendler_preis') {
+      const isNumeric = /^\d+([.,]\d+)?$/.test(String(newValue));
+      if (isNumeric) {
+        adjustedConfidence += rules.numericBonus || 0;
+      }
+    }
+
+    // Apply structure bonus for well-formatted text
+    if (fieldName === 'produkt_beschreibung' || fieldName === 'parameter_masse') {
+      const hasStructure = /[•\-\*]|^[A-Z][a-z]+:|^\d+\./.test(String(newValue));
+      if (hasStructure) {
+        adjustedConfidence += rules.structureBonus || 0;
+      }
+    }
+
+    // Cap confidence at 1.0
+    adjustedConfidence = Math.min(adjustedConfidence, 1.0);
+
+    // Decision logic
+    const shouldUpdate = adjustedConfidence >= rules.minConfidence;
+
+    // Log decision details
+    setExtractionLog((prev) => prev + `🔍 Konfidenz-Analyse ${fieldName}: Basis=${(confidence * 100).toFixed(0)}%, Angepasst=${(adjustedConfidence * 100).toFixed(0)}%, Schwellwert=${(rules.minConfidence * 100).toFixed(0)}%, Update=${shouldUpdate ? 'JA' : 'NEIN'}\n`);
+
+    return shouldUpdate;
+  }, []);
+
+  // Handle field selection in analysis table
+  const handleFieldSelection = useCallback((fieldName: string, value: any) => {
+    setSelectedValues((prev) => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  }, []);
+
+  // Close analysis table and apply selected values
+  const closeAnalysisTable = useCallback(() => {
+    // Apply all selected values
+    if (Object.keys(selectedValues).length > 0) {
+      setFormData((prev) => {
+        const newData = { ...prev, ...selectedValues };
+        updateAllProgress(newData, true);
+        return newData;
+      });
+      
+      setExtractionLog((prev) => prev + `✅ ${Object.keys(selectedValues).length} Felder übernommen: ${Object.entries(selectedValues).map(([field, value]) => `${field}="${value}"`).join(', ')}\n`);
+    }
+    
+    setShowAnalysisTable(false);
+    setAiAnalysisResults(null);
+    setSelectedValues({});
+    setExtractionLog((prev) => prev + `📊 KI-Analyse-Tabelle geschlossen\n`);
+  }, [selectedValues, updateAllProgress]);
 
   useEffect(() => {
     const loadCaptureData = async () => {
@@ -2361,6 +2587,25 @@ function Extractor() {
               ✕
             </button>
             
+            {/* KI Analysis Button */}
+            <button
+              className="absolute top-4 left-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all z-10 flex items-center gap-2"
+              onClick={handleScreenshotAnalysis}
+              disabled={isAnalyzing}
+              aria-label="KI Screenshot Analyse"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Analysiere...
+                </>
+              ) : (
+                <>
+                  🤖 KI-Analyse
+                </>
+              )}
+            </button>
+            
             {/* Zoomed Image */}
             <img
               className="max-w-full max-h-full object-contain"
@@ -2374,6 +2619,119 @@ function Extractor() {
             {/* ESC Hint */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm">
               ESC zum Schließen
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Analysis Results Table */}
+      {showAnalysisTable && aiAnalysisResults && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-neutral-border">
+            {/* Header */}
+            <div className="bg-neutral-50 border-b border-neutral-border p-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-neutral-900">🤖 KI-Screenshot-Analyse Ergebnisse</h2>
+              <button
+                onClick={closeAnalysisTable}
+                className="text-neutral-500 hover:text-neutral-700 text-2xl font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Table */}
+            <div className="p-6 overflow-auto max-h-[calc(90vh-140px)]">
+              <div className="mb-6 text-sm text-neutral-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                💡 <strong>Anleitung:</strong> Klicke auf einen Wert (aktuell oder KI-Vorschlag), um ihn auszuwählen. 
+                Ausgewählte Werte werden farblich hervorgehoben. Beim Schließen werden alle ausgewählten Werte übernommen.
+              </div>
+              
+              <div className="grid gap-6">
+                {Object.entries(aiAnalysisResults).map(([fieldName, data]: [string, any]) => {
+                  const isCurrentSelected = selectedValues[fieldName] === data.currentValue;
+                  const isNewSelected = selectedValues[fieldName] === data.newValue;
+                  
+                  return (
+                    <div key={fieldName} className="border border-neutral-border rounded-lg p-4 bg-neutral-50">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-semibold text-neutral-900 capitalize">
+                          {fieldName.replace(/_/g, ' ')}
+                        </h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          data.shouldUpdate 
+                            ? 'bg-green-100 text-green-800 border border-green-200' 
+                            : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        }`}>
+                          Konfidenz: {(data.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Current Value */}
+                        <div>
+                          <div className="text-sm font-medium text-neutral-700 mb-2">Aktueller Wert:</div>
+                          <div 
+                            className={`p-3 border rounded-lg text-sm min-h-[80px] flex items-center cursor-pointer transition-all ${
+                              isCurrentSelected 
+                                ? 'bg-blue-50 border-blue-300 shadow-md' 
+                                : 'bg-white border-neutral-border hover:bg-neutral-50 hover:border-neutral-300'
+                            }`}
+                            onClick={() => handleFieldSelection(fieldName, data.currentValue)}
+                            title="Klicke um diesen Wert auszuwählen"
+                          >
+                            {data.currentValue || (
+                              <span className="text-neutral-400 italic">Leer</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* New Value */}
+                        <div>
+                          <div className="text-sm font-medium text-neutral-700 mb-2">KI-Vorschlag:</div>
+                          <div 
+                            className={`p-3 border rounded-lg text-sm min-h-[80px] flex items-center cursor-pointer transition-all ${
+                              isNewSelected 
+                                ? 'bg-blue-50 border-blue-300 shadow-md' 
+                                : data.shouldUpdate 
+                                  ? 'bg-green-50 border-green-300 hover:bg-green-100' 
+                                  : 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100'
+                            }`}
+                            onClick={() => handleFieldSelection(fieldName, data.newValue)}
+                            title="Klicke um diesen Wert auszuwählen"
+                          >
+                            {data.newValue}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3 text-xs text-neutral-500 flex items-center gap-2">
+                        {data.shouldUpdate 
+                          ? '✅ Empfohlen: KI-Vorschlag ist besser'
+                          : '⚠️ Empfohlen: Aktueller Wert beibehalten'
+                        }
+                        {isCurrentSelected && <span className="text-blue-600">← Ausgewählt</span>}
+                        {isNewSelected && <span className="text-blue-600">← Ausgewählt</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Footer */}
+            <div className="bg-neutral-50 border-t border-neutral-border p-4 flex justify-between items-center">
+              <div className="text-sm text-neutral-600">
+                {Object.keys(selectedValues).length > 0 
+                  ? `${Object.keys(selectedValues).length} Felder ausgewählt`
+                  : 'Keine Felder ausgewählt'
+                }
+              </div>
+              <button
+                onClick={closeAnalysisTable}
+                className="px-6 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors font-medium"
+              >
+                {Object.keys(selectedValues).length > 0 ? 'Übernehmen & Schließen' : 'Schließen'}
+              </button>
             </div>
           </div>
         </div>

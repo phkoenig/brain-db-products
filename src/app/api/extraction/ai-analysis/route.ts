@@ -20,11 +20,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get OpenAI API key from environment
-    const openaiApiKey = process.env.OPENAI_KEY;
+    const openaiApiKey = process.env.OPENAI_API_KEY;
     
     if (!openaiApiKey) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured. Please set OPENAI_KEY in environment variables.' },
+        { error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in environment variables.' },
         { status: 500 }
       );
     }

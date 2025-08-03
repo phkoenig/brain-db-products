@@ -1,5 +1,22 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 02.08.2025 - 14:35 - Screenshot-Zoom-Modal implementiert
+
+**Aufgabe:** Implementierung einer Screenshot-Zoom-Funktion mit Modal-Popup für bessere Benutzerfreundlichkeit.
+
+**Umgesetzt:**
+- ✅ **Modal-System**: Vollbild-Modal mit dunklem Hintergrund und ESC-Schließung
+- ✅ **Click-Handler**: Beide Screenshots (Produktbild + Quell-Screenshot) sind klickbar
+- ✅ **Keyboard-Controls**: ESC-Taste schließt Modal, Body-Scroll wird deaktiviert
+- ✅ **Responsive Design**: Modal passt sich an Viewport-Größe an (95% max)
+- ✅ **UI-Features**: Close-Button, Click-outside-to-close, ESC-Hint
+
+**Korrektur:** Produktbild zeigt jetzt korrektes Thumbnail im Zoom (nicht Screenshot der ganzen Webseite)
+
+**Best Practice erkannt:** Modals sollten immer Keyboard-Controls und Click-outside-to-close haben für bessere UX.
+
+---
+
 ## 02.08.2025 - 14:20 - Händler-Duplikation und Layout-Fixes
 
 **Aufgabe:** Behebung von Händler-Duplikation und Layout-Problemen in der Extraktions-Pipeline.
