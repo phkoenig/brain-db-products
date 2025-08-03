@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 
 export default function Home() {
@@ -18,12 +19,12 @@ export default function Home() {
               <p className="text-gray-600 mb-4">
                 Erfassen Sie neue Produkte mit KI-gestützter Extraktion aus Webseiten
               </p>
-              <a 
+              <Link 
                 href="/capture" 
                 className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
               >
                 Neues Produkt erfassen
-              </a>
+              </Link>
             </div>
             
             <div className="bg-white p-6 rounded-lg shadow-md border">
@@ -31,12 +32,12 @@ export default function Home() {
               <p className="text-gray-600 mb-4">
                 Durchsuchen und verwalten Sie Ihre erfassten Produktdaten
               </p>
-              <a 
+              <Link 
                 href="/database" 
                 className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
               >
                 Datenbank öffnen
-              </a>
+              </Link>
             </div>
           </div>
           
