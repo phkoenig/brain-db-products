@@ -69,6 +69,27 @@ const parsePriceInput = (input: string): string => {
   return cleaned;
 };
 
+// Debug logging function
+const debugLog = (message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] ${message}`;
+  
+  console.log(logMessage, data);
+  
+  // Also log to a debug file (optional)
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('debug_logs', JSON.stringify({
+        timestamp,
+        message,
+        data: data ? JSON.stringify(data) : undefined
+      }));
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }
+};
+
 function Extractor() {
   const [spaltenProgress, setSpaltenProgress] = useState({
     produkt: 0,
@@ -214,18 +235,25 @@ function Extractor() {
 
   // Hilfsfunktion: Extrahierte Daten sowohl im UI als auch für DB-Speicherung setzen
   const updateExtractedData = useCallback((spalte: string, updates: any) => {
+    console.log(`🔍 updateExtractedData called for ${spalte}:`, updates);
+    
     // Aktualisiere UI-Formular
     setFormData((prev) => {
       const newData = { ...prev, ...updates };
+      console.log(`📝 FormData updated:`, newData);
       updateAllProgress(newData, true); // Preserve AI progress during data extraction
       return newData;
     });
 
     // Speichere für DB-Speicherung
-    setExtractedData((prev) => ({
-      ...prev,
-      [spalte]: { ...prev[spalte as keyof typeof prev], ...updates }
-    }));
+    setExtractedData((prev) => {
+      const newExtractedData = {
+        ...prev,
+        [spalte]: { ...prev[spalte as keyof typeof prev], ...updates }
+      };
+      console.log(`💾 ExtractedData updated:`, newExtractedData);
+      return newExtractedData;
+    });
 
     console.log(`📋 Daten für Spalte "${spalte}" zwischengespeichert:`, Object.keys(updates));
   }, []);
@@ -315,12 +343,16 @@ function Extractor() {
   };
 
   // Hilfsfunktion für TextField Props (onChange + onBlur)
-  const createTextFieldProps = (fieldName: string) => ({
-    value: (formData as any)[fieldName] || '',
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleFormChange(fieldName, e.target.value),
-    onBlur: (e: React.FocusEvent<HTMLInputElement>) => handleFieldBlur(fieldName, e.target.value),
-    disabled: lockedFields.has(fieldName)
-  });
+  const createTextFieldProps = (fieldName: string) => {
+    const value = (formData as any)[fieldName] || '';
+    console.log(`🔍 createTextFieldProps for ${fieldName}:`, value);
+    return {
+      value: value,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleFormChange(fieldName, e.target.value),
+      onBlur: (e: React.FocusEvent<HTMLInputElement>) => handleFieldBlur(fieldName, e.target.value),
+      disabled: lockedFields.has(fieldName)
+    };
+  };
 
   // Hilfsfunktion für TextArea Props (onChange + onBlur)
   const createTextAreaProps = (fieldName: string) => ({
@@ -1240,8 +1272,10 @@ function Extractor() {
                 (updates as any).haendler_weitere_haendler_und_preise = allRetailers;
                 setExtractionLog((prev) => prev + `🏪 ${newRetailers.length} weitere Händler gefunden: ${newRetailers.map((r: any) => `${r.name} (${r.price || 'Kein Preis'})`).join(', ')}\n`);
               }
+              console.log(`🔍 Setting formData with updates:`, updates);
               setFormData((prev) => {
                 const newData = { ...prev, ...updates };
+                console.log(`📝 New formData after update:`, newData);
                 updateAllProgress(newData, true); // Preserve AI progress during enhanced search
                 return newData;
               });
