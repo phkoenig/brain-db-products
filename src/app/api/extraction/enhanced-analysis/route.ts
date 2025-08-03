@@ -5,9 +5,9 @@ import { analyzeWithPerplexity } from '@/lib/extraction/perplexityAnalyzer';
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, screenshotBase64, sourceType } = await request.json();
+    const { url, screenshotBase64, sourceType, productId } = await request.json();
 
-    console.log('Enhanced Analysis: Starting analysis for', { url, sourceType });
+    console.log('Enhanced Analysis: Starting analysis for', { url, sourceType, productId });
 
     // Step 1: Load field definitions for dynamic prompts
     const fieldDefinitions = await loadProductFieldDefinitions();
@@ -33,6 +33,11 @@ export async function POST(request: NextRequest) {
     console.log('Enhanced Analysis: Using Perplexity result directly');
     const fusedResult = perplexityResult || {};
     console.log('Enhanced Analysis: Final fusedResult:', JSON.stringify(fusedResult, null, 2));
+    
+    // 🔄 DATEN WERDEN NICHT MEHR AUTOMATISCH GESPEICHERT
+    // Speicherung erfolgt erst am Ende über /api/products/save-all
+    console.log('📋 KI-Analyse-Daten extrahiert, warte auf Speicherung am Ende der Analyse');
+    
     console.log('Enhanced Analysis: Processing complete');
 
     return NextResponse.json({

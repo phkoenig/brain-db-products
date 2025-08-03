@@ -32,20 +32,38 @@ export function useProducts() {
     setLoading(true);
     setError(null);
     
+    console.log('🔧 createProduct: Starte...', productData);
+    console.log('🔧 createProduct: Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('🔧 createProduct: Supabase Key vorhanden:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    
     try {
+      // Prüfe ob Supabase-Client verfügbar ist
+      if (!supabase) {
+        throw new Error('Supabase client is not initialized');
+      }
+      
       const { data, error } = await supabase
         .from('products')
         .insert([productData])
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ createProduct: Supabase error:', error);
+        console.error('❌ createProduct: Error details:', JSON.stringify(error, null, 2));
+        throw error;
+      }
+      
+      console.log('✅ createProduct: Erfolgreich erstellt:', data);
       
       // Add to local state
       setProducts(prev => [data, ...prev]);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('❌ createProduct: Exception:', err);
+      console.error('❌ createProduct: Exception details:', JSON.stringify(err, null, 2));
+      setError(errorMessage);
       return null;
     } finally {
       setLoading(false);

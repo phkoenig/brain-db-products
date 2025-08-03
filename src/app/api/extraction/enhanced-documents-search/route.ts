@@ -4,9 +4,9 @@ import { perplexityAnalyzer } from '@/lib/extraction/perplexityAnalyzer';
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, manufacturer, productName, productCode } = await request.json();
+    const { url, manufacturer, productName, productCode, productId } = await request.json();
     
-    console.log('Enhanced Documents Search:', { url, manufacturer, productName, productCode });
+    console.log('Enhanced Documents Search:', { url, manufacturer, productName, productCode, productId });
     
     // Erstelle erweiterten Prompt mit Hersteller-Kontext
     const basePrompt = await generateDynamicPrompt({ url, spalte: 'dokumente' });
@@ -39,6 +39,10 @@ Zusätzliche Suchbegriffe: "${productName} Datenblatt", "${productCode} technisc
         `${manufacturer} Produktdokumentation ${productName}`
       ].filter(query => query && !query.includes('Unbekannt'))
     });
+
+    // 🔄 DATEN WERDEN NICHT MEHR AUTOMATISCH GESPEICHERT
+    // Speicherung erfolgt erst am Ende über /api/products/save-all
+    console.log('📋 Dokumente-Daten extrahiert, warte auf Speicherung am Ende der Analyse');
 
     return NextResponse.json({
       success: true,

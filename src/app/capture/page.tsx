@@ -43,6 +43,13 @@ function Extractor() {
   });
 
   const [lockedFields, setLockedFields] = useState<Set<string>>(new Set());
+  const [currentProductId, setCurrentProductId] = useState<string | null>(null);
+  const [extractedData, setExtractedData] = useState({
+    produkt: {},
+    parameter: {},
+    dokumente: {},
+    haendler: {}
+  });
   const [formData, setFormData] = useState({
     // PRODUKT-Spalte
     produkt_kategorie: [] as string[],
@@ -98,11 +105,88 @@ function Extractor() {
   });
 
   const { categories, loading: categoriesLoading, getGroupedCategories } = useMaterialCategories();
+
+  // Generiere eine neue productId für jede neue Analyse
+  const generateProductId = useCallback(() => {
+    const newProductId = crypto.randomUUID();
+    setCurrentProductId(newProductId);
+    return newProductId;
+  }, []);
+
+  // State-Definitionen
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [extractionLog, setExtractionLog] = useState("");
+
+  // Speichere alle extrahierten Daten am Ende
+  const saveAllData = useCallback(async () => {
+    if (!currentProductId) {
+      console.error('❌ Keine productId vorhanden für das Speichern');
+      return;
+    }
+
+    try {
+      console.log('💾 Speichere alle extrahierten Daten...');
+      
+      const response = await fetch('/api/products/save-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: currentProductId,
+          produktData: extractedData.produkt,
+          parameterData: extractedData.parameter,
+          dokumenteData: extractedData.dokumente,
+          haendlerData: extractedData.haendler,
+          sourceType: 'manufacturer',
+          sourceUrl: currentUrl
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Alle Daten erfolgreich gespeichert:', result);
+        setExtractionLog((prev) => prev + `\n✅ ALLE DATEN ERFOLGREICH IN DATENBANK GESPEICHERT!\n`);
+        setExtractionLog((prev) => prev + `📊 Produkt-ID: ${result.productId}\n`);
+        setExtractionLog((prev) => prev + `🎯 Operation: ${result.operation}\n`);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Fehler beim Speichern aller Daten:', errorText);
+        setExtractionLog((prev) => prev + `\n❌ FEHLER BEIM SPEICHERN: ${errorText}\n`);
+      }
+    } catch (error) {
+      console.error('❌ Save All Error:', error);
+      setExtractionLog((prev) => prev + `\n❌ FEHLER BEIM SPEICHERN: ${error instanceof Error ? error.message : String(error)}\n`);
+    }
+  }, [currentProductId, extractedData, currentUrl]);
+
+  // Überwache den Progress aller Spalten und speichere am Ende
+  useEffect(() => {
+    const allCompleted = Object.values(aiProgress).every(p => p.progress === 100);
+    if (allCompleted && currentProductId) {
+      console.log('🎯 Alle Spalten abgeschlossen, starte Speicherung...');
+      saveAllData();
+    }
+  }, [aiProgress, currentProductId, saveAllData]);
+
+  // Hilfsfunktion: Extrahierte Daten sowohl im UI als auch für DB-Speicherung setzen
+  const updateExtractedData = useCallback((spalte: string, updates: any) => {
+    // Aktualisiere UI-Formular
+    setFormData((prev) => {
+      const newData = { ...prev, ...updates };
+      updateAllProgress(newData, true); // Preserve AI progress during data extraction
+      return newData;
+    });
+
+    // Speichere für DB-Speicherung
+    setExtractedData((prev) => ({
+      ...prev,
+      [spalte]: { ...prev[spalte as keyof typeof prev], ...updates }
+    }));
+
+    console.log(`📋 Daten für Spalte "${spalte}" zwischengespeichert:`, Object.keys(updates));
+  }, []);
   const { loadCaptureById } = useCaptures();
   const { createProduct, loading: productLoading } = useProducts();
   const { validateForm, toProductData } = useCaptureForm();
-  const [currentUrl, setCurrentUrl] = useState("");
-  const [extractionLog, setExtractionLog] = useState("");
   const [currentCapture, setCurrentCapture] = useState<Capture | null>(null);
   const [captureLoading, setCaptureLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -370,6 +454,9 @@ function Extractor() {
     setExtractionLog((prev) => prev + `\n=== STARTE ${spalte.toUpperCase()}-ANALYSE ===`);
     
     try {
+      // Verwende die aktuelle productId oder generiere eine neue
+      const productId = currentProductId || generateProductId();
+      
       const response = await fetch("/api/extraction/spalten-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -377,6 +464,7 @@ function Extractor() {
           url,
           spalte,
           felder,
+          productId: productId
         }),
       });
 
@@ -470,11 +558,8 @@ function Extractor() {
         
         console.log('Updates für Formular:', updates);
         
-        setFormData((prev) => {
-            const newData = { ...prev, ...updates };
-            updateAllProgress(newData, true); // Preserve AI progress during data extraction
-            return newData;
-        });
+        // Verwende die neue Hilfsfunktion für Zwischenspeicherung
+        updateExtractedData(spalte, updates);
         
         setExtractionLog((prev) => prev + `\n🎯 KI-ANTWORT erhalten - ${Object.keys(updates).length} Felder extrahiert`);
         setExtractionLog((prev) => prev + `\n✅ ${spalte.toUpperCase()}-Analyse abgeschlossen\n`);
@@ -610,6 +695,9 @@ function Extractor() {
         // PHASE 2A: Erweiterte Dokumente-Suche mit Web-Suche
         setExtractionLog((prev) => prev + "\n📄 PHASE 2A: DOKUMENTE-SUCHE (mit Web-Suche)...\n");
         try {
+          // Verwende die aktuelle productId oder generiere eine neue
+          const productId = currentProductId || generateProductId();
+          
           const documentsResponse = await fetch("/api/extraction/enhanced-documents-search", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -617,7 +705,8 @@ function Extractor() {
               url: currentUrl,
               manufacturer,
               productName,
-              productCode
+              productCode,
+              productId: productId
             }),
           });
           
@@ -684,6 +773,9 @@ function Extractor() {
           animateProgressWhileWaiting(['haendler'], 25, 50, 3000);
         }, 100);
         try {
+          // Generiere eine productId für diese Analyse
+          const productId = generateProductId();
+          
           const retailersResponse = await fetch("/api/extraction/enhanced-retailers-search", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -692,7 +784,8 @@ function Extractor() {
               manufacturer,
               productName,
               productCode,
-              buttonType: 'haendler' // Da wir in handleResellerClick sind
+              buttonType: 'haendler', // Da wir in handleResellerClick sind
+              productId: productId
             }),
           });
           
@@ -858,10 +951,12 @@ function Extractor() {
       updateAiProgress('parameter', 'completed', 100);
     }, 500);
     
-    // Extrahiere Produktdaten direkt aus den KI-Ergebnissen
-    let manufacturer = "";
-    let productName = "";
-    let productCode = "";
+    // Extrahiere Produktdaten direkt aus dem aktuellen FormData
+    let manufacturer = formData.produkt_hersteller || "";
+    let productName = formData.produkt_name_modell || "";
+    let productCode = formData.produkt_code_id || "";
+    
+    console.log(`🔍 DEBUG: FormData - manufacturer="${manufacturer}", productName="${productName}", productCode="${productCode}"`);
     
     // Debug: Logge die kompletten stage1Results
     console.log('🔍 DEBUG: stage1Results =', stage1Results);
@@ -896,6 +991,9 @@ function Extractor() {
         // PHASE 2A: Erweiterte Dokumente-Suche mit Web-Suche
         setExtractionLog((prev) => prev + "\n📄 PHASE 2A: DOKUMENTE-SUCHE (mit Web-Suche)...\n");
         try {
+          // Verwende die aktuelle productId oder generiere eine neue
+          const productId = currentProductId || generateProductId();
+          
           const documentsResponse = await fetch("/api/extraction/enhanced-documents-search", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -903,7 +1001,8 @@ function Extractor() {
               url: currentUrl,
               manufacturer,
               productName,
-              productCode
+              productCode,
+              productId: productId
             }),
           });
           
@@ -970,6 +1069,9 @@ function Extractor() {
           animateProgressWhileWaiting(['haendler'], 25, 50, 3000);
         }, 100);
         try {
+          // Verwende die aktuelle productId oder generiere eine neue
+          const productId = currentProductId || generateProductId();
+          
           const retailersResponse = await fetch("/api/extraction/enhanced-retailers-search", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -978,7 +1080,8 @@ function Extractor() {
               manufacturer,
               productName,
               productCode,
-              buttonType: 'haendler' // Da wir in handleResellerClick sind
+              buttonType: 'haendler', // Da wir in handleResellerClick sind
+              productId: productId
             }),
           });
           

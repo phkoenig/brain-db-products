@@ -4,9 +4,12 @@ import { perplexityAnalyzer } from '@/lib/extraction/perplexityAnalyzer';
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, manufacturer, productName, productCode, buttonType } = await request.json();
+    const { url, manufacturer, productName, productCode, buttonType, productId } = await request.json();
     
-    console.log('Enhanced Retailers Search Request:', { url, manufacturer, productName, productCode, buttonType });
+    // 🆕 Automatische productId-Generierung falls nicht vorhanden
+    const finalProductId = productId || crypto.randomUUID();
+    
+    console.log('Enhanced Retailers Search Request:', { url, manufacturer, productName, productCode, buttonType, productId: finalProductId });
     
     // Generiere erweiterten Prompt mit Produkt-Kontext und Button-Typ
     const enhancedPrompt = await generateDynamicPrompt({ 
@@ -41,14 +44,14 @@ export async function POST(request: NextRequest) {
     // Konvertiere Perplexity-Antwort in unser erwartetes Format
     let convertedData = {};
     
-    console.log('🔍 DEBUG: result.data type =', typeof result.data);
-    console.log('🔍 DEBUG: result.data =', JSON.stringify(result.data, null, 2));
+    console.log('🔍 DEBUG: result.data type =', typeof (result as any).data);
+    console.log('🔍 DEBUG: result.data =', JSON.stringify((result as any).data, null, 2));
     
-    if (result.data) {
+    if ((result as any).data) {
       // Prüfe ob result.data ein Array ist (neues vereinfachtes Format)
-      if (Array.isArray(result.data)) {
+      if (Array.isArray((result as any).data)) {
         console.log('Converting simplified array format to field format');
-        console.log('🔍 DEBUG: Array length =', result.data.length);
+        console.log('🔍 DEBUG: Array length =', (result as any).data.length);
         
         // WICHTIG: Im HÄNDLER-Modus ist die ursprüngliche URL der Primärhändler!
         let mainRetailer;
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
           const originalRetailerName = urlHostname.replace('www.', '').split('.')[0];
           
           // Suche nach KI-Eintrag mit der ursprünglichen URL
-          const originalUrlEntry = result.data.find(r => 
+          const originalUrlEntry = (result as any).data.find((r: any) => 
             r.url && (r.url === url || r.url.includes(urlHostname))
           );
           
@@ -83,8 +86,8 @@ export async function POST(request: NextRequest) {
           }
         } else {
           // Hersteller-Modus: Nehme besten gefundenen Händler als Primärhändler
-          const retailerWithPrice = result.data.find(r => r.price && r.price !== null && r.price !== 'null');
-          const firstRetailer = result.data[0];
+          const retailerWithPrice = (result as any).data.find((r: any) => r.price && r.price !== null && r.price !== 'null');
+          const firstRetailer = (result as any).data[0];
           mainRetailer = retailerWithPrice || firstRetailer;
         }
         
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
         console.log('🔍 DEBUG: buttonType =', buttonType);
         
         // Hilfsfunktion für bessere Preis-Extraktion
-        const extractPrice = (priceStr) => {
+        const extractPrice = (priceStr: any) => {
           if (!priceStr || priceStr === 'null') return '';
           
           // Wenn "Preis auf Anfrage" oder ähnlich -> leer lassen
@@ -114,62 +117,63 @@ export async function POST(request: NextRequest) {
           if (buttonType === 'hersteller') {
             // HERSTELLER-Modus: Setze Primärhändler-Felder
             convertedData = {
-              haendler_haendlername: { value: mainRetailer.name || '' },
-              haendler_haendler_webseite: { value: mainRetailer.url ? new URL(mainRetailer.url).hostname : '' },
-              haendler_haendler_produkt_url: { value: mainRetailer.url || '' },
-              haendler_preis: { value: price || '' },
-              haendler_einheit: { value: 'm²' },
-              haendler_preis_pro_einheit: { value: price || '' }
+              haendler_haendlername: mainRetailer.name || '',
+              haendler_haendler_webseite: mainRetailer.url ? new URL(mainRetailer.url).hostname : '',
+              haendler_haendler_produkt_url: mainRetailer.url || '',
+              haendler_preis: price || '',
+              haendler_einheit: 'Stück',
+              haendler_preis_pro_einheit: price || ''
             };
             
             // Sammle alle anderen Händler als "weitere Händler"
-            const additionalRetailers = result.data
-              .filter(r => r.name !== mainRetailer.name)
-              .map(r => ({
+            const additionalRetailers = (result as any).data
+              .filter((r: any) => r.name !== mainRetailer.name)
+              .map((r: any) => ({
                 name: r.name,
                 website: r.url ? new URL(r.url).hostname : '',
                 productUrl: r.url,
                 price: extractPrice(r.price),
-                unit: 'm²'
+                unit: 'Stück'
               }));
               
             if (additionalRetailers.length > 0) {
-              convertedData.haendler_weitere_haendler_und_preise = { value: additionalRetailers };
+              (convertedData as any).haendler_weitere_haendler_und_preise = additionalRetailers;
+              console.log('🔍 DEBUG: Set haendler_weitere_haendler_und_preise (HERSTELLER-Modus) =', additionalRetailers.length, 'Händler');
             }
             
-                    } else {
+          } else {
             // HÄNDLER-Modus: Setze den ERSTEN Händler als Primärhändler, REST als weitere Händler
             convertedData = {
-              haendler_haendlername: { value: mainRetailer.name || '' },
-              haendler_haendler_webseite: { value: mainRetailer.url ? new URL(mainRetailer.url).hostname : '' },
-              haendler_haendler_produkt_url: { value: mainRetailer.url || '' },
-              haendler_preis: { value: price || '' },
-              haendler_einheit: { value: 'm²' },
-              haendler_preis_pro_einheit: { value: price || '' }
+              haendler_haendlername: mainRetailer.name || '',
+              haendler_haendler_webseite: mainRetailer.url ? new URL(mainRetailer.url).hostname : '',
+              haendler_haendler_produkt_url: mainRetailer.url || '',
+              haendler_preis: price || '',
+              haendler_einheit: 'Stück',
+              haendler_preis_pro_einheit: price || ''
             };
             
             // Alle KI-gefundenen Händler sind alternative Händler (da mainRetailer = ursprüngliche URL)
-            const additionalRetailers = result.data
-              .filter(r => r.name !== mainRetailer.name)  // Entferne Duplikate des Primärhändlers
-              .map(r => ({
+            const additionalRetailers = (result as any).data
+              .filter((r: any) => r.name !== mainRetailer.name)  // Entferne Duplikate des Primärhändlers
+              .map((r: any) => ({
                 name: r.name,
                 website: r.url ? new URL(r.url).hostname : '',
                 productUrl: r.url,
                 price: extractPrice(r.price),
-                unit: 'm²'
+                unit: 'Stück'
               }));
             
             console.log('🔍 DEBUG: additionalRetailers (HÄNDLER-Modus) =', additionalRetailers);
             
             if (additionalRetailers.length > 0) {
-              convertedData.haendler_weitere_haendler_und_preise = { value: additionalRetailers };
-              console.log('🔍 DEBUG: Set haendler_weitere_haendler_und_preise (HÄNDLER-Modus) =', additionalRetailers);
+              (convertedData as any).haendler_weitere_haendler_und_preise = additionalRetailers;
+              console.log('🔍 DEBUG: Set haendler_weitere_haendler_und_preise (HÄNDLER-Modus) =', additionalRetailers.length, 'Händler');
             }
           }
         }
       } else {
         // Fallback: Verwende result.data direkt (falls es bereits im richtigen Format ist)
-        convertedData = result.data;
+        convertedData = (result as any).data;
         console.log('🔍 DEBUG: Using result.data directly');
       }
     }
@@ -177,17 +181,21 @@ export async function POST(request: NextRequest) {
     console.log('Converted data:', convertedData);
     console.log('🔍 DEBUG: Final convertedData =', JSON.stringify(convertedData, null, 2));
     
+    // 🔄 DATEN WERDEN NICHT MEHR AUTOMATISCH GESPEICHERT
+    // Speicherung erfolgt erst am Ende über /api/products/save-all
+    console.log('📋 Händler-Daten extrahiert, warte auf Speicherung am Ende der Analyse');
+    
     return NextResponse.json({ 
       success: true, 
       data: convertedData, 
-      searchQueries: result.searchQueries, 
-      sources: result.sources 
+      searchQueries: (result as any).searchQueries, 
+      sources: (result as any).sources 
     });
     
   } catch (error) {
     console.error('Enhanced Retailers Search Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error as Error).message },
       { status: 500 }
     );
   }

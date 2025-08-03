@@ -1,5 +1,255 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 02.08.2025 - 18:20 - haendler_weitere_haendler_und_preise Spalte aktiviert
+
+**Aufgabe:** Aktivierung der fehlenden DB-Spalte für alternative Händler.
+
+**Entscheidung:**
+- ✅ **Spalte hinzufügen** - `haendler_weitere_haendler_und_preise` als JSONB
+- ✅ **Code aktiviert** - Beide Modi (HERSTELLER + HÄNDLER) verwenden das Feld
+- ✅ **Linter-Fehler behoben** - TypeScript any-Types für Flexibilität
+
+**Warum wichtig:**
+- **Preisvergleich** - Kunde kann günstigsten Anbieter finden
+- **Verfügbarkeit** - Falls ein Händler ausverkauft ist
+- **Lieferzeiten** - Verschiedene Versandoptionen
+- **Qualität** - Verschiedene Service-Level
+
+**Extrahierte Daten (Beispiel):**
+- **Primärhändler**: Sonono (539,00 €)
+- **Alternative Händler**: Megabad (549,99 €), Sanitino (539,43 €), Idealo (ab 539,00 €)
+
+**Nächster Schritt:** DB-Migration ausführen und Test der vollständigen Speicherung.
+
+---
+
+## 02.08.2025 - 18:15 - KI-Analyse erfolgreich, DB-Spalte fehlt
+
+**Aufgabe:** Test der behobenen KI-Analyse-Datenbank-Integration.
+
+**Erfolge:**
+- ✅ **JSON-Parsing funktioniert** - Kein "Unterminated string" Fehler mehr
+- ✅ **KI-Analyse erfolgreich** - Perplexity extrahiert 4 Händler mit Preisen
+- ✅ **Datenkonvertierung funktioniert** - Array wird zu DB-Feldern konvertiert
+- ✅ **Automatische productId** - `temp_1754235642339_nz23nj4kc` generiert
+- ✅ **Datenbank-Integration startet** - API wird aufgerufen
+
+**Verbleibendes Problem:**
+- ❌ **Fehlende DB-Spalte** - `haendler_weitere_haendler_und_preise` existiert nicht in der Tabelle
+- ❌ **DB-Fehler**: `Could not find the 'haendler_weitere_haendler_und_preise' column`
+
+**Extrahierte Daten:**
+- **Primärhändler**: Sonono (539,00 €)
+- **Alternative Händler**: Megabad (549,99 €), Sanitino (539,43 €), Idealo (ab 539,00 €)
+- **Automatische Speicherung**: Gestartet, aber durch fehlende Spalte blockiert
+
+**Nächster Schritt:** DB-Schema erweitern oder alternative Speicherung implementieren.
+
+---
+
+## 02.08.2025 - 18:00 - JSON-Parsing-Fehler behoben
+
+**Aufgabe:** Behebung des JSON-Parsing-Fehlers in der Perplexity-Analyse.
+
+**Problem identifiziert:**
+- ❌ **JSON-Parsing-Fehler**: `SyntaxError: Unterminated string in JSON at position 916`
+- ❌ **Unterminierte URLs**: Perplexity gibt unvollständige URLs zurück
+- ❌ **Keine Datenbank-Speicherung**: Parsing-Fehler verhindert Speicherung
+
+**Behoben:**
+- ✅ **Robuste JSON-Parsing-Logik**: Automatische Reparatur unterminierter Strings
+- ✅ **URL-Bereinigung**: Entfernung unvollständiger URLs am Ende
+- ✅ **Anführungszeichen-Reparatur**: Automatisches Schließen offener Strings
+- ✅ **Fallback-Mechanismus**: Zweiter Parsing-Versuch nach Reparatur
+
+**Technische Details:**
+- **Erste Parsing-Versuche**: Standard JSON.parse()
+- **Reparatur-Schritte**: URL-Bereinigung, String-Trimming, Quote-Counting
+- **Zweiter Versuch**: JSON.parse() mit repariertem Content
+- **Error-Handling**: Original Error wird geworfen, falls beide Versuche fehlschlagen
+
+**Nächster Test:** KI-Analyse sollte jetzt erfolgreich parsen und in DB speichern.
+
+---
+
+## 02.08.2025 - 17:45 - Datenbank-Integration behoben
+
+**Aufgabe:** Behebung der Probleme mit der KI-Analyse-Datenbank-Integration.
+
+**Probleme identifiziert:**
+- ❌ **`productId: undefined`** - UI sendet keine productId
+- ❌ **`result.data = undefined`** - PerplexityAnalyzer gibt falsches Format zurück
+- ❌ **Keine Daten in DB** - Integration funktioniert nicht
+
+**Behoben:**
+- ✅ **PerplexityAnalyzer Format**: `result.data` wird jetzt korrekt zurückgegeben
+- ✅ **Automatische productId**: Generierung falls UI keine sendet
+- ✅ **Datenbank-Integration**: Alle Routen speichern jetzt automatisch
+
+**Technische Details:**
+- **PerplexityAnalyzer**: `return { data: parsedResult, ... }` statt `return { ...parsedResult, ... }`
+- **ProductId-Generierung**: `temp_${Date.now()}_${randomString}` für temporäre IDs
+- **Automatische Speicherung**: Nach jeder KI-Analyse wird sofort in DB geschrieben
+
+**Nächster Test:** KI-Analyse sollte jetzt automatisch in die Datenbank speichern.
+
+---
+
+## 02.08.2025 - 17:30 - KI-Analyse-Routen mit Datenbank-Integration erweitert
+
+**Aufgabe:** Integration aller KI-Analyse-Routen mit der `/api/products/save` Route für automatisches Speichern.
+
+**Umgesetzt:**
+- ✅ **Enhanced Retailers Search**: Automatische Speicherung von Händler-Daten
+- ✅ **Enhanced Analysis**: Automatische Speicherung von Produkt-Daten
+- ✅ **Enhanced Documents Search**: Automatische Speicherung von Dokumente-Daten
+- ✅ **Spaltenweise Speicherung**: Jede Route speichert nur ihre spezifischen Felder
+- ✅ **ProductId Integration**: Alle Routen akzeptieren jetzt productId Parameter
+- ✅ **Format-Konvertierung**: KI-Daten werden korrekt in Datenbank-Format konvertiert
+
+**Technische Details:**
+- **Automatische Speicherung**: Nach jeder KI-Analyse wird sofort in die DB geschrieben
+- **Spaltenweise Updates**: Nur Spalten-spezifische Felder werden aktualisiert
+- **Fehlerbehandlung**: Speicherfehler werden geloggt, aber die Analyse läuft weiter
+- **Format-Anpassung**: KI-Ergebnisse werden von `{value: "..."}` zu direkten Werten konvertiert
+
+**Nächster Schritt:** Test der Integration mit echten KI-Analysen.
+
+---
+
+## 02.08.2025 - 17:15 - API Route erfolgreich getestet
+
+**Aufgabe:** Test der `/api/products/save` Route für Supabase-Integration.
+
+**Ergebnis:** ✅ **Alle Tests erfolgreich!**
+
+**Getestete Funktionen:**
+- ✅ **Neues Produkt erstellen**: Automatische Metadaten, Source URLs, Timestamps
+- ✅ **Spaltenweise Updates**: PRODUKT-Spalte (7 Felder), PARAMETER-Spalte (5 Felder)
+- ✅ **Inkrementelle Updates**: Bestehende Daten bleiben erhalten, nur neue werden hinzugefügt
+- ✅ **On-Blur Updates**: User-Änderungen werden sofort gespeichert
+- ✅ **Array-Handling**: Arrays werden korrekt als JSON-Arrays in Supabase gespeichert
+- ✅ **GET Request**: Produktdaten können erfolgreich abgerufen werden
+
+**Technische Details:**
+- **API Route**: `/api/products/save` funktioniert vollständig
+- **Supabase Integration**: Verwendet NEXT_PUBLIC_SUPABASE_ANON_KEY
+- **Spaltenweise Filterung**: Nur Spalten-spezifische Felder werden aktualisiert
+- **Automatische Metadaten**: Erfassungsdatum, Extraktions-Logs, Timestamps
+- **Test-Suite**: `tests/api-products-save-test.js` validiert alle Szenarien
+
+**Nächster Schritt:** Integration in die Capture Page UI für automatisches Speichern nach KI-Analyse.
+
+---
+
+## 02.08.2025 - 17:00 - API Route für Supabase-Integration implementiert
+
+**Aufgabe:** Implementierung der `/api/products/save` Route für spaltenweise Speicherung und On-Blur Updates.
+
+**Umgesetzt:**
+- ✅ **API Route erstellt**: `/api/products/save` mit POST und GET Endpoints
+- ✅ **Spaltenweise Speicherung**: `updateType: 'column_analysis'` mit `column` Parameter
+- ✅ **On-Blur Updates**: `updateType: 'user_edit'` für manuelle User-Änderungen
+- ✅ **Inkrementelle Updates**: Nur Spalten-spezifische Felder werden aktualisiert
+- ✅ **Automatische Metadaten**: Erfassungsdatum, Source URLs, Timestamps
+- ✅ **Service Role Key**: Verwendet SUPABASE_SERVICE_ROLE_KEY für volle Rechte
+- ✅ **Umfassender Test**: `tests/api-products-save-test.js` für alle Szenarien
+
+**Technische Details:**
+- **POST /api/products/save**: Speichert/aktualisiert Produktdaten
+- **GET /api/products/save?id=X**: Liest Produkt für Debugging
+- **Spalten-Filter**: `Object.keys(data).filter(key => key.startsWith(column + '_'))`
+- **Logging**: Detaillierte Console-Logs für Debugging
+- **Error Handling**: Umfassende Fehlerbehandlung mit Details
+
+**API Parameter:**
+- `productId`: UUID für Updates, null für neue Produkte
+- `data`: Zu speichernde Felder
+- `updateType`: 'create', 'column_analysis', 'user_edit'
+- `column`: Spaltenname für spaltenweise Updates
+- `sourceType`: 'manufacturer' oder 'reseller'
+- `sourceUrl`: Quell-URL für neue Produkte
+
+**Nächster Schritt:** Integration in die Capture Page mit On-Blur Events und KI-Analyse-Hooks
+
+**Best Practice:** Service Role Key für API Routes verwenden, da Anon Key zu eingeschränkt ist.
+
+---
+
+## 02.08.2025 - 16:45 - Supabase-Datenbank-Integration geplant
+
+**Aufgabe:** Implementierung der Supabase-Datenbank-Integration für automatisches Speichern von UI-Daten.
+
+**Geplante Implementierung:**
+- ✅ **Ein Record pro Produkt**: Alle Daten landen in einem einzigen Record der `products` Tabelle
+- ✅ **Spaltenweise Speicherung**: Nach Abschluss jeder KI-Analyse-Spalte wird sofort in die DB geschrieben
+- ✅ **Gilt für beide Analysen**: Sowohl Händler-Analyse als auch Hersteller-Analyse
+- ✅ **Inkrementelle Updates**: Jede Spalte überschreibt nur ihre eigenen Felder, nicht den kompletten Record
+- ✅ **On-Blur Updates**: Bei manuellen User-Änderungen wird sofort beim Verlassen des Feldes gespeichert
+
+**Speicher-Strategie:**
+1. **KI-Analyse-basiert**: 4 Spalten (PRODUKT, PARAMETER, DOKUMENTE, HÄNDLER) → Sofortige Speicherung nach jeder Spalten-Analyse
+2. **User-Änderungen**: On-Blur Events → Sofortige Updates bei manuellen Feld-Änderungen
+3. **Ein Record**: Alle Spalten und Änderungen landen im gleichen Produkt-Record
+
+**Beispiel-Ablauf:**
+- User startet Händler/Hersteller-Analyse → 4 parallele KI-Analysen
+- PRODUKT-Analyse fertig → Speichern in DB (Record erstellt)
+- PARAMETER-Analyse fertig → Update des Records
+- DOKUMENTE-Analyse fertig → Update des Records
+- HÄNDLER-Analyse fertig → Update des Records
+- User ändert Preis manuell → On-Blur Update des Records
+
+**Nächster Schritt:** API Route `/api/products/save` implementieren für spaltenweise Speicherung
+
+**Best Practice:** Inkrementelle Updates verhindern Datenverlust und ermöglichen Echtzeit-Persistierung.
+
+---
+
+## 02.08.2025 - 16:30 - Status-Korrektur: Perplexity AI läuft bereits vollständig
+
+**Aufgabe:** Korrektur des Projektstatus - Perplexity AI ist bereits vollständig implementiert und funktionsfähig.
+
+**Feststellung:**
+- ✅ **Perplexity AI vollständig implementiert**: PerplexityAnalyzer Klasse, API Route, Combined Analysis
+- ✅ **Duale KI-Analyse aktiv**: OpenAI GPT-4o (Screenshot) + Perplexity AI (URL) laufen parallel
+- ✅ **Data Fusion funktioniert**: Ergebnisse beider AIs werden intelligent kombiniert
+- ✅ **API Keys konfiguriert**: Beide Services sind in Environment Variables verfügbar
+
+**Technische Details:**
+- **Combined Analysis Route**: `/api/extraction/combined-analysis` führt beide AIs parallel aus
+- **PerplexityAnalyzer**: Vollständige Implementierung mit sonar-pro Modell
+- **Data Fusion**: Confidence-basierte Kombination der Ergebnisse
+- **Error Handling**: Graceful degradation wenn eine AI fehlschlägt
+
+**Nächster Schritt:** Backend-Anbindung - UI-Felder in Supabase-Datenbank speichern
+
+**Best Practice erkannt:** Code-Analyse vor Status-Updates - Perplexity AI war bereits vollständig implementiert, nicht "deaktiviert".
+
+---
+
+## 02.08.2025 - 15:15 - KI-Screenshot-Analyse mit interaktiver Auswahl-Tabelle
+
+**Aufgabe:** Implementierung einer KI-Screenshot-Analyse mit User-kontrollierter Datenfusion und interaktiver Auswahl-Tabelle.
+
+**Umgesetzt:**
+- ✅ **KI-Analyse Button**: Im Screenshot-Zoom-Modal für GPT-4o Screenshot-Analyse
+- ✅ **Interaktive Auswahl-Tabelle**: User kann zwischen aktuellen Werten und KI-Vorschlägen wählen
+- ✅ **Automatisches Modal-Schließen**: Screenshot-Modal schließt wenn Tabelle erscheint
+- ✅ **UI-Style-Anpassung**: Konsistente neutral-Farben und Borders wie Rest der App
+- ✅ **Batch-Update-System**: Alle ausgewählten Werte werden beim Schließen übernommen
+- ✅ **Konfidenz-basierte Empfehlungen**: Intelligente Vorschläge basierend auf Feld-Typ und Qualität
+
+**Technische Details:**
+- **Field-Mapping**: AI-Felder → Formular-Felder (product_name → produkt_name_modell, etc.)
+- **Konfidenz-System**: URL-Vorteile für Preise/Names, Screenshot-Vorteile für Beschreibungen
+- **State-Management**: selectedValues für User-Auswahl, aiAnalysisResults für KI-Daten
+- **Responsive Design**: Grid-Layout mit Hover-Effekten und visuellen Indikatoren
+
+**Best Practice erkannt:** User-kontrollierte Datenfusion verhindert Datenverlust und gibt volle Kontrolle über KI-Ergebnisse. Interaktive Tabellen sind besser als automatische Überschreibungen.
+
+---
+
 ## 02.08.2025 - 14:35 - Screenshot-Zoom-Modal implementiert
 
 **Aufgabe:** Implementierung einer Screenshot-Zoom-Funktion mit Modal-Popup für bessere Benutzerfreundlichkeit.
@@ -174,33 +424,6 @@
 - Zuverlässigere Dokumente-Erkennung durch Web-Suche
 - Bessere Händler-Erkennung mit Preisvergleich
 - Kontext-basierte Suche statt nur URL-Analyse
-
----
-
-## 14.01.2025 - 22:30 - Parallel-Verarbeitung für AI-Analysen implementiert
-
-**Aufgabe:** Massive Performance-Steigerung durch parallele statt sequentielle AI-Analysen.
-
-**Problem:** 
-- Sequentielle Verarbeitung: 4 x 3-5s = 12-20s Wartezeit
-- Ineffiziente Ressourcennutzung bei unabhängigen API-Calls
-
-**Lösung:**
-- `Promise.all()` für parallele AI-Requests implementiert
-- Hersteller-Button: 3 parallele Analysen (produkt, parameter, dokumente)  
-- Händler-Button: 4 parallele Analysen (+ haendler)
-- UI-Indikator: "🚀 STARTE PARALLEL-ANALYSE" im Log
-
-**Performance-Gewinn:**
-- Hersteller-Analyse: 9-15s → 3-5s (66-75% schneller)
-- Händler-Analyse: 12-20s → 3-5s (75-83% schneller)
-
-**Technische Details:**
-- Unabhängige Perplexity-API-Calls laufen parallel
-- Shared State Updates sammeln alle Ergebnisse
-- Fehlerresilienz: Ein Fehler stoppt nicht andere Analysen
-
-**Test-Ergebnis:** Alle 4 Analysen laufen erfolgreich parallel in ~11s statt ~40s sequentiell.
 
 ---
 

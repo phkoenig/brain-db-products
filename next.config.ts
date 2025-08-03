@@ -5,11 +5,27 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['@subframe/core'],
   },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, 'src'),
-    };
+  // Neue Turbopack-Konfiguration (stabil)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+    resolveAlias: {
+      '@': './src',
+    },
+  },
+  // Webpack-Fallback für Production
+  webpack: (config, { dev, isServer }) => {
+    // Nur in Production oder wenn Turbopack nicht aktiv ist
+    if (!dev || process.env.TURBOPACK !== '1') {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@': require('path').resolve(__dirname, 'src'),
+      };
+    }
     return config;
   },
 };

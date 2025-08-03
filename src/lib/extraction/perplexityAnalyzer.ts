@@ -2,12 +2,12 @@ import { AIAnalysisResult, FieldData } from '../types/extraction';
 import { generateAIPrompt, getCachedFieldDefinitions } from '../schemas/product-fields';
 
 export class PerplexityAnalyzer {
-  private apiKey: string;
-  
+  private apiKey: string
+
   constructor(apiKey: string) {
-    this.apiKey = apiKey;
+    this.apiKey = apiKey
   }
-  
+
   async analyzeUrl(url: string, customPrompt?: string): Promise<AIAnalysisResult> {
     return this.analyzeWithEnhancedSearch({ url, prompt: customPrompt });
   }
@@ -102,14 +102,52 @@ export class PerplexityAnalyzer {
         
         console.log('DEBUG: Cleaned content for JSON parsing:', cleanedContent.substring(0, 300) + '...');
         
-        const parsedResult = JSON.parse(cleanedContent);
+        // 🆕 Verbesserte JSON-Parsing-Logik
+        let parsedResult;
+        try {
+          parsedResult = JSON.parse(cleanedContent);
+        } catch (parseError) {
+          console.error('DEBUG: Initial JSON parse failed, trying to fix unterminated strings...');
+          
+          // Versuche unterminierte Strings zu reparieren
+          let fixedContent = cleanedContent;
+          
+          // Entferne unvollständige URLs am Ende
+          const urlMatch = fixedContent.match(/(https?:\/\/[^"]*)$/);
+          if (urlMatch) {
+            fixedContent = fixedContent.replace(urlMatch[1], '');
+          }
+          
+          // Entferne unvollständige Strings am Ende
+          const stringMatch = fixedContent.match(/([^"]*)$/);
+          if (stringMatch && stringMatch[1].length > 0) {
+            fixedContent = fixedContent.replace(stringMatch[1], '');
+          }
+          
+          // Schließe offene Anführungszeichen
+          const quoteCount = (fixedContent.match(/"/g) || []).length;
+          if (quoteCount % 2 !== 0) {
+            fixedContent = fixedContent.replace(/[^"]*$/, '');
+          }
+          
+          console.log('DEBUG: Fixed content for JSON parsing:', fixedContent.substring(0, 300) + '...');
+          
+          try {
+            parsedResult = JSON.parse(fixedContent);
+            console.log('DEBUG: JSON parse successful after fixing');
+          } catch (secondParseError) {
+            console.error('DEBUG: Second JSON parse also failed:', secondParseError);
+            throw parseError; // Throw original error
+          }
+        }
+        
         console.log('DEBUG: Perplexity analysis completed successfully');
         
         return {
           data: parsedResult,
           searchQueries,
           sources: data.citations || []
-        };
+        } as any; // Temporär any verwenden, da das Interface nicht data unterstützt
       } catch (parseError) {
         console.error('DEBUG: Failed to parse JSON response:', parseError);
         console.error('DEBUG: Raw content that failed to parse:', content);

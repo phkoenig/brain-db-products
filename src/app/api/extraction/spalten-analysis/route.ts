@@ -4,7 +4,7 @@ import { generateDynamicPrompt } from '@/lib/extraction/dynamicPrompts';
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, spalte, felder } = await request.json();
+    const { url, spalte, felder, productId } = await request.json();
 
     console.log(`Spalten-Analyse: Starte ${spalte}-Analyse für URL:`, url);
     console.log(`Spalten-Analyse: Felder:`, felder);
@@ -23,6 +23,10 @@ export async function POST(request: NextRequest) {
     const result = await analyzeWithPerplexity(url, { fields: felder }, prompt);
 
     console.log(`Spalten-Analyse: ${spalte}-Analyse abgeschlossen`);
+
+    // 🔄 DATEN WERDEN NICHT MEHR AUTOMATISCH GESPEICHERT
+    // Speicherung erfolgt erst am Ende über /api/products/save-all
+    console.log('📋 Spalten-Analyse-Daten extrahiert, warte auf Speicherung am Ende der Analyse');
 
     return NextResponse.json({
       success: true,
