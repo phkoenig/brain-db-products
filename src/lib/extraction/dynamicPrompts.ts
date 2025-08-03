@@ -121,7 +121,9 @@ AUSGABEFORMAT (JSON-Array):
 ]
 
 PRIORITÄT: Der Preis von der angegebenen URL ${url} ist KRITISCH wichtig!
-Suche nach mindestens 3-5 zusätzlichen alternativen Händlern.
+- Besuche die URL und extrahiere den aktuellen Verkaufspreis
+- Suche nach mindestens 3-5 zusätzlichen alternativen Händlern
+- Verwende spezifische Suchbegriffe wie "Preisvergleich", "online kaufen", "Händler"
 `;
       } else if (buttonType === 'hersteller') {
         // Hersteller-Button: Verwende die direkt übergebenen Parameter
@@ -131,20 +133,30 @@ Suche nach mindestens 3-5 zusätzlichen alternativen Händlern.
         
         retailerPrompt = `
 SPEZIELLE HÄNDLER-SUCHE (Hersteller-Seite):
-Suche für das genannte Produkt: ${currentManufacturer} ${currentProductName} ${currentProductCode ? `(${currentProductCode})` : ''}
+Du analysierst eine Hersteller-Produktseite: ${url}
 
-Händler und gib Händlernamen, URL zum Produkt beim Händler und Preis als JSON zurück.
+WICHTIGE AUFGABEN:
+1. PRIMÄRHÄNDLER-PREIS: Extrahiere den Verkaufspreis des Produkts von der angegebenen Hersteller-URL
+2. ALTERNATIVE HÄNDLER: Suche zusätzlich nach anderen Händlern, die das gleiche Produkt anbieten
 
-FORMAT:
+AUSGABEFORMAT (JSON-Array):
 [
   {
-    "name": "Händlername", 
+    "name": "Herstellername (von der URL)",
+    "url": "${url}",
+    "price": "PREIS VON DER HERSTELLER-URL (z.B. 1.499,00 €)"
+  },
+  {
+    "name": "Alternative Händler 1",
     "url": "https://händler.de/produkt-url",
-    "price": "180,00 € pro m²"
+    "price": "Preis falls verfügbar"
   }
 ]
 
-Suche nach mindestens 3-5 Händlern, die dieses Produkt anbieten.
+PRIORITÄT: Der Preis von der angegebenen Hersteller-URL ${url} ist KRITISCH wichtig!
+- Besuche die Hersteller-URL und extrahiere den aktuellen Verkaufspreis
+- Suche nach mindestens 3-5 zusätzlichen alternativen Händlern
+- Verwende spezifische Suchbegriffe wie "Preisvergleich", "online kaufen", "Händler", "Lieferanten"
 `;
       }
       

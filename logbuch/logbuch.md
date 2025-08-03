@@ -1,5 +1,40 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 03.08.2025 - 20:15 - OnBlur Auto-Save für alle Eingabefelder implementiert
+
+**Aufgabe:** Implementierung einer automatischen Speicherung bei jedem Eingabefeld, sobald der User das Feld verlässt (onBlur).
+
+**Durchgeführte Änderungen:**
+- **Neue `handleFieldBlur` Funktion** für automatische Datenbank-Updates bei Feldverlust
+- **Helper-Funktionen** `createTextFieldProps` und `createTextAreaProps` für sauberen Code
+- **API-Route erweitert** `/api/products/save` um `updateType: 'field_update'` zu unterstützen
+- **Alle TextField und TextArea Komponenten** refaktoriert für automatische Speicherung
+- **Automatisierte Code-Modifikation** mit Node.js-Script für effiziente Massenaktualisierung
+
+**Technische Details:**
+- Einzelne Feld-Updates ohne vollständige Produkt-Überschreibung
+- Robuste Fehlerbehandlung mit detailliertem Console-Logging
+- TypeScript-kompatible Implementierung mit any-Casting für dynamische Feldzugriffe
+- Automatische `updated_at` Timestamp-Aktualisierung
+
+**Testergebnisse:**
+- ✅ Auto-Save funktioniert bei allen TextField-Komponenten
+- ✅ Auto-Save funktioniert bei allen TextArea-Komponenten
+- ✅ API-Route verarbeitet Einzelfeld-Updates korrekt
+- ✅ Dev-Server läuft stabil auf Port 3000
+- ✅ Keine neuen Linter-Fehler durch die Änderungen
+
+**Erkannte Best Practices:**
+- OnBlur-Auto-Save verbessert User Experience erheblich
+- Helper-Funktionen reduzieren Code-Duplikation und verbessern Wartbarkeit
+- Einzelfeld-Updates sind effizienter als vollständige Produkt-Updates
+- Automatisierte Code-Modifikation beschleunigt Refactoring-Prozesse
+
+**Schwierigkeiten und Lösungen:**
+- Problem: TypeScript any-Types für dynamische Feldzugriffe → Lösung: Explizites Casting mit `(formData as any)[fieldName]`
+- Problem: Linter-Fehler bei undefined Properties → Lösung: Hardcoding von 'manual' und currentUrl für source_type und source_url
+- Problem: Massenaktualisierung vieler Komponenten → Lösung: Node.js-Script für automatisierte Regex-Ersetzung
+
 ## 03.08.2025 - 19:45 - Gebündelte Datenbank-Speicherung implementiert
 
 **Aufgabe:** Implementierung einer gebündelten Datenbank-Speicherung um das Problem mit mehreren DB-Records pro Analyse zu lösen.

@@ -27,7 +27,12 @@ export async function POST(request: NextRequest) {
       `${productName} ${manufacturer} Händler`,
       `${manufacturer} ${productCode} bestellen`,
       `${productName} Preisvergleich`,
-      `${manufacturer} ${productName} Lieferanten`
+      `${manufacturer} ${productName} Lieferanten`,
+      `${productName} ${manufacturer} Preis`,
+      `${manufacturer} ${productName} Shop`,
+      `${productName} ${manufacturer} Verkauf`,
+      `${manufacturer} ${productName} Distributor`,
+      `${productName} ${manufacturer} Handel`
     ].filter(query => query && !query.includes('Unbekannt'));
     
     console.log('Enhanced Retailers Search Queries:', searchQueries);
@@ -91,6 +96,32 @@ export async function POST(request: NextRequest) {
           mainRetailer = retailerWithPrice || firstRetailer;
         }
         
+        // WICHTIG: Im Hersteller-Modus sollte der erste Eintrag die Hersteller-URL + Preis sein
+        if (buttonType === 'hersteller') {
+          // Suche nach KI-Eintrag mit der ursprünglichen Hersteller-URL
+          const originalUrlEntry = (result as any).data.find((r: any) => 
+            r.url && (r.url === url || r.url.includes(new URL(url).hostname))
+          );
+          
+          if (originalUrlEntry) {
+            // Verwende KI-Eintrag mit Preis von der Hersteller-URL
+            mainRetailer = {
+              name: originalUrlEntry.name || mainRetailer.name,
+              url: url,
+              price: originalUrlEntry.price || mainRetailer.price
+            };
+            console.log('🎯 HERSTELLER-PRIMÄRHÄNDLER mit KI-Preis gefunden:', mainRetailer);
+          } else {
+            // Fallback: Verwende bestehenden mainRetailer, aber setze URL auf Hersteller-URL
+            mainRetailer = {
+              name: mainRetailer.name,
+              url: url,
+              price: mainRetailer.price
+            };
+            console.log('⚠️ HERSTELLER-PRIMÄRHÄNDLER ohne KI-Preis (Fallback):', mainRetailer);
+          }
+        }
+        
         console.log('🔍 DEBUG: mainRetailer =', mainRetailer);
         console.log('🔍 DEBUG: buttonType =', buttonType);
         
@@ -105,24 +136,68 @@ export async function POST(request: NextRequest) {
             return '';
           }
           
-          // Extrahiere erste Zahl mit Komma/Punkt
-          const priceMatch = priceStr.match(/(\d+[.,]\d+|\d+)/);
-          return priceMatch ? priceMatch[1].replace(',', '.') : '';
+          // Entferne Währungssymbole und Leerzeichen
+          let cleanedPrice = priceStr.replace(/[€$£¥\s]/g, '');
+          
+          // Deutsche Formatierung: 1.234,56 -> 1234.56
+          // Amerikanische Formatierung: 1,234.56 -> 1234.56
+          
+          // Prüfe ob deutsche Formatierung (Punkt als Tausender-Trennzeichen)
+          if (cleanedPrice.includes('.') && cleanedPrice.includes(',')) {
+            // Deutsche Formatierung: 1.234,56
+            const parts = cleanedPrice.split(',');
+            const wholePart = parts[0].replace(/\./g, ''); // Entferne Punkte aus dem Ganzen Teil
+            const decimalPart = parts[1] || '00';
+            return `${wholePart}.${decimalPart}`;
+          } else if (cleanedPrice.includes(',')) {
+            // Nur Komma vorhanden - prüfe ob es ein Dezimaltrennzeichen ist
+            const commaCount = (cleanedPrice.match(/,/g) || []).length;
+            if (commaCount === 1) {
+              // Wahrscheinlich Dezimaltrennzeichen: 1234,56
+              return cleanedPrice.replace(',', '.');
+            } else {
+              // Wahrscheinlich Tausender-Trennzeichen: 1,234,567
+              return cleanedPrice.replace(/,/g, '');
+            }
+          } else {
+            // Keine Kommas - normale Zahl
+            return cleanedPrice;
+          }
         };
         
         if (mainRetailer) {
           let price = extractPrice(mainRetailer.price);
           
+          // WICHTIG: Falls kein Primärhändler-Preis gefunden, verwende besten Preis aus alternativen Händlern
+          if (!price && buttonType === 'haendler') {
+            const retailersWithPrice = (result as any).data
+              .filter((r: any) => r.price && r.price !== 'Kein Preis auf der Herstellerseite ersichtlich' && r.price !== 'Preis nicht direkt ersichtlich')
+              .map((r: any) => ({ ...r, extractedPrice: extractPrice(r.price) }))
+              .filter((r: any) => r.extractedPrice);
+            
+            if (retailersWithPrice.length > 0) {
+              // Nehme den niedrigsten Preis als Referenz
+              const bestPrice = retailersWithPrice.reduce((best: any, current: any) => {
+                const bestNum = parseFloat(best.extractedPrice);
+                const currentNum = parseFloat(current.extractedPrice);
+                return currentNum < bestNum ? current : best;
+              });
+              
+              price = bestPrice.extractedPrice;
+              console.log('🎯 Besten Preis aus alternativen Händlern als Primärhändler-Preis verwendet:', price);
+            }
+          }
+          
           // UNTERSCHEIDE zwischen buttonType Modi:
           if (buttonType === 'hersteller') {
             // HERSTELLER-Modus: Setze Primärhändler-Felder
             convertedData = {
-              haendler_haendlername: mainRetailer.name || '',
-              haendler_haendler_webseite: mainRetailer.url ? new URL(mainRetailer.url).hostname : '',
-              haendler_haendler_produkt_url: mainRetailer.url || '',
-              haendler_preis: price || '',
-              haendler_einheit: 'Stück',
-              haendler_preis_pro_einheit: price || ''
+              haendler_haendlername: { value: mainRetailer.name || '' },
+              haendler_haendler_webseite: { value: mainRetailer.url ? new URL(mainRetailer.url).hostname : '' },
+              haendler_haendler_produkt_url: { value: mainRetailer.url || '' },
+              haendler_preis: { value: price || '' },
+              haendler_einheit: { value: 'Stück' },
+              haendler_preis_pro_einheit: { value: price || '' }
             };
             
             // Sammle alle anderen Händler als "weitere Händler"
@@ -137,19 +212,19 @@ export async function POST(request: NextRequest) {
               }));
               
             if (additionalRetailers.length > 0) {
-              (convertedData as any).haendler_weitere_haendler_und_preise = additionalRetailers;
+              (convertedData as any).haendler_weitere_haendler_und_preise = { value: additionalRetailers };
               console.log('🔍 DEBUG: Set haendler_weitere_haendler_und_preise (HERSTELLER-Modus) =', additionalRetailers.length, 'Händler');
             }
             
           } else {
             // HÄNDLER-Modus: Setze den ERSTEN Händler als Primärhändler, REST als weitere Händler
             convertedData = {
-              haendler_haendlername: mainRetailer.name || '',
-              haendler_haendler_webseite: mainRetailer.url ? new URL(mainRetailer.url).hostname : '',
-              haendler_haendler_produkt_url: mainRetailer.url || '',
-              haendler_preis: price || '',
-              haendler_einheit: 'Stück',
-              haendler_preis_pro_einheit: price || ''
+              haendler_haendlername: { value: mainRetailer.name || '' },
+              haendler_haendler_webseite: { value: mainRetailer.url ? new URL(mainRetailer.url).hostname : '' },
+              haendler_haendler_produkt_url: { value: mainRetailer.url || '' },
+              haendler_preis: { value: price || '' },
+              haendler_einheit: { value: 'Stück' },
+              haendler_preis_pro_einheit: { value: price || '' }
             };
             
             // Alle KI-gefundenen Händler sind alternative Händler (da mainRetailer = ursprüngliche URL)
@@ -166,7 +241,7 @@ export async function POST(request: NextRequest) {
             console.log('🔍 DEBUG: additionalRetailers (HÄNDLER-Modus) =', additionalRetailers);
             
             if (additionalRetailers.length > 0) {
-              (convertedData as any).haendler_weitere_haendler_und_preise = additionalRetailers;
+              (convertedData as any).haendler_weitere_haendler_und_preise = { value: additionalRetailers };
               console.log('🔍 DEBUG: Set haendler_weitere_haendler_und_preise (HÄNDLER-Modus) =', additionalRetailers.length, 'Händler');
             }
           }

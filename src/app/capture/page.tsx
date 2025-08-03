@@ -24,6 +24,51 @@ import { SPALTEN_FELDER } from "@/lib/extraction/constants";
 import { MultiSelectWithSearch } from "@/ui/components/MultiSelectWithSearch";
 import { Capture } from "@/types/captures";
 
+// Hilfsfunktion für deutsche Preisformatierung
+const formatGermanPrice = (price: string | number): string => {
+  if (!price) return '';
+  let numPrice: number;
+  if (typeof price === 'string') {
+    // Bereits korrekt formatierte Zahl (z.B. "1488.89")
+    const cleaned = price.replace(/[^\d.,]/g, '');
+    if (cleaned.includes(',')) {
+      // Deutsche Formatierung: 1.234,56 -> 1234.56
+      const parts = cleaned.split(',');
+      const wholePart = parts[0].replace(/\./g, '');
+      const decimalPart = parts[1] || '00';
+      numPrice = parseFloat(`${wholePart}.${decimalPart}`);
+    } else {
+      // Normale Zahl
+      numPrice = parseFloat(cleaned);
+    }
+  } else {
+    numPrice = price;
+  }
+  if (isNaN(numPrice)) return price as string;
+  return numPrice.toLocaleString('de-DE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
+// Hilfsfunktion für Preis-Parsing (für Input-Felder)
+const parsePriceInput = (input: string): string => {
+  if (!input) return '';
+  
+  // Entferne Euro-Symbol und Leerzeichen
+  const cleaned = input.replace(/[€\s]/g, '');
+  
+  // Wenn bereits deutsches Format (1.450,45), konvertiere zu Standard
+  if (cleaned.includes(',')) {
+    const parts = cleaned.split(',');
+    const wholePart = parts[0].replace(/\./g, '');
+    const decimalPart = parts[1] || '00';
+    return `${wholePart}.${decimalPart}`;
+  }
+  
+  return cleaned;
+};
+
 function Extractor() {
   const [spaltenProgress, setSpaltenProgress] = useState({
     produkt: 0,
@@ -283,6 +328,21 @@ function Extractor() {
     onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => handleFormChange(fieldName, e.target.value),
     onBlur: (e: React.FocusEvent<HTMLTextAreaElement>) => handleFieldBlur(fieldName, e.target.value),
     disabled: lockedFields.has(fieldName)
+  });
+
+  // Spezielle Helper-Funktion für Preisfelder
+  const createPriceFieldProps = (fieldName: string) => ({
+    value: formatGermanPrice((formData as any)[fieldName] || ''),
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = parsePriceInput(e.target.value);
+      handleFormChange(fieldName, rawValue);
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      const rawValue = parsePriceInput(e.target.value);
+      handleFieldBlur(fieldName, rawValue);
+    },
+    disabled: lockedFields.has(fieldName),
+    placeholder: "€ 0,00"
   });
 
   // Hilfsfunktion um URLs zu öffnen
@@ -2334,10 +2394,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     className="text-right"
-                    placeholder="€ 123,00"
-                    value={formData.haendler_preis}
-                    onChange={(e) => handleFormChange('haendler_preis', e.target.value)}
-                    disabled={lockedFields.has('haendler_preis')}
+                    {...createPriceFieldProps('haendler_preis')}
                   />
                 </TextField>
               </div>
@@ -2358,10 +2415,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     className="text-right"
-                    placeholder="€ 123,00"
-                    value={formData.haendler_preis_pro_einheit}
-                    onChange={(e) => handleFormChange('haendler_preis_pro_einheit', e.target.value)}
-                    disabled={lockedFields.has('haendler_preis_pro_einheit')}
+                    {...createPriceFieldProps('haendler_preis_pro_einheit')}
                   />
                 </TextField>
               </div>
@@ -2390,7 +2444,7 @@ function Extractor() {
                             <Table.Cell>
                               <div className="flex flex-col items-end">
                                 <span className="grow shrink-0 basis-0 text-body font-body text-neutral-700 text-right">
-                                  {retailer.price} {retailer.unit && `/ ${retailer.unit}`}
+                                  {formatGermanPrice(retailer.price)} {retailer.unit && `/ ${retailer.unit}`}
                                 </span>
                                 {retailer.productUrl && (
                                   <a 
