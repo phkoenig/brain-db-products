@@ -1,5 +1,35 @@
 # BRAIN DB - Entwicklungslogbuch
 
+## 2025-08-03 23:15 - Navigationsleiste korrekt mit Seiten verbunden
+
+### Aufgaben durchgeführt:
+- **Next.js Router Integration** - usePathname Hook für aktuelle Seiten-Erkennung
+- **Dynamische Navigation** - Statische Navigation durch Link-Komponenten ersetzt
+- **Aktive Seiten-Hervorhebung** - Korrekte Markierung der aktiven Seite basierend auf pathname
+- **Homepage Links optimiert** - Next.js Link-Komponenten für bessere Performance
+
+### Implementierte Navigation:
+- **DB** → `/database` (Datenbank-Übersicht) - wird nur bei /database hervorgehoben
+- **Neu** → `/capture` (Produkt-Erfassung) - wird nur bei /capture hervorgehoben  
+- **Settings** → `/settings` (Feld-Definitionen) - wird nur bei /settings hervorgehoben
+- **User** → `/` (Homepage) - wird nur bei / hervorgehoben
+
+### Technische Details:
+- **usePathname Hook:** Erkennt automatisch die aktuelle Seite
+- **Link Komponenten:** Client-Side Navigation für bessere Performance
+- **selected Prop:** Dynamisch basierend auf pathname === "/seitenpfad"
+- **Alle Seiten vorhanden:** /database, /capture, /settings, / funktionieren korrekt
+
+### Ergebnis:
+- ✅ Navigation funktioniert zwischen allen Seiten
+- ✅ Aktive Seite wird korrekt hervorgehoben (nicht mehr hardcoded)
+- ✅ DB wird nur bei /database hervorgehoben
+- ✅ Einheitliches Layout auf allen Seiten
+- ✅ Moderne Homepage mit optimierten Links
+- ✅ Benutzerfreundliche Navigation
+
+---
+
 ## 2025-08-03 23:00 - Image Transfer Funktionalität erfolgreich getestet
 
 ### Aufgaben durchgeführt:

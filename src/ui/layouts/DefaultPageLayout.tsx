@@ -48,18 +48,20 @@ const DefaultPageLayoutRoot = React.forwardRef<
         }
         footer={
           <>
-            <Link href="/settings" passHref>
+            <Link href="/settings" passHref className="w-full">
               <SidebarRailWithLabels.NavItem 
                 icon={<FeatherSettings />}
                 selected={pathname === "/settings"}
+                className="w-full"
               >
                 Settings
               </SidebarRailWithLabels.NavItem>
             </Link>
-            <Link href="/" passHref>
+            <Link href="/" passHref className="w-full">
               <SidebarRailWithLabels.NavItem 
                 icon={<FeatherUserCircle />}
                 selected={pathname === "/"}
+                className="w-full"
               >
                 User
               </SidebarRailWithLabels.NavItem>
@@ -67,18 +69,20 @@ const DefaultPageLayoutRoot = React.forwardRef<
           </>
         }
       >
-        <Link href="/database" passHref>
+        <Link href="/database" passHref className="w-full">
           <SidebarRailWithLabels.NavItem
             icon={<FeatherDatabase />}
             selected={pathname === "/database"}
+            className="w-full"
           >
             DB
           </SidebarRailWithLabels.NavItem>
         </Link>
-        <Link href="/capture" passHref>
+        <Link href="/capture" passHref className="w-full">
           <SidebarRailWithLabels.NavItem 
             icon={<FeatherPlus />}
             selected={pathname === "/capture"}
+            className="w-full"
           >
             Neu
           </SidebarRailWithLabels.NavItem>
