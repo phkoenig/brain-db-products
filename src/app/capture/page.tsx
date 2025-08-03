@@ -107,6 +107,10 @@ function Extractor() {
   const [captureLoading, setCaptureLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Screenshot Zoom Modal State
+  const [isImageZoomOpen, setIsImageZoomOpen] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<string>('');
 
   // Transform categories for MultiSelectWithSearch
   const multiSelectOptions = useMemo(() => {
@@ -1101,6 +1105,37 @@ function Extractor() {
     }
   }, [formData, currentUrl, validateForm, toProductData, createProduct]);
 
+  // Screenshot Zoom Handlers
+  const openImageZoom = useCallback((imageUrl: string) => {
+    setZoomedImageUrl(imageUrl);
+    setIsImageZoomOpen(true);
+  }, []);
+
+  const closeImageZoom = useCallback(() => {
+    setIsImageZoomOpen(false);
+    setZoomedImageUrl('');
+  }, []);
+
+  // ESC Key Handler für Modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isImageZoomOpen) {
+        closeImageZoom();
+      }
+    };
+
+    if (isImageZoomOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      // Body scroll deaktivieren wenn Modal offen
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isImageZoomOpen, closeImageZoom]);
+
   useEffect(() => {
     const loadCaptureData = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -1166,9 +1201,10 @@ function Extractor() {
                       </div>
                     ) : currentCapture?.thumbnail_url ? (
                       <img
-                        className="w-full grow shrink-0 basis-0 rounded-md border border-solid border-neutral-border object-cover shadow-md"
+                        className="w-full grow shrink-0 basis-0 rounded-md border border-solid border-neutral-border object-cover shadow-md cursor-pointer hover:opacity-90 transition-opacity"
                         src={currentCapture.thumbnail_url}
                         alt="Produkt Thumbnail"
+                        onClick={() => openImageZoom(currentCapture.thumbnail_url || currentCapture.screenshot_url)}
                         onError={(e) => {
                           e.currentTarget.src = "https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png";
                         }}
@@ -2192,7 +2228,7 @@ function Extractor() {
                     className="w-full flex-none rounded-md border border-solid border-neutral-border shadow-md cursor-pointer hover:opacity-90 transition-opacity"
                     src={currentCapture.screenshot_url}
                     alt="Quell-Screenshot"
-                    onClick={() => window.open(currentCapture.screenshot_url, '_blank')}
+                    onClick={() => openImageZoom(currentCapture.screenshot_url)}
                     onError={(e) => {
                       e.currentTarget.src = "https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png";
                     }}
@@ -2305,6 +2341,43 @@ function Extractor() {
           </div>
         </div>
       </div>
+      
+      {/* Screenshot Zoom Modal */}
+      {isImageZoomOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={closeImageZoom}
+        >
+          <div 
+            className="relative max-w-[95vw] max-h-[95vh] bg-white rounded-lg shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              className="absolute top-4 right-4 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full w-8 h-8 flex items-center justify-center transition-all z-10"
+              onClick={closeImageZoom}
+              aria-label="Schließen"
+            >
+              ✕
+            </button>
+            
+            {/* Zoomed Image */}
+            <img
+              className="max-w-full max-h-full object-contain"
+              src={zoomedImageUrl}
+              alt="Screenshot Zoom"
+              onError={(e) => {
+                e.currentTarget.src = "https://res.cloudinary.com/subframe/image/upload/v1753745144/uploads/15448/eec2lucgs06zsgxjfdgb.png";
+              }}
+            />
+            
+            {/* ESC Hint */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm">
+              ESC zum Schließen
+            </div>
+          </div>
+        </div>
+      )}
     </DefaultPageLayout>
   );
 }

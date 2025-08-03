@@ -1,5 +1,23 @@
 # BRAIN DB Products A - Entwicklungslogbuch
 
+## 02.08.2025 - 14:20 - Händler-Duplikation und Layout-Fixes
+
+**Aufgabe:** Behebung von Händler-Duplikation und Layout-Problemen in der Extraktions-Pipeline.
+
+**Behobene Probleme:**
+- ✅ **Händler-Duplikation**: Primärhändler erschien fälschlicherweise auch als alternativer Händler
+- ✅ **Layout-Problem**: Lange Händlernamen sprengten Spaltenbreite der Tabelle
+
+**Lösungen:**
+- **Duplikation**: `.filter(r => r.name !== mainRetailer.name)` in HÄNDLER-Modus hinzugefügt (analog zu HERSTELLER-Modus)
+- **Layout**: `whitespace-nowrap` aus Händler-Tabelle entfernt → Zeilenumbruch ermöglicht
+
+**Nicht behoben:** Preis-Extraktion XXXLutz (Screenshot-Analyse zu aufwendig)
+
+**Best Practice erkannt:** Konsistente Logik zwischen verschiedenen Modi und Flexibilität vor Abschneiden bei Layout-Fixes bevorzugen.
+
+---
+
 ## 02.08.2025 - 08:45 - Lock/Unlock-Funktionalität und vollständige Code-Bereinigung
 
 **Aufgabe:** Implementierung einer Field-Lock-Funktionalität zum Schutz von User-Eingaben vor KI-Überschreibung und Behebung aller TypeScript-Linter-Fehler.
