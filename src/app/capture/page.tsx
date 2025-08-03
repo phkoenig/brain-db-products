@@ -229,6 +229,62 @@ function Extractor() {
     });
   };
 
+  // Neue Funktion für automatisches Speichern bei onBlur
+  const handleFieldBlur = async (field: string, value: any) => {
+    if (!currentProductId) {
+      console.log('⚠️ No product ID available for auto-save');
+      return;
+    }
+
+    try {
+      console.log(`💾 Auto-saving field: ${field} = ${value}`);
+      
+      const response = await fetch('/api/products/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: currentProductId,
+          data: { [field]: value },
+          updateType: 'field_update',
+          sourceType: 'manual',
+          sourceUrl: currentUrl || ''
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log(`✅ Field ${field} auto-saved successfully`);
+      } else {
+        console.error(`❌ Field ${field} auto-save failed:`, result.error);
+      }
+    } catch (error) {
+      console.error(`❌ Error auto-saving field ${field}:`, error);
+    }
+  };
+
+  // Hilfsfunktion für TextField Props (onChange + onBlur)
+  const createTextFieldProps = (fieldName: string) => ({
+    value: (formData as any)[fieldName] || '',
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleFormChange(fieldName, e.target.value),
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => handleFieldBlur(fieldName, e.target.value),
+    disabled: lockedFields.has(fieldName)
+  });
+
+  // Hilfsfunktion für TextArea Props (onChange + onBlur)
+  const createTextAreaProps = (fieldName: string) => ({
+    value: (formData as any)[fieldName] || '',
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => handleFormChange(fieldName, e.target.value),
+    onBlur: (e: React.FocusEvent<HTMLTextAreaElement>) => handleFieldBlur(fieldName, e.target.value),
+    disabled: lockedFields.has(fieldName)
+  });
+
   // Hilfsfunktion um URLs zu öffnen
   const openUrl = (url: string) => {
     if (url) {
@@ -1579,9 +1635,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produkt_hersteller}
-                    onChange={(e) => handleFormChange('produkt_hersteller', e.target.value)}
-                    disabled={lockedFields.has('produkt_hersteller')}
+                    {...createTextFieldProps('produkt_hersteller')}
                   />
                 </TextField>
               </div>
@@ -1602,9 +1656,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produkt_name_modell}
-                    onChange={(e) => handleFormChange('produkt_name_modell', e.target.value)}
-                    disabled={lockedFields.has('produkt_name_modell')}
+                    {...createTextFieldProps('produkt_name_modell')}
                   />
                 </TextField>
               </div>
@@ -1625,9 +1677,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produkt_produktlinie_serie}
-                    onChange={(e) => handleFormChange('produkt_produktlinie_serie', e.target.value)}
-                    disabled={lockedFields.has('produkt_produktlinie_serie')}
+                    {...createTextFieldProps('produkt_produktlinie_serie')}
                   />
                 </TextField>
               </div>
@@ -1648,9 +1698,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produkt_code_id}
-                    onChange={(e) => handleFormChange('produkt_code_id', e.target.value)}
-                    disabled={lockedFields.has('produkt_code_id')}
+                    {...createTextFieldProps('produkt_code_id')}
                   />
                 </TextField>
               </div>
@@ -1671,9 +1719,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produkt_anwendungsbereich}
-                    onChange={(e) => handleFormChange('produkt_anwendungsbereich', e.target.value)}
-                    disabled={lockedFields.has('produkt_anwendungsbereich')}
+                    {...createTextFieldProps('produkt_anwendungsbereich')}
                   />
                 </TextField>
                 <div className="flex w-full flex-col items-start gap-1 pt-4">
@@ -1689,8 +1735,7 @@ function Extractor() {
                     <TextArea.Input
                       className="h-28 w-full flex-none"
                       placeholder="..."
-                      value={formData.produkt_beschreibung}
-                      onChange={(e) => handleFormChange('produkt_beschreibung', e.target.value)}
+                      {...createTextAreaProps('produkt_beschreibung')}
                     />
                   </TextArea>
                 </div>
@@ -1713,9 +1758,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produkt_hersteller_webseite}
-                    onChange={(e) => handleFormChange('produkt_hersteller_webseite', e.target.value)}
-                    disabled={lockedFields.has('produkt_hersteller_webseite')}
+                    {...createTextFieldProps('produkt_hersteller_webseite')}
                   />
                 </TextField>
               </div>
@@ -1737,9 +1780,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.produkt_hersteller_produkt_url}
-                    onChange={(e) => handleFormChange('produkt_hersteller_produkt_url', e.target.value)}
-                    disabled={lockedFields.has('produkt_hersteller_produkt_url')}
+                    {...createTextFieldProps('produkt_hersteller_produkt_url')}
                   />
                 </TextField>
               </div>
@@ -1769,9 +1810,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_masse}
-                    onChange={(e) => handleFormChange('parameter_masse', e.target.value)}
-                    disabled={lockedFields.has('parameter_masse')}
+                    {...createTextFieldProps('parameter_masse')}
                   />
                 </TextField>
               </div>
@@ -1792,9 +1831,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_farbe}
-                    onChange={(e) => handleFormChange('parameter_farbe', e.target.value)}
-                    disabled={lockedFields.has('parameter_farbe')}
+                    {...createTextFieldProps('parameter_farbe')}
                   />
                 </TextField>
               </div>
@@ -1815,9 +1852,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_hauptmaterial}
-                    onChange={(e) => handleFormChange('parameter_hauptmaterial', e.target.value)}
-                    disabled={lockedFields.has('parameter_hauptmaterial')}
+                    {...createTextFieldProps('parameter_hauptmaterial')}
                   />
                 </TextField>
               </div>
@@ -1838,9 +1873,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_oberflaeche}
-                    onChange={(e) => handleFormChange('parameter_oberflaeche', e.target.value)}
-                    disabled={lockedFields.has('parameter_oberflaeche')}
+                    {...createTextFieldProps('parameter_oberflaeche')}
                   />
                 </TextField>
               </div>
@@ -1861,9 +1894,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_gewicht_pro_einheit}
-                    onChange={(e) => handleFormChange('parameter_gewicht_pro_einheit', e.target.value)}
-                    disabled={lockedFields.has('parameter_gewicht_pro_einheit')}
+                    {...createTextFieldProps('parameter_gewicht_pro_einheit')}
                   />
                 </TextField>
               </div>
@@ -1884,9 +1915,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_feuerwiderstand}
-                    onChange={(e) => handleFormChange('parameter_feuerwiderstand', e.target.value)}
-                    disabled={lockedFields.has('parameter_feuerwiderstand')}
+                    {...createTextFieldProps('parameter_feuerwiderstand')}
                   />
                 </TextField>
               </div>
@@ -1907,9 +1936,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_waermeleitfaehigkeit}
-                    onChange={(e) => handleFormChange('parameter_waermeleitfaehigkeit', e.target.value)}
-                    disabled={lockedFields.has('parameter_waermeleitfaehigkeit')}
+                    {...createTextFieldProps('parameter_waermeleitfaehigkeit')}
                   />
                 </TextField>
               </div>
@@ -1930,9 +1957,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_u_wert}
-                    onChange={(e) => handleFormChange('parameter_u_wert', e.target.value)}
-                    disabled={lockedFields.has('parameter_u_wert')}
+                    {...createTextFieldProps('parameter_u_wert')}
                   />
                 </TextField>
               </div>
@@ -1953,9 +1978,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_schalldaemmung}
-                    onChange={(e) => handleFormChange('parameter_schalldaemmung', e.target.value)}
-                    disabled={lockedFields.has('parameter_schalldaemmung')}
+                    {...createTextFieldProps('parameter_schalldaemmung')}
                   />
                 </TextField>
               </div>
@@ -1976,9 +1999,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_wasserbestaendigkeit}
-                    onChange={(e) => handleFormChange('parameter_wasserbestaendigkeit', e.target.value)}
-                    disabled={lockedFields.has('parameter_wasserbestaendigkeit')}
+                    {...createTextFieldProps('parameter_wasserbestaendigkeit')}
                   />
                 </TextField>
               </div>
@@ -1999,9 +2020,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_dampfdiffusion}
-                    onChange={(e) => handleFormChange('parameter_dampfdiffusion', e.target.value)}
-                    disabled={lockedFields.has('parameter_dampfdiffusion')}
+                    {...createTextFieldProps('parameter_dampfdiffusion')}
                   />
                 </TextField>
               </div>
@@ -2022,9 +2041,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_einbauart}
-                    onChange={(e) => handleFormChange('parameter_einbauart', e.target.value)}
-                    disabled={lockedFields.has('parameter_einbauart')}
+                    {...createTextFieldProps('parameter_einbauart')}
                   />
                 </TextField>
               </div>
@@ -2045,9 +2062,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_wartung}
-                    onChange={(e) => handleFormChange('parameter_wartung', e.target.value)}
-                    disabled={lockedFields.has('parameter_wartung')}
+                    {...createTextFieldProps('parameter_wartung')}
                   />
                 </TextField>
               </div>
@@ -2068,9 +2083,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.parameter_umweltzertifikat}
-                    onChange={(e) => handleFormChange('parameter_umweltzertifikat', e.target.value)}
-                    disabled={lockedFields.has('parameter_umweltzertifikat')}
+                    {...createTextFieldProps('parameter_umweltzertifikat')}
                   />
                 </TextField>
               </div>
@@ -2100,9 +2113,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.dokumente_datenblatt}
-                    onChange={(e) => handleFormChange('dokumente_datenblatt', e.target.value)}
-                    disabled={lockedFields.has('dokumente_datenblatt')}
+                    {...createTextFieldProps('dokumente_datenblatt')}
                   />
                 </TextField>
               </div>
@@ -2123,9 +2134,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.dokumente_technisches_merkblatt}
-                    onChange={(e) => handleFormChange('dokumente_technisches_merkblatt', e.target.value)}
-                    disabled={lockedFields.has('dokumente_technisches_merkblatt')}
+                    {...createTextFieldProps('dokumente_technisches_merkblatt')}
                   />
                 </TextField>
               </div>
@@ -2146,9 +2155,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.dokumente_produktkatalog}
-                    onChange={(e) => handleFormChange('dokumente_produktkatalog', e.target.value)}
-                    disabled={lockedFields.has('dokumente_produktkatalog')}
+                    {...createTextFieldProps('dokumente_produktkatalog')}
                   />
                 </TextField>
               </div>
@@ -2169,9 +2176,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.dokumente_weitere_dokumente}
-                    onChange={(e) => handleFormChange('dokumente_weitere_dokumente', e.target.value)}
-                    disabled={lockedFields.has('dokumente_weitere_dokumente')}
+                    {...createTextFieldProps('dokumente_weitere_dokumente')}
                   />
                 </TextField>
               </div>
@@ -2192,9 +2197,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.dokumente_bim_cad_technische_zeichnungen}
-                    onChange={(e) => handleFormChange('dokumente_bim_cad_technische_zeichnungen', e.target.value)}
-                    disabled={lockedFields.has('dokumente_bim_cad_technische_zeichnungen')}
+                    {...createTextFieldProps('dokumente_bim_cad_technische_zeichnungen')}
                   />
                 </TextField>
               </div>
@@ -2224,9 +2227,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendler_haendlername}
-                    onChange={(e) => handleFormChange('haendler_haendlername', e.target.value)}
-                    disabled={lockedFields.has('haendler_haendlername')}
+                    {...createTextFieldProps('haendler_haendlername')}
                   />
                 </TextField>
               </div>
@@ -2248,9 +2249,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendler_haendler_webseite}
-                    onChange={(e) => handleFormChange('haendler_haendler_webseite', e.target.value)}
-                    disabled={lockedFields.has('haendler_haendler_webseite')}
+                    {...createTextFieldProps('haendler_haendler_webseite')}
                   />
                 </TextField>
               </div>
@@ -2272,9 +2271,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendler_haendler_produkt_url}
-                    onChange={(e) => handleFormChange('haendler_haendler_produkt_url', e.target.value)}
-                    disabled={lockedFields.has('haendler_haendler_produkt_url')}
+                    {...createTextFieldProps('haendler_haendler_produkt_url')}
                   />
                 </TextField>
               </div>
@@ -2295,9 +2292,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendler_verfuegbarkeit}
-                    onChange={(e) => handleFormChange('haendler_verfuegbarkeit', e.target.value)}
-                    disabled={lockedFields.has('haendler_verfuegbarkeit')}
+                    {...createTextFieldProps('haendler_verfuegbarkeit')}
                   />
                 </TextField>
               </div>
@@ -2318,9 +2313,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.haendler_einheit}
-                    onChange={(e) => handleFormChange('haendler_einheit', e.target.value)}
-                    disabled={lockedFields.has('haendler_einheit')}
+                    {...createTextFieldProps('haendler_einheit')}
                   />
                 </TextField>
               </div>
@@ -2470,9 +2463,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.erfahrung_muster_bestellt}
-                    onChange={(e) => handleFormChange('erfahrung_muster_bestellt', e.target.value)}
-                    disabled={lockedFields.has('erfahrung_muster_bestellt')}
+                    {...createTextFieldProps('erfahrung_muster_bestellt')}
                   />
                 </TextField>
               </div>
@@ -2493,9 +2484,7 @@ function Extractor() {
                 >
                   <TextField.Input
                     placeholder=""
-                    value={formData.erfahrung_muster_abgelegt}
-                    onChange={(e) => handleFormChange('erfahrung_muster_abgelegt', e.target.value)}
-                    disabled={lockedFields.has('erfahrung_muster_abgelegt')}
+                    {...createTextFieldProps('erfahrung_muster_abgelegt')}
                   />
                 </TextField>
               </div>

@@ -102,6 +102,18 @@ export async function POST(request: NextRequest) {
             })
             .eq('id', productId)
             .select();
+        } else if (updateType === 'field_update') {
+          // Einzelnes Feld Update (für On-Blur Updates)
+          console.log('✏️ Single field update for onBlur');
+          
+          result = await supabase
+            .from('products')
+            .update({
+              ...data,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', productId)
+            .select();
         } else {
           // Vollständiges Update (für On-Blur Updates)
           console.log('✏️ Full product update');
