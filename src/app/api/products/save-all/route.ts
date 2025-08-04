@@ -91,6 +91,22 @@ export async function POST(request: NextRequest) {
       erfassung_extraktions_log: `Vollständige KI-Analyse abgeschlossen - ${new Date().toISOString()}`
     };
 
+    // Automatische URL-Zuordnung basierend auf sourceType
+    if (sourceUrl) {
+      if (sourceType === 'manufacturer') {
+        // Hersteller-Analyse: Quell-URL ist Hersteller-Produkt-URL
+        completeData.produkt_hersteller_produkt_url = sourceUrl;
+        console.log('🏭 Hersteller-Analyse: Quell-URL als produkt_hersteller_produkt_url gesetzt:', sourceUrl);
+      } else if (sourceType === 'retailer') {
+        // Händler-Analyse: Quell-URL ist Händler-Produkt-URL
+        completeData.haendler_haendler_produkt_url = sourceUrl;
+        console.log('🏪 Händler-Analyse: Quell-URL als haendler_haendler_produkt_url gesetzt:', sourceUrl);
+      } else {
+        // Fallback: Unbekannter sourceType
+        console.log('⚠️ Unbekannter sourceType:', sourceType, '- URL-Zuordnung übersprungen');
+      }
+    }
+
     // Konvertiere Preis-Felder zu Zahlen
     const processedData = convertPriceFields(completeData);
 

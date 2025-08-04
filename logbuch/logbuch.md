@@ -1,5 +1,49 @@
 # BRAIN DB - Entwicklungslogbuch
 
+## 2025-08-04 14:00 - Preis-Update Extraction Script implementiert und source_url Redundanz entfernt
+
+### Aufgaben durchgeführt:
+- **Preis-Update Extraction Script erstellt** - API-Route für automatische Preis-Aktualisierung über Perplexity
+- **source_url Redundanz entfernt** - Nur noch erfassung_quell_url verwendet (deutsche Namenskonvention)
+- **Preis-Konvertierung implementiert** - Strings zu Zahlen mit deutscher Formatierung (1.234,56 → 1234.56)
+- **CSS/Tailwind-Probleme behoben** - Cache-Löschung und Server-Restart
+- **Mock-Test erfolgreich** - Preis 1299.99€ korrekt extrahiert und gespeichert
+
+### Technische Implementierung:
+- **API-Route:** `/api/extraction/update-primary-price` für einzelne Produkt-Preis-Updates
+- **URL-Priorität:** erfassung_quell_url > alternative_retailer_url > produkt_hersteller_produkt_url
+- **Preis-Konvertierung:** Robuste Konvertierung von deutschen Preis-Formaten zu Zahlen
+- **Mock-Integration:** Temporäre Mock-Analyse für Tests ohne Perplexity API-Credits
+- **Datenbank-Update:** Vollständige Preis-Felder (haendler_preis, haendler_einheit, haendler_preis_pro_einheit)
+
+### Entfernte Redundanz:
+- **source_url** komplett entfernt aus allen Dateien
+- **erfassung_quell_url** als einzige Quell-URL verwendet
+- **Konsistente deutsche Namenskonvention** in der gesamten Codebase
+- **TypeScript-Typen aktualisiert** - source_url aus Product-Interface entfernt
+
+### Test-Ergebnisse:
+- ✅ **Produkt:** StoneArt BS-533 weiß 180x140 glänzend
+- ✅ **URL:** erfassung_quell_url korrekt verwendet
+- ✅ **Preis-Update:** 1299.99€ erfolgreich extrahiert und gespeichert
+- ✅ **Einheit:** "Stück" korrekt erkannt
+- ✅ **API-Response:** Vollständige Rückmeldung mit Details
+
+### Best Practices erkannt:
+- **Schrittweise Entwicklung** - Erst Analyse, dann Implementierung, dann Tests
+- **Redundanz-Eliminierung** - Konsistente Namenskonventionen wichtig
+- **Mock-Tests** - API-Funktionalität ohne externe Kosten testen
+- **Cache-Management** - Bei CSS-Problemen .next Cache löschen
+- **Deutsche Feldnamen** - Bessere Lesbarkeit für deutsche Entwickler
+
+### Nächste Schritte:
+- **Batch-Skript entwickeln** für Massen-Preis-Updates
+- **Echte Perplexity API** integrieren (nach Mock-Tests)
+- **Intelligente Update-Logik** - Nur notwendige Produkte aktualisieren
+- **Rate Limiting** für API-Calls implementieren
+
+---
+
 ## 2025-08-03 23:30 - Tagesabschluss - Alle Hauptfunktionen funktionsfähig
 
 ### Heute erreichte Meilensteine:
