@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Prüfe ob Primär-URL vorhanden ist (Priorität: erfassung_quell_url > alternative_retailer_url > produkt_hersteller_produkt_url > haendler_haendler_produkt_url)
-    const primaryUrl = product.erfassung_quell_url || product.alternative_retailer_url || product.produkt_hersteller_produkt_url || product.haendler_haendler_produkt_url || product.haendler_haendler_webseite;
+    // 2. Prüfe ob Primär-URL vorhanden ist (Priorität: haendler_haendler_produkt_url > erfassung_quell_url)
+    const primaryUrl = product.haendler_haendler_produkt_url || product.erfassung_quell_url;
     
     if (!primaryUrl) {
       console.log('⚠️ No primary URL found for product');
@@ -62,7 +62,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔗 Primary URL: ${primaryUrl}`);
+    // Log welche URL verwendet wird
+    if (product.haendler_haendler_produkt_url) {
+      console.log(`🔗 Using haendler_haendler_produkt_url: ${primaryUrl}`);
+    } else if (product.erfassung_quell_url) {
+      console.log(`🔗 Using erfassung_quell_url (fallback): ${primaryUrl}`);
+    } else {
+      console.log(`🔗 No URL available for price update`);
+    }
 
     // 3. Erstelle spezialisierten Prompt für Preis-Extraktion
     const pricePrompt = generatePriceExtractionPrompt({
@@ -73,27 +80,18 @@ export async function POST(request: NextRequest) {
       currentUnit: product.haendler_einheit
     });
 
-    // 4. Führe Perplexity-Analyse durch (Mock für jetzt)
+    // 4. Führe Perplexity-Analyse durch
     console.log('🤖 Starting Perplexity price analysis...');
     console.log('📝 Prompt:', pricePrompt);
     console.log('🔗 URL:', primaryUrl);
     
-    // Mock-Analyse für Test
-    const analysisResult = {
-      success: true,
-      data: JSON.stringify({
-        haendler_preis: "1299.99",
-        haendler_einheit: "Stück",
-        haendler_preis_pro_einheit: "1299.99",
-        price_confidence: "high",
-        price_notes: "Preis von der Webseite extrahiert"
-      })
-    };
+    // Echte Perplexity API aufrufen
+    const analysisResult = await perplexityService.analyzeWithPerplexity(pricePrompt, primaryUrl);
 
     if (!analysisResult.success) {
-      console.error('❌ Perplexity analysis failed');
+      console.error('❌ Perplexity analysis failed:', analysisResult.error);
       return NextResponse.json(
-        { error: 'Price analysis failed' },
+        { error: 'Price analysis failed', details: analysisResult.error },
         { status: 500 }
       );
     }

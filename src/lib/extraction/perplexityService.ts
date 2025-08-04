@@ -56,6 +56,66 @@ export class PerplexityService {
         }
     }
 
+    async analyzeWithPerplexity(prompt: string, url?: string): Promise<{ success: boolean; data: string; error?: string }> {
+        try {
+            console.log("PerplexityService: Starting real API call with prompt:", prompt.substring(0, 100) + "...");
+            
+            // Echte Perplexity API aufrufen
+            const response = await fetch('https://api.perplexity.ai/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'sonar-pro',
+                    messages: [
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: 1000,
+                    temperature: 0.1
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("PerplexityService: API error:", response.status, errorText);
+                return {
+                    success: false,
+                    data: "",
+                    error: `API error: ${response.status} - ${errorText}`
+                };
+            }
+
+            const result = await response.json();
+            console.log("PerplexityService: API response received");
+            
+            if (result.choices && result.choices[0] && result.choices[0].message) {
+                return {
+                    success: true,
+                    data: result.choices[0].message.content
+                };
+            } else {
+                return {
+                    success: false,
+                    data: "",
+                    error: "Invalid response format from Perplexity API"
+                };
+            }
+
+        } catch (error) {
+            console.error("PerplexityService: Network error:", error);
+            return {
+                success: false,
+                data: "",
+                error: error instanceof Error ? error.message : "Unknown error"
+            };
+        }
+    }
+
     async findManufacturerInfo(productName: string, retailerName: string): Promise<ManufacturerInfo> {
         const prompt = `
             Given the product "${productName}" from the retailer "${retailerName}", find the official manufacturer.

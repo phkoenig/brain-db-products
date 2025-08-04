@@ -351,7 +351,7 @@ function Extractor() {
     console.log(`📋 Daten für Spalte "${spalte}" zwischengespeichert:`, Object.keys(updates));
   }, []);
   const { loadCaptureById } = useCaptures();
-  const { createProduct, loading: productLoading } = useProducts();
+  const { createProduct, loading: productLoading, getProduct } = useProducts();
   const { validateForm, toProductData } = useCaptureForm();
   const [captureLoading, setCaptureLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1808,7 +1808,6 @@ function Extractor() {
       if (productIdFromUrl) {
         setCaptureLoading(true);
         try {
-          const { getProduct } = useProducts();
           const product = await getProduct(productIdFromUrl);
           if (product) {
             setCurrentProductId(productIdFromUrl);

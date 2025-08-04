@@ -34,7 +34,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
         <SubframeCore.Tooltip.Trigger asChild={true}>
           <div
             className={SubframeUtils.twClassNames(
-              "group/8815d632 flex h-20 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md px-2 active:bg-neutral-50",
+              "group/8815d632 flex min-h-[48px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md px-2 pt-3 pb-2 active:bg-neutral-50",
               {
                 "bg-neutral-100 hover:bg-neutral-100 active:bg-neutral-50":
                   selected,

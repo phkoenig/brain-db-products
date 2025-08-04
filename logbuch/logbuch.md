@@ -1,4 +1,152 @@
+# Logbuch - BRAIN DB Products A
+
+## 2025-01-05 15:45 - ProductDetailDrawer vollständig überarbeitet und funktionsfähig gemacht
+
+**Aufgaben:**
+- ProductDetailDrawer von 3 auf 6 Spalten erweitert (PRODUKT, PARAMETER, DOKUMENTE, HÄNDLER, ERFAHRUNG, ERFASSUNG)
+- Drawer-Breite auf 60% des Bildschirms gesetzt
+- useProjects Hook für Projekt-Dropdown erstellt
+- Kategorie-Dropdown debuggt und korrigiert
+- Alle Parameter-Felder aus Capture-Seite hinzugefügt
+- Debug-Logs für bessere Daten-Sichtbarkeit implementiert
+
+**Schwierigkeiten:**
+- Drawer zeigte nur 3 Spalten statt 6 wie in Capture-Seite
+- Dropdown-Felder für Kategorie und Projekt funktionierten nicht
+- Daten wurden nicht korrekt angezeigt (z.B. Hersteller-Feld leer)
+- Fehlende Parameter-Felder in PARAMETER-Spalte
+
+**Lösungen:**
+- **Layout-Erweiterung:** 6-Spalten-Layout mit `w-1/6` für gleichmäßige Verteilung
+- **Drawer-Breite:** `w-[60%]` für optimale Bildschirmnutzung
+- **useProjects Hook:** Neue Hook erstellt für Projekt-Daten aus Supabase
+- **Projekt-Dropdown:** Funktionale Dropdown mit echten Daten aus projects-Tabelle
+- **Kategorie-Dropdown:** Array-Handling korrigiert mit Debug-Logs
+- **Parameter-Felder:** Alle fehlenden Felder hinzugefügt (Feuerwiderstand, Wärmeleitfähigkeit, etc.)
+- **Debug-Logs:** Console-Logs für Datenladung und Feld-Werte
+
+**Erkannte Best Practices:**
+- **Feature-Parität:** Drawer sollte identisch zur Capture-Seite sein
+- **Hook-basierte Datenverwaltung:** Separate Hooks für verschiedene Datenquellen
+- **Debug-Logs:** Console-Logs für bessere Transparenz bei Datenproblemen
+- **Responsive Design:** Prozentuale Breiten für flexible Layouts
+- **Inkrementelle Entwicklung:** Kleine Änderungen, sofort testen
+
+**Ergebnis:**
+- ✅ 6-Spalten-Layout funktioniert
+- ✅ 60% Bildschirmbreite optimal
+- ✅ Projekt-Dropdown funktioniert mit echten Daten
+- ✅ Kategorie-Dropdown korrekt debuggt
+- ✅ Alle Parameter-Felder verfügbar
+- ✅ Debug-Logs für bessere Sichtbarkeit
+- ✅ Vollständige Feature-Parität mit Capture-Seite
+
+---
+
+## 2025-01-04 22:30 - CustomTreeView erfolgreich implementiert
+
+**Aufgaben:**
+- Subframe TreeView-Komponente durch eigene CustomTreeView ersetzt
+- Vollständige Expand/Collapse-Funktionalität implementiert
+- Brand Color Hervorhebung für selektierte Kategorien
+
+**Schwierigkeiten:**
+- Subframe TreeView hatte API-Limitationen (keine open/onOpenChange Props)
+- Komplexe Logik für Hauptkategorien vs. Subkategorien
+- Event-Handling zwischen Expand/Collapse und Selection
+
+**Lösungen:**
+- Eigene CustomTreeView-Komponente von Grund auf erstellt
+- handleRowClick-Logik: Hauptkategorien expandieren, Subkategorien werden ausgewählt
+- Brand Color Hervorhebung (bg-brand-500 text-white) für selektierte Items
+- Ganze Zeile klickbar für bessere UX
+
+**Erkannte Best Practices:**
+- Bei API-Limitationen: Eigene Komponente erstellen statt Workarounds
+- Klare Trennung zwischen Expand/Collapse und Selection-Logik
+- Konsistente Brand Color Verwendung für visuelle Hierarchie
+- Event-Bubbling verhindern mit stopPropagation()
+
+**Ergebnis:**
+- ✅ Vollständige Expand/Collapse-Funktionalität
+- ✅ Brand Color Hervorhebung funktioniert
+- ✅ Ganze Zeile klickbar
+- ✅ Konsistente Subframe-Styling-Klassen
+- ✅ Hauptbutton toggelt alle Kategorien
+
+---
+
 # BRAIN DB - Entwicklungslogbuch
+
+## 2025-08-04 21:00 - Navbar-Fixes und Icon-Troubleshooting dokumentiert
+
+### Aufgaben durchgeführt:
+- **Navbar-Button-Größe korrigiert** - Von w-12 h-12 auf w-16 h-16 vergrößert für bessere Sichtbarkeit
+- **Icon-Problematik gelöst** - Feather Icons trotz Linter-Fehler funktionsfähig gemacht
+- **README erweitert** - Detaillierte Icon-Troubleshooting-Anleitung für zukünftige Entwickler
+- **GitHub Commit** - Alle Änderungen erfolgreich gepusht
+
+### Technische Implementierung:
+- **Button-Größe:** `className="w-16 h-16"` für alle Navbar-Buttons (64x64px statt 48x48px)
+- **Icon-Imports:** FeatherDatabase, FeatherPlus, FeatherSettings, FeatherUserCircle
+- **Linter-Fehler:** Bekanntes Subframe-Problem - Icons funktionieren trotz TypeScript-Fehler
+- **README-Dokumentation:** Neuer Troubleshooting-Abschnitt mit Code-Beispielen
+
+### Problem gelöst:
+- **Vorher:** Buttons zu klein, Untertitel schwer lesbar
+- **Jetzt:** Größere quadratische Buttons mit sichtbaren Untertiteln
+- **Icon-Problem:** Linter-Fehler vs. Browser-Funktionalität verstanden und dokumentiert
+
+### Best Practices erkannt:
+- **Schrittweise Entwicklung** - Kleine Änderungen, sofort testen
+- **Dokumentation wichtig** - Icon-Problematik für zukünftige Entwickler festgehalten
+- **Linter vs. Runtime** - Subframe Icons funktionieren trotz TypeScript-Fehler
+- **Button-Größe explizit setzen** - Standard-Größe kann zu klein sein
+
+### Nächste Schritte:
+- **Weitere UI-Verbesserungen** - Andere 2-3 bemerkte Probleme angehen
+- **ProductDetailDrawer optimieren** - Drawer-Funktionalität verfeinern
+- **Database-Seite erweitern** - Weitere Subframe-Komponenten integrieren
+
+---
+
+## 2025-08-04 14:20 - Automatische URL-Zuordnung basierend auf sourceType implementiert
+
+### Aufgaben durchgeführt:
+- **URL-Zuordnungsproblem analysiert** - Viele URL-Felder waren leer, weil keine automatische Zuordnung
+- **Automatische URL-Zuordnung implementiert** - Quell-URL wird basierend auf sourceType korrekt zugeordnet
+- **Save-All API erweitert** - Intelligente Logik für Hersteller- vs. Händler-Analyse
+- **Tests erfolgreich durchgeführt** - Beide Analyse-Typen funktionieren korrekt
+
+### Technische Implementierung:
+- **Hersteller-Analyse** (`sourceType: "manufacturer"`): `erfassung_quell_url` → `produkt_hersteller_produkt_url`
+- **Händler-Analyse** (`sourceType: "retailer"`): `erfassung_quell_url` → `haendler_haendler_produkt_url`
+- **Logik in save-all API:** Automatische Zuordnung basierend auf sourceType
+- **Console-Logging:** Detaillierte Logs für Debugging und Transparenz
+
+### Test-Ergebnisse:
+- ✅ **Hersteller-Test:** `https://www.ilve.com/en/range-cookers/professional-plus/` → `produkt_hersteller_produkt_url`
+- ✅ **Händler-Test:** `https://www.welterundwelter.de/ilve-p12w-standherd-professional-plus-120-cm/P127WE3` → `haendler_haendler_produkt_url`
+- ✅ **Korrekte Null-Werte:** Andere URL-Felder bleiben null (wie erwartet)
+- ✅ **source_type Speicherung:** Korrekt als "manufacturer" oder "retailer" gespeichert
+
+### Problem gelöst:
+- **Vorher:** URL-Felder waren leer, weil keine automatische Zuordnung
+- **Jetzt:** Quell-URL wird automatisch dem korrekten Feld zugeordnet
+- **Logik:** sourceType bestimmt, ob es eine Hersteller- oder Händler-Produkt-URL ist
+
+### Best Practices erkannt:
+- **Systematische Analyse** - Erst Problem identifizieren, dann Lösung implementieren
+- **Test-Driven Development** - Sofort Tests nach Implementierung
+- **Console-Logging** - Detaillierte Logs für Debugging und Transparenz
+- **Korrekte URL-Semantik** - Quell-URL ist immer eine Produkt-URL, nie eine Hauptseite
+
+### Nächste Schritte:
+- **Bestehende Produkte aktualisieren** - URL-Zuordnung für bereits erfasste Produkte
+- **Batch-Skript entwickeln** - Für Massen-Updates der URL-Felder
+- **UI-Integration** - Anzeige der korrekten URLs in der Database-Übersicht
+
+---
 
 ## 2025-08-04 14:00 - Preis-Update Extraction Script implementiert und source_url Redundanz entfernt
 
@@ -386,3 +534,41 @@
 - Responsive UI mit modernem Design
 
 ---
+
+## 2024-12-19 15:30 - Tree-Menü-System vollständig dokumentiert und wiederverwendbar gemacht
+
+### Aufgaben durchgeführt:
+- ✅ **Filterauflöse-Symbol** im Suchfeld hinzugefügt (X-Button)
+- ✅ **CustomTreeView** erweitert um `selectedItemId` Support
+- ✅ **TreeMenuTemplate** Komponente erstellt für schnelle Integration
+- ✅ **Umfassende Dokumentation** erstellt (`docs/README_TREE_MENU_SYSTEM.md`)
+- ✅ **Code-Beispiele** für verschiedene Anwendungsfälle
+- ✅ **Troubleshooting Guide** für häufige Probleme
+- ✅ **Migration Guide** von anderen Tree-Komponenten
+
+### Schwierigkeiten und Lösungen:
+- **Problem:** Feather-Icon Import-Fehler bei `FeatherX`
+- **Lösung:** Einfachen Text-Button mit "×" Symbol verwendet
+- **Problem:** "Filename too long" bei git add
+- **Lösung:** Spezifische Dateipfade statt `git add .` verwendet
+
+### Erkannte Best Practices:
+- **Modulare Architektur:** Zentrale Änderungen in `CustomTreeView.tsx` wirken sich auf alle Tree-Menüs aus
+- **DRY-Prinzip:** Keine Code-Duplikation durch wiederverwendbare Komponenten
+- **Template-Pattern:** `TreeMenuTemplate` für schnelle Integration neuer Seiten
+- **Dokumentation:** Umfassende README mit Code-Beispielen und Troubleshooting
+
+### Technische Details:
+- **CustomTreeView:** Vollständig kontrollierbare Tree-Komponente
+- **TreeMenuTemplate:** Plug & Play Lösung mit allen Features
+- **Dokumentation:** 649 Zeilen Code-Beispiele und Anleitungen
+- **Zentrale Wartung:** Änderungen nur an einer Stelle nötig
+
+### Nächste Schritte:
+- Tree-Menü-System kann jetzt einfach auf andere Seiten übertragen werden
+- Neue Features können zentral in `CustomTreeView.tsx` hinzugefügt werden
+- Template ermöglicht schnelle Integration ohne Code-Duplikation
+
+---
+
+## 2024-12-19 14:45 - CustomTreeView erfolgreich implementiert und getestet
