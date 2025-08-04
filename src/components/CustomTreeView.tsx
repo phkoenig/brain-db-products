@@ -11,28 +11,28 @@ interface TreeItem {
 
 interface CustomTreeViewProps {
   items: TreeItem[];
+  expandedItems: Record<string, boolean>;
+  onItemSelect: (itemId: string) => void;
+  onExpandedChange: (itemId: string, expanded: boolean) => void;
   selectedItemId?: string | null;
-  onItemSelect?: (itemId: string) => void;
-  expandedItems?: Record<string, boolean>;
-  onExpandedChange?: (itemId: string, expanded: boolean) => void;
 }
 
 interface TreeItemProps {
   item: TreeItem;
   level?: number;
+  expandedItems: Record<string, boolean>;
+  onItemSelect: (itemId: string) => void;
+  onExpandedChange: (itemId: string, expanded: boolean) => void;
   selectedItemId?: string | null;
-  onItemSelect?: (itemId: string) => void;
-  expandedItems?: Record<string, boolean>;
-  onExpandedChange?: (itemId: string, expanded: boolean) => void;
 }
 
-const TreeItemComponent: React.FC<TreeItemProps> = ({
-  item,
-  level = 0,
-  selectedItemId,
-  onItemSelect,
-  expandedItems = {},
+const TreeItemComponent: React.FC<TreeItemProps> = ({ 
+  item, 
+  level = 0, 
+  expandedItems, 
+  onItemSelect, 
   onExpandedChange,
+  selectedItemId 
 }) => {
   const hasChildren = item.children && item.children.length > 0;
   const isExpanded = expandedItems[item.id] || false;
@@ -119,21 +119,22 @@ const TreeItemComponent: React.FC<TreeItemProps> = ({
 
 export const CustomTreeView: React.FC<CustomTreeViewProps> = ({
   items,
-  selectedItemId,
+  expandedItems,
   onItemSelect,
-  expandedItems = {},
   onExpandedChange,
+  selectedItemId
 }) => {
   return (
-    <div className="w-full flex flex-col">
+    <div className="flex flex-col gap-1">
       {items.map((item) => (
         <TreeItemComponent
           key={item.id}
           item={item}
-          selectedItemId={selectedItemId}
-          onItemSelect={onItemSelect}
+          level={0}
           expandedItems={expandedItems}
+          onItemSelect={onItemSelect}
           onExpandedChange={onExpandedChange}
+          selectedItemId={selectedItemId}
         />
       ))}
     </div>

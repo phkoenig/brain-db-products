@@ -6,6 +6,7 @@ import { TextField } from "@/ui/components/TextField";
 import { FeatherSearch } from "@subframe/core";
 import { FeatherChevronDown } from "@subframe/core";
 import { FeatherChevronUp } from "@subframe/core";
+import { FeatherX } from "@subframe/core";
 import { IconButton } from "@/ui/components/IconButton";
 import { Breadcrumbs } from "@/ui/components/Breadcrumbs";
 import { MatCard } from "@/ui/components/MatCard";
@@ -86,6 +87,10 @@ function Database() {
       ...prev,
       [itemId]: expanded
     }));
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
   };
 
   // Get selected category info for breadcrumbs
@@ -170,6 +175,15 @@ function Database() {
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(event.target.value)}
               />
             </TextField>
+            {searchTerm && (
+              <button
+                onClick={clearSearch}
+                className="flex items-center justify-center w-8 h-8 rounded-md bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-neutral-800 text-sm font-medium"
+                title="Suche löschen"
+              >
+                ×
+              </button>
+            )}
             <IconButton
               variant="neutral-primary"
               onClick={toggleAllFolders}
