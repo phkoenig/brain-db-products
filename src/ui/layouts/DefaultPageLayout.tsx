@@ -6,8 +6,8 @@
  */
 
 import React from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import * as SubframeUtils from "../utils";
 import { SidebarRailWithLabels } from "../components/SidebarRailWithLabels";
 import { FeatherDatabase } from "@subframe/core";
@@ -29,6 +29,11 @@ const DefaultPageLayoutRoot = React.forwardRef<
   ref
 ) {
   const pathname = usePathname();
+  
+  // Determine which nav item should be selected based on current path
+  const isDatabasePage = pathname === "/database";
+  const isCapturePage = pathname === "/capture";
+  const isSettingsPage = pathname === "/settings";
 
   return (
     <div
@@ -48,41 +53,38 @@ const DefaultPageLayoutRoot = React.forwardRef<
         }
         footer={
           <>
-            <Link href="/settings" passHref className="w-full">
+            <Link href="/settings">
               <SidebarRailWithLabels.NavItem 
                 icon={<FeatherSettings />}
-                selected={pathname === "/settings"}
-                className="w-full"
+                selected={isSettingsPage}
+                className="w-16 h-16"
               >
                 Settings
               </SidebarRailWithLabels.NavItem>
             </Link>
-            <Link href="/" passHref className="w-full">
-              <SidebarRailWithLabels.NavItem 
-                icon={<FeatherUserCircle />}
-                selected={pathname === "/"}
-                className="w-full"
-              >
-                User
-              </SidebarRailWithLabels.NavItem>
-            </Link>
+            <SidebarRailWithLabels.NavItem 
+              icon={<FeatherUserCircle />}
+              className="w-16 h-16"
+            >
+              User
+            </SidebarRailWithLabels.NavItem>
           </>
         }
       >
-        <Link href="/database" passHref className="w-full">
+        <Link href="/database">
           <SidebarRailWithLabels.NavItem
             icon={<FeatherDatabase />}
-            selected={pathname === "/database"}
-            className="w-full"
+            selected={isDatabasePage}
+            className="w-16 h-16"
           >
             DB
           </SidebarRailWithLabels.NavItem>
         </Link>
-        <Link href="/capture" passHref className="w-full">
+        <Link href="/capture">
           <SidebarRailWithLabels.NavItem 
             icon={<FeatherPlus />}
-            selected={pathname === "/capture"}
-            className="w-full"
+            selected={isCapturePage}
+            className="w-16 h-16"
           >
             Neu
           </SidebarRailWithLabels.NavItem>

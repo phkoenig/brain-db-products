@@ -267,6 +267,38 @@ export default Settings;
 
 ## 🔧 Troubleshooting
 
+### Problem: Feather Icons werden nicht erkannt (Linter-Fehler)
+**Symptome:**
+- TypeScript-Fehler: `Module '"@subframe/core"' has no exported member 'FeatherDatabase'`
+- Icons funktionieren im Browser, aber Linter zeigt Fehler
+- Icons verschwinden nach `sync`-Befehlen wieder
+
+**Lösung:**
+1. **Icons trotz Linter-Fehler verwenden** - sie funktionieren im Browser
+2. **Nach jedem `sync`-Befehl Icons neu hinzufügen**:
+   ```typescript
+   import { FeatherDatabase } from "@subframe/core";
+   import { FeatherPlus } from "@subframe/core";
+   import { FeatherSettings } from "@subframe/core";
+   import { FeatherUserCircle } from "@subframe/core";
+   ```
+3. **Button-Größe explizit setzen** für konsistente Darstellung:
+   ```typescript
+   <SidebarRailWithLabels.NavItem 
+     icon={<FeatherDatabase />}
+     selected={isDatabasePage}
+     className="w-16 h-16" // Quadratische Buttons
+   >
+     DB
+   </SidebarRailWithLabels.NavItem>
+   ```
+
+**Wichtige Erkenntnisse:**
+- **Linter-Fehler sind bekanntes Subframe-Problem** - beeinträchtigen nicht die Funktionalität
+- **Icons müssen nach jedem `sync` neu importiert werden** - Subframe überschreibt manuelle Änderungen
+- **Button-Größe sollte explizit gesetzt werden** - Standard-Größe kann zu klein sein
+- **Untertitel bleiben automatisch sichtbar** - NavItem-Komponente zeigt sie an
+
 ### Problem: Komponenten werden gerendert, aber ohne Styling
 **Symptome:**
 - Badges erscheinen als einfache Textboxen
