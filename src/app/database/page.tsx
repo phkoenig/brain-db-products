@@ -8,6 +8,7 @@ import { FeatherSearch } from "@subframe/core";
 import { TreeView } from "@/ui/components/TreeView";
 import { Breadcrumbs } from "@/ui/components/Breadcrumbs";
 import ProductEditor from "@/components/ProductEditor";
+
 import { useMaterialCategories } from "@/hooks/useMaterialCategories";
 import { useDatabaseProducts } from "@/hooks/useDatabaseProducts";
 import { Product } from "@/types/products";
@@ -27,6 +28,8 @@ function Database() {
     // Navigate to capture page with product ID
     router.push(`/capture?id=${product.id}`);
   };
+
+
 
   // Filter categories based on search term
   const filteredCategories = categories.filter(category =>
@@ -74,8 +77,19 @@ function Database() {
     const productName = product.produkt_name_modell || "Unbekanntes Produkt";
     const manufacturer = product.produkt_hersteller || "Unbekannter Hersteller";
     const description = product.produkt_beschreibung || "Keine Beschreibung verfügbar";
-    const price = product.haendler_preis ? `${product.haendler_preis.toLocaleString('de-DE')} €` : "Preis auf Anfrage";
-    const unit = product.haendler_einheit || "Stück";
+    
+    // Verbesserte Preis-Logik: Prüfe zuerst haendler_preis, dann alternative_retailer_price
+    let price = "Preis auf Anfrage";
+    let unit = "Stück";
+    
+    if (product.haendler_preis && product.haendler_preis > 0) {
+      price = `${product.haendler_preis.toLocaleString('de-DE')} €`;
+      unit = product.haendler_einheit || "Stück";
+    } else if (product.alternative_retailer_price && product.alternative_retailer_price > 0) {
+      price = `${product.alternative_retailer_price.toLocaleString('de-DE')} €`;
+      unit = product.alternative_retailer_unit || "Stück";
+    }
+    
     const dimensions = product.parameter_masse || "Maße nicht angegeben";
     
     // Debug: Logge Bild-Informationen

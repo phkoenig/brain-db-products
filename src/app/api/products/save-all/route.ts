@@ -7,6 +7,48 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Hilfsfunktion zum Konvertieren von Preis-Strings zu Zahlen
+const convertPriceFields = (data: any) => {
+  const priceFields = [
+    'haendler_preis',
+    'haendler_preis_pro_einheit',
+    'alternative_retailer_price',
+    'alternative_retailer_price_per_unit'
+  ];
+
+  const convertedData = { ...data };
+
+  priceFields.forEach(field => {
+    if (convertedData[field] !== undefined && convertedData[field] !== null && convertedData[field] !== '') {
+      // Entferne Euro-Symbol und Leerzeichen
+      let priceValue = String(convertedData[field]).replace(/[€\s]/g, '');
+      
+      // Konvertiere deutsche Formatierung (1.234,56) zu Standard (1234.56)
+      if (priceValue.includes(',')) {
+        const parts = priceValue.split(',');
+        const wholePart = parts[0].replace(/\./g, '');
+        const decimalPart = parts[1] || '00';
+        priceValue = `${wholePart}.${decimalPart}`;
+      }
+      
+      // Konvertiere zu Zahl
+      const numericPrice = parseFloat(priceValue);
+      if (!isNaN(numericPrice)) {
+        convertedData[field] = numericPrice;
+        console.log(`💰 Converted ${field}: "${data[field]}" → ${numericPrice}`);
+      } else {
+        console.log(`⚠️ Could not convert ${field}: "${data[field]}" → setting to null`);
+        convertedData[field] = null;
+      }
+    } else {
+      // Leere Werte auf null setzen
+      convertedData[field] = null;
+    }
+  });
+
+  return convertedData;
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -45,16 +87,20 @@ export async function POST(request: NextRequest) {
       erfassung_erfassungsdatum: new Date().toISOString(),
       erfassung_erfassung_fuer: 'Deutschland',
       source_type: sourceType,
-      source_url: sourceUrl,
       erfassung_quell_url: sourceUrl,
       erfassung_extraktions_log: `Vollständige KI-Analyse abgeschlossen - ${new Date().toISOString()}`
     };
 
+    // Konvertiere Preis-Felder zu Zahlen
+    const processedData = convertPriceFields(completeData);
+
     console.log('🔍 Complete data to save:', {
-      id: completeData.id,
-      totalFields: Object.keys(completeData).length,
-      produktName: completeData.produkt_name_modell || 'Unnamed',
-      haendlerName: completeData.haendler_haendlername || 'Unknown'
+      id: processedData.id,
+      totalFields: Object.keys(processedData).length,
+      produktName: processedData.produkt_name_modell || 'Unnamed',
+      haendlerName: processedData.haendler_haendlername || 'Unknown',
+      haendlerPreis: processedData.haendler_preis,
+      haendlerPreisProEinheit: processedData.haendler_preis_pro_einheit
     });
 
     // Prüfe ob Produkt bereits existiert
@@ -74,7 +120,7 @@ export async function POST(request: NextRequest) {
       
       result = await supabase
         .from('products')
-        .insert([completeData])
+        .insert([processedData])
         .select();
     } else {
       // Existierendes Produkt aktualisieren
@@ -83,7 +129,7 @@ export async function POST(request: NextRequest) {
       
       result = await supabase
         .from('products')
-        .update(completeData)
+        .update(processedData)
         .eq('id', finalProductId)
         .select();
     }

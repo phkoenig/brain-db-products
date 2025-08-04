@@ -7,7 +7,7 @@ export interface Product {
   
   // Source Information (Chrome Extension)
   source_type?: string;
-  source_url?: string;
+
   screenshot_path?: string;
   thumbnail_path?: string;
   

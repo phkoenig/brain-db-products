@@ -7,6 +7,48 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Hilfsfunktion zum Konvertieren von Preis-Strings zu Zahlen
+const convertPriceFields = (data: any) => {
+  const priceFields = [
+    'haendler_preis',
+    'haendler_preis_pro_einheit',
+    'alternative_retailer_price',
+    'alternative_retailer_price_per_unit'
+  ];
+
+  const convertedData = { ...data };
+
+  priceFields.forEach(field => {
+    if (convertedData[field] !== undefined && convertedData[field] !== null && convertedData[field] !== '') {
+      // Entferne Euro-Symbol und Leerzeichen
+      let priceValue = String(convertedData[field]).replace(/[€\s]/g, '');
+      
+      // Konvertiere deutsche Formatierung (1.234,56) zu Standard (1234.56)
+      if (priceValue.includes(',')) {
+        const parts = priceValue.split(',');
+        const wholePart = parts[0].replace(/\./g, '');
+        const decimalPart = parts[1] || '00';
+        priceValue = `${wholePart}.${decimalPart}`;
+      }
+      
+      // Konvertiere zu Zahl
+      const numericPrice = parseFloat(priceValue);
+      if (!isNaN(numericPrice)) {
+        convertedData[field] = numericPrice;
+        console.log(`💰 Converted ${field}: "${data[field]}" → ${numericPrice}`);
+      } else {
+        console.log(`⚠️ Could not convert ${field}: "${data[field]}" → setting to null`);
+        convertedData[field] = null;
+      }
+    } else {
+      // Leere Werte auf null setzen
+      convertedData[field] = null;
+    }
+  });
+
+  return convertedData;
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -52,10 +94,12 @@ export async function POST(request: NextRequest) {
         enrichedData.source_type = sourceType;
       }
       if (sourceUrl) {
-        enrichedData.source_url = sourceUrl;
         enrichedData.erfassung_quell_url = sourceUrl;
       }
     }
+
+    // Konvertiere Preis-Felder zu Zahlen
+    const processedData = convertPriceFields(enrichedData);
 
     let result;
     let operation;
@@ -75,7 +119,7 @@ export async function POST(request: NextRequest) {
         
         result = await supabase
           .from('products')
-          .insert([enrichedData])
+          .insert([processedData])
           .select();
       } else {
         // Produkt existiert - Update
@@ -93,10 +137,13 @@ export async function POST(request: NextRequest) {
           
           console.log(`📊 Column fields to update:`, columnFields);
           
+          // Konvertiere Preis-Felder zu Zahlen
+          const processedColumnData = convertPriceFields(columnData);
+          
           result = await supabase
             .from('products')
             .update({
-              ...columnData,
+              ...processedColumnData,
               updated_at: new Date().toISOString(),
               erfassung_extraktions_log: `KI-Analyse Spalte ${column} abgeschlossen - ${new Date().toISOString()}`
             })
@@ -106,10 +153,13 @@ export async function POST(request: NextRequest) {
           // Einzelnes Feld Update (für On-Blur Updates)
           console.log('✏️ Single field update for onBlur');
           
+          // Konvertiere Preis-Felder zu Zahlen
+          const processedFieldData = convertPriceFields(data);
+          
           result = await supabase
             .from('products')
             .update({
-              ...data,
+              ...processedFieldData,
               updated_at: new Date().toISOString()
             })
             .eq('id', productId)
@@ -120,7 +170,7 @@ export async function POST(request: NextRequest) {
           
           result = await supabase
             .from('products')
-            .update(enrichedData)
+            .update(processedData)
             .eq('id', productId)
             .select();
         }
@@ -132,7 +182,7 @@ export async function POST(request: NextRequest) {
       
       result = await supabase
         .from('products')
-        .insert([enrichedData])
+        .insert([processedData])
         .select();
     }
 

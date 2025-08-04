@@ -116,7 +116,6 @@ export function useCaptureForm() {
   const loadFromCapture = useCallback((captureData: { url: string; screenshot_url: string; thumbnail_url: string; created_at: string }) => {
     updateFields({
       erfassung_quell_url: captureData.url,
-      source_url: captureData.url,
       erfassung_erfassungsdatum: new Date(captureData.created_at).toLocaleString('de-DE'),
     });
   }, [updateFields]);
@@ -146,8 +145,6 @@ export function useCaptureForm() {
   // Convert form data to Product format for database
   const toProductData = () => {
     return {
-      // Source Information (Chrome Extension)
-      source_url: formData.source_url || null,
       
       // PRODUKT-Spalte
       produkt_kategorie: formData.produkt_kategorie && formData.produkt_kategorie.length > 0 ? formData.produkt_kategorie : null,

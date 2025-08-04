@@ -28,6 +28,12 @@ Das kaputte Dropdown-Menü zu den Kategorisierungen wurde repariert.
 
 9. Wenn größer Mengen Code bearbeitet werden sollen, dann Teile das in kleinere Stücke auf, damit das Kontext-Fenster nicht zu voll wird.
 
+10. Im Root liegt eine .env.local datei, die für Cursor unsichtbar ist da sie im .gitignore gelistet ist. Sie enthält folgende Schlüssel:
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_URL="https://jpmhwyjiuodsvjowddsm.supabase.co"
+SUPABASE_SECRET_KEY=
+VERCEL_OIDC_TOKEN=
+PERPLEXITY_API_KEY=
 
 Generelle Schlussbemerkung:
 Ich möchte immer gerne in kleinen kontrollierten Schritten vorgehen, die wie vorher besprechen. 
