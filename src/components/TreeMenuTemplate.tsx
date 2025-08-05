@@ -15,11 +15,17 @@ interface TreeMenuTemplateProps {
     label: string;
     main_category: string;
     sub_category: string;
+    path?: string;
+    type?: 'folder' | 'file';
+    children?: any[];
+    hasChildren?: boolean;
   }>;
   loading?: boolean;
   error?: string | null;
   onCategorySelect: (categoryId: string) => void;
   selectedCategoryId?: string | null;
+  onExpandFolder?: (path: string) => Promise<void>;
+  loadingExpandedItems?: Set<string>;
 }
 
 export function TreeMenuTemplate({
@@ -28,7 +34,9 @@ export function TreeMenuTemplate({
   loading = false,
   error = null,
   onCategorySelect,
-  selectedCategoryId = null
+  selectedCategoryId = null,
+  onExpandFolder,
+  loadingExpandedItems = new Set()
 }: TreeMenuTemplateProps) {
   // State Management
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,30 +49,19 @@ export function TreeMenuTemplate({
     category.sub_category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Group categories by main_category and convert to tree structure
-  const groupedCategories = filteredCategories.reduce((acc, category) => {
-    if (!acc[category.main_category]) {
-      acc[category.main_category] = [];
-    }
-    acc[category.main_category].push(category);
-    return acc;
-  }, {} as Record<string, typeof categories>);
-
-  const treeItems = Object.entries(groupedCategories).map(([mainCategory, subCategories]) => ({
-    id: mainCategory,
-    label: mainCategory,
-    children: subCategories.map(category => ({
-      id: category.id,
-      label: category.label,
-    }))
+  // Convert to tree structure for CustomTreeView
+  const treeItems = filteredCategories.map(category => ({
+    id: category.id,
+    label: category.label,
+    path: category.path,
+    type: category.type || 'folder',
+    hasChildren: category.hasChildren,
+    children: category.children || []
   }));
 
   // Event Handlers
   const handleItemSelect = (itemId: string) => {
-    const isMainCategory = treeItems.some(item => item.id === itemId);
-    if (!isMainCategory) {
-      onCategorySelect(itemId);
-    }
+    onCategorySelect(itemId);
   };
 
   const handleExpandedChange = (itemId: string, expanded: boolean) => {
@@ -147,6 +144,8 @@ export function TreeMenuTemplate({
         onItemSelect={handleItemSelect}
         onExpandedChange={handleExpandedChange}
         selectedItemId={selectedCategoryId}
+        onExpandFolder={onExpandFolder}
+        loadingExpandedItems={loadingExpandedItems}
       />
 
       {/* Loading/Error States */}

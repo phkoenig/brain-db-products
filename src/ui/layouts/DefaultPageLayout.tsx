@@ -14,6 +14,7 @@ import { FeatherDatabase } from "@subframe/core";
 import { FeatherPlus } from "@subframe/core";
 import { FeatherSettings } from "@subframe/core";
 import { FeatherUserCircle } from "@subframe/core";
+import { FeatherFolder } from "@subframe/core";
 
 interface DefaultPageLayoutRootProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -34,6 +35,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
   const isDatabasePage = pathname === "/database";
   const isCapturePage = pathname === "/capture";
   const isSettingsPage = pathname === "/settings";
+  const isPlanPage = pathname === "/plan";
 
   return (
     <div
@@ -87,6 +89,15 @@ const DefaultPageLayoutRoot = React.forwardRef<
             className="w-16 h-16"
           >
             Neu
+          </SidebarRailWithLabels.NavItem>
+        </Link>
+        <Link href="/plan">
+          <SidebarRailWithLabels.NavItem 
+            icon={<FeatherFolder />}
+            selected={isPlanPage}
+            className="w-16 h-16"
+          >
+            Plan
           </SidebarRailWithLabels.NavItem>
         </Link>
       </SidebarRailWithLabels>
