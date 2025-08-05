@@ -1,3 +1,49 @@
+# 05.08.2025 - 08:15 - Tree-View Auswahl-Hervorhebung optimiert
+
+**Aufgaben:**
+- Farbliche Hervorhebung des ausgewählten Ordners implementiert
+- Subframe Primärfarbe korrekt verwendet (nicht Standard-Blau)
+- Abgedämpfte Farben für bessere Benutzerfreundlichkeit
+- Kontrast-Optimierung für optimale Lesbarkeit
+- Vertikales Springen der Tree-View behoben
+
+**Schwierigkeiten:**
+- Zunächst falsche Primärfarbe (Tailwind-Blau statt Subframe-Pink)
+- Knallige Farben waren zu aufdringlich für professionelle Nutzung
+- Hover-Effekte führten zu unzureichendem Kontrast
+- Vertikales Springen trat wieder auf durch unterschiedliche Hover-Effekte
+- Icon-Import-Probleme mit Feather-Icons (bekanntes Problem)
+
+**Lösungen:**
+- **Korrekte Subframe-Farben:** `brand-100` (helles Pink) für Hintergrund, `brand-700` (dunkles Pink) für Text
+- **Abgedämpfte Farbpalette:** Statt knalligem Rot dezente, professionelle Farben
+- **Kontrast-Optimierung:** Dunkler Text auf hellem Hintergrund für beste Lesbarkeit
+- **Einheitliche Hover-Effekte:** `hover:bg-neutral-50` für alle Items verhindert Springen
+- **Konsistente Icons:** Alle Icons passen sich der Auswahl-Farbe an
+
+**Erkannte Best Practices:**
+- **Design-System:** Immer die vorgegebenen Farben des UI-Frameworks verwenden
+- **Kontrast-Richtlinien:** Dunkler Text auf hellem Hintergrund für Accessibility
+- **Hover-Konsistenz:** Einheitliche Hover-Effekte verhindern Layout-Verschiebungen
+- **Abgedämpfte Farben:** Professionelle Anwendungen benötigen subtile Hervorhebungen
+- **Icon-Synchronisation:** Icons sollten sich der Text-Farbe anpassen
+
+**Ergebnis:**
+- ✅ **Korrekte Subframe Primärfarbe (brand-100/brand-700) implementiert**
+- ✅ **Abgedämpfte, professionelle Auswahl-Hervorhebung**
+- ✅ **Optimaler Kontrast für beste Lesbarkeit**
+- ✅ **Kein vertikales Springen mehr beim Klicken**
+- ✅ **GitHub-Commit erfolgreich (Commit: fea2623)**
+
+**Technische Details:**
+- Subframe brand-100: rgb(252, 231, 243) - Helles, abgedämpftes Pink
+- Subframe brand-700: rgb(190, 24, 93) - Dunkles Pink für optimalen Kontrast
+- Einheitlicher Hover-Effekt verhindert Layout-Verschiebungen
+- Transition-Effekte für smooth Animationen
+- Responsive Design mit korrekten Flex-Layouts
+
+---
+
 # 05.08.2025 - 07:45 - Tree-Navigation UX-Verbesserungen implementiert
 
 **Aufgaben:**
