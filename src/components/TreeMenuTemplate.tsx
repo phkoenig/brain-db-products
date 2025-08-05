@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CustomTreeView } from "@/components/CustomTreeView";
 import { TextField } from "@/ui/components/TextField";
 import { IconButton } from "@/ui/components/IconButton";
-import { FeatherSearch } from "@subframe/core";
-import { FeatherChevronDown } from "@subframe/core";
-import { FeatherChevronUp } from "@subframe/core";
+import { FeatherSearch, FeatherChevronDown } from "@subframe/core";
 
 interface TreeMenuTemplateProps {
   title?: string;
@@ -26,6 +24,7 @@ interface TreeMenuTemplateProps {
   selectedCategoryId?: string | null;
   onExpandFolder?: (path: string) => Promise<void>;
   loadingExpandedItems?: Set<string>;
+  expandedFolders?: Set<string>;
 }
 
 export function TreeMenuTemplate({
@@ -36,11 +35,41 @@ export function TreeMenuTemplate({
   onCategorySelect,
   selectedCategoryId = null,
   onExpandFolder,
-  loadingExpandedItems = new Set()
+  loadingExpandedItems = new Set(),
+  expandedFolders = new Set()
 }: TreeMenuTemplateProps) {
   // State Management
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  // Sync expandedItems with expandedFolders from hook
+  useEffect(() => {
+    const newExpandedItems: Record<string, boolean> = {};
+    
+    // Convert Set to Record for CustomTreeView
+    expandedFolders.forEach(path => {
+      // Find the item with this path and use its id
+      const findItemByPath = (items: any[]): string | null => {
+        for (const item of items) {
+          if (item.path === path) {
+            return item.id;
+          }
+          if (item.children) {
+            const found = findItemByPath(item.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const itemId = findItemByPath(categories);
+      if (itemId) {
+        newExpandedItems[itemId] = true;
+      }
+    });
+    
+    setExpandedItems(newExpandedItems);
+  }, [expandedFolders, categories]);
 
   // Filter categories based on search term
   const filteredCategories = categories.filter(category =>
@@ -132,7 +161,7 @@ export function TreeMenuTemplate({
             const allMainCategories = [...new Set(categories.map(cat => cat.main_category))];
             const currentStates = allMainCategories.map(cat => expandedItems[cat] || false);
             const allExpanded = currentStates.every(state => state);
-            return allExpanded ? <FeatherChevronUp /> : <FeatherChevronDown />;
+            return allExpanded ? <span>−</span> : <FeatherChevronDown />;
           })()}
         />
       </div>

@@ -8,10 +8,17 @@ import { useNextcloud } from "@/hooks/useNextcloud";
 export default function PlanPage() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
-  const [loadingExpandedItems, setLoadingExpandedItems] = useState<Set<string>>(new Set());
   
   // Use Nextcloud hook to fetch real folder structure
-  const { folders, loading, error, refreshFolders, expandFolder, expandedFolders } = useNextcloud('/');
+  const { 
+    folders, 
+    loading, 
+    error, 
+    refreshFolders, 
+    expandFolder, 
+    expandedFolders,
+    loadingExpandedItems 
+  } = useNextcloud('/');
 
   const handleFolderSelect = (folderId: string) => {
     setSelectedFolderId(folderId);
@@ -27,14 +34,9 @@ export default function PlanPage() {
 
   const handleExpandFolder = async (path: string) => {
     try {
-      setLoadingExpandedItems(prev => new Set([...prev, path]));
       await expandFolder(path);
-    } finally {
-      setLoadingExpandedItems(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(path);
-        return newSet;
-      });
+    } catch (error) {
+      console.error('Failed to expand folder:', error);
     }
   };
 
@@ -51,6 +53,7 @@ export default function PlanPage() {
           selectedCategoryId={selectedFolderId}
           onExpandFolder={handleExpandFolder}
           loadingExpandedItems={loadingExpandedItems}
+          expandedFolders={expandedFolders}
         />
         
         {/* Main Content */}
@@ -99,6 +102,11 @@ export default function PlanPage() {
                 {expandedFolders.size > 0 && (
                   <p className="text-green-600 text-sm mt-1">
                     📁 {expandedFolders.size} Ordner expandiert
+                  </p>
+                )}
+                {loadingExpandedItems.size > 0 && (
+                  <p className="text-blue-600 text-sm mt-1">
+                    🔄 {loadingExpandedItems.size} Ordner werden geladen...
                   </p>
                 )}
               </div>

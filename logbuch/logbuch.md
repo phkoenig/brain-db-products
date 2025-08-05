@@ -1,3 +1,43 @@
+# 05.08.2025 - 06:30 - Nextcloud-Integration mit rekursiver Tree-Struktur implementiert
+
+**Aufgaben:**
+- Plan-Seite mit Tree-Struktur erstellt (wie DB-Seite)
+- Nextcloud-Integration über WebDAV-Protokoll implementiert
+- Rekursive Ordnerstrukturen mit unbegrenzter Tiefe
+- Dynamisches Laden von Unterordnern (Lazy Loading)
+- Datei- und Ordner-Unterstützung mit verschiedenen Icons
+- Loading-States und Error-Handling implementiert
+
+**Schwierigkeiten:**
+- TypeScript-Fehler bei WebDAV-Bibliothek (FileStat-Typen)
+- Zu lange Dateinamen in node_modules verhinderten Git-Add
+- Komplexe rekursive Tree-Struktur für unbegrenzte Ordner-Tiefe
+- Dynamisches Laden von Unterordnern ohne Performance-Probleme
+
+**Lösungen:**
+- **TypeScript-Fixes:** `as any[]` Casting für WebDAV-Response-Typen
+- **Git-Problem:** Nur relevante Dateien (src/, package.json) committed
+- **Rekursive Struktur:** NextcloudService mit getSubfolders() und expandFolder()
+- **Performance:** Lazy Loading - Unterordner nur bei Bedarf geladen
+- **UI/UX:** Loading-Spinner, verschiedene Icons für Dateien/Ordner
+
+**Erkannte Best Practices:**
+- **Lazy Loading:** Unterordner nur beim Expandieren laden
+- **Error Boundaries:** Umfassende Fehlerbehandlung für WebDAV-Calls
+- **Loading States:** Benutzer-Feedback während API-Calls
+- **Type Safety:** TypeScript-Interfaces für Nextcloud-Daten
+- **Modulare Architektur:** Separate Service-Klasse, API-Routes, Hooks
+
+**Ergebnis:**
+- ✅ Nextcloud-Integration funktioniert mit echten Daten
+- ✅ 19 Hauptordner erfolgreich geladen
+- ✅ Rekursive Unterordner-Navigation (ARCH → ANG → etc.)
+- ✅ Dateien und Ordner werden unterschiedlich behandelt
+- ✅ Loading-States für bessere UX
+- ✅ GitHub-Commit erfolgreich
+
+---
+
 # Logbuch - BRAIN DB Products A
 
 ## 2025-01-05 15:45 - ProductDetailDrawer vollständig überarbeitet und funktionsfähig gemacht

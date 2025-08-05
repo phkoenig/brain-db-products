@@ -9,6 +9,7 @@ interface UseNextcloudReturn {
   loadSubfolders: (path: string) => Promise<NextcloudFolder[]>;
   expandFolder: (folderPath: string) => Promise<void>;
   expandedFolders: Set<string>;
+  loadingExpandedItems: Set<string>;
 }
 
 export function useNextcloud(path: string = '/'): UseNextcloudReturn {
@@ -16,6 +17,7 @@ export function useNextcloud(path: string = '/'): UseNextcloudReturn {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [loadingExpandedItems, setLoadingExpandedItems] = useState<Set<string>>(new Set());
 
   const fetchFolders = async (folderPath: string = path) => {
     try {
@@ -73,9 +75,35 @@ export function useNextcloud(path: string = '/'): UseNextcloudReturn {
     }
   };
 
+  // Recursive function to update folder children at any level
+  const updateFolderChildren = (folders: NextcloudFolder[], targetPath: string, children: NextcloudFolder[]): NextcloudFolder[] => {
+    return folders.map(folder => {
+      if (folder.path === targetPath) {
+        return {
+          ...folder,
+          children: children,
+          hasChildren: children.length > 0
+        };
+      }
+      
+      // Recursively search in children
+      if (folder.children) {
+        return {
+          ...folder,
+          children: updateFolderChildren(folder.children, targetPath, children)
+        };
+      }
+      
+      return folder;
+    });
+  };
+
   const expandFolder = async (folderPath: string) => {
     try {
       console.log(`🔍 useNextcloud: Expanding folder: ${folderPath}`);
+      
+      // Add to loading state
+      setLoadingExpandedItems(prev => new Set([...prev, folderPath]));
       
       // Add to expanded folders set
       setExpandedFolders(prev => new Set([...prev, folderPath]));
@@ -83,18 +111,9 @@ export function useNextcloud(path: string = '/'): UseNextcloudReturn {
       // Load subfolders for this path
       const subfolders = await loadSubfolders(folderPath);
       
-      // Update folders with children
+      // Update folders with children recursively
       setFolders(prevFolders => {
-        return prevFolders.map(folder => {
-          if (folder.path === folderPath) {
-            return {
-              ...folder,
-              children: subfolders,
-              hasChildren: subfolders.length > 0
-            };
-          }
-          return folder;
-        });
+        return updateFolderChildren(prevFolders, folderPath, subfolders);
       });
       
       console.log(`✅ useNextcloud: Successfully expanded folder with ${subfolders.length} children`);
@@ -103,6 +122,13 @@ export function useNextcloud(path: string = '/'): UseNextcloudReturn {
       console.error('❌ useNextcloud: Error expanding folder:', err);
       // Remove from expanded folders if failed
       setExpandedFolders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(folderPath);
+        return newSet;
+      });
+    } finally {
+      // Remove from loading state
+      setLoadingExpandedItems(prev => {
         const newSet = new Set(prev);
         newSet.delete(folderPath);
         return newSet;
@@ -125,6 +151,7 @@ export function useNextcloud(path: string = '/'): UseNextcloudReturn {
     refreshFolders,
     loadSubfolders,
     expandFolder,
-    expandedFolders
+    expandedFolders,
+    loadingExpandedItems
   };
 } 
