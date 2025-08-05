@@ -14,7 +14,10 @@
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "dotenv": "^17.2.1",
+    "forge-apis": "^0.9.10",
+    "multer": "^1.4.5-lts.1",
     "next": "15.4.4",
+    "node-fetch": "^3.3.2",
     "openai": "^5.10.2",
     "perplexity-sdk": "^1.0.4",
     "react": "19.1.0",
@@ -24,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/multer": "^1.4.11",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
