@@ -100,259 +100,131 @@ export class PerplexityAnalyzer {
           }
         }
         
-        console.log('DEBUG: Cleaned content for JSON parsing:', cleanedContent.substring(0, 300) + '...');
+        console.log('DEBUG: Final cleaned content for JSON parsing:', cleanedContent.substring(0, 300) + '...');
         
-        // 🆕 Verbesserte JSON-Parsing-Logik
-        let parsedResult;
-        try {
-          parsedResult = JSON.parse(cleanedContent);
-        } catch (parseError) {
-          console.error('DEBUG: Initial JSON parse failed, trying to fix unterminated strings...');
-          
-          // Versuche unterminierte Strings zu reparieren
-          let fixedContent = cleanedContent;
-          
-          // Entferne unvollständige URLs am Ende
-          const urlMatch = fixedContent.match(/(https?:\/\/[^"]*)$/);
-          if (urlMatch) {
-            fixedContent = fixedContent.replace(urlMatch[1], '');
-          }
-          
-          // Entferne unvollständige Strings am Ende
-          const stringMatch = fixedContent.match(/([^"]*)$/);
-          if (stringMatch && stringMatch[1].length > 0) {
-            fixedContent = fixedContent.replace(stringMatch[1], '');
-          }
-          
-          // Schließe offene Anführungszeichen
-          const quoteCount = (fixedContent.match(/"/g) || []).length;
-          if (quoteCount % 2 !== 0) {
-            fixedContent = fixedContent.replace(/[^"]*$/, '');
-          }
-          
-          console.log('DEBUG: Fixed content for JSON parsing:', fixedContent.substring(0, 300) + '...');
-          
-          try {
-            parsedResult = JSON.parse(fixedContent);
-            console.log('DEBUG: JSON parse successful after fixing');
-          } catch (secondParseError) {
-            console.error('DEBUG: Second JSON parse also failed:', secondParseError);
-            throw parseError; // Throw original error
-          }
-        }
+        const parsedResult = JSON.parse(cleanedContent);
+        console.log('DEBUG: Successfully parsed JSON result');
         
-        console.log('DEBUG: Perplexity analysis completed successfully');
-        
-        return {
-          data: parsedResult,
-          searchQueries,
-          sources: data.citations || []
-        } as any; // Temporär any verwenden, da das Interface nicht data unterstützt
+        // Validiere und normalisiere das Ergebnis
+        return this.parseAIResponse(parsedResult);
       } catch (parseError) {
         console.error('DEBUG: Failed to parse JSON response:', parseError);
         console.error('DEBUG: Raw content that failed to parse:', content);
         throw new Error(`Failed to parse Perplexity response as JSON: ${parseError}`);
       }
     } catch (error) {
+      console.error('DEBUG: Perplexity analysis failed:', error);
       return this.handleError(error);
     }
   }
-  
+
   private async buildDynamicPrompt(url: string): Promise<string> {
     try {
-      const schema = await getCachedFieldDefinitions();
-      
-      const fieldDescriptions = schema.fields.map(field => {
-        const examples = field.examples ? ` (Beispiele: ${field.examples.join(', ')})` : '';
-        const hints = field.extraction_hints ? ` (Hinweise: ${field.extraction_hints.join(', ')})` : '';
-        return `- ${field.field_name}: ${field.description}${examples}${hints}`;
-      }).join('\n');
-
-      return `
-Analysiere die folgende Webseite: ${url}
-
-Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
-
-Ziel-Felder:
-${fieldDescriptions}
-
-JSON-Format für jedes Feld:
-{
-  "value": "extrahierter Wert",
-  "confidence": 0.0-1.0,
-  "reasoning": "Begründung für die Extraktion"
-}
-
-Wichtige Hinweise:
-- Gib nur gültiges JSON zurück
-- Verwende confidence-Werte zwischen 0.0 und 1.0
-- Bei unsicheren Werten verwende niedrige confidence-Werte
-- Bei fehlenden Informationen verwende leere Strings und confidence 0.0
-- Bei numerischen Werten (Preis, Gewicht, etc.) extrahiere nur die Zahl ohne Einheiten
-- Verwende die angegebenen Hinweise und Beispiele zur besseren Extraktion
-- Analysiere den gesamten Inhalt der Webseite, nicht nur den sichtbaren Text
-
-Antworte ausschließlich mit gültigem JSON.
-      `;
+      const fieldDefinitions = await getCachedFieldDefinitions();
+      return await generateAIPrompt(url, fieldDefinitions);
     } catch (error) {
-      console.error('Failed to build dynamic prompt, falling back to static prompt:', error);
+      console.warn('Failed to build dynamic prompt, falling back to static prompt:', error);
       return this.buildStaticPrompt(url);
     }
   }
-  
+
   private buildStaticPrompt(url: string): string {
     return `
 Analysiere die folgende Webseite: ${url}
 
-Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
+Extrahiere alle verfügbaren Produktinformationen und gib sie als JSON-Objekt zurück. 
+Verwende folgende Struktur für jedes Feld:
 
 {
-  "product_name": {
-    "value": "Produktname",
-    "confidence": 0.0-1.0,
-    "reasoning": "Begründung für die Extraktion"
-  },
-  "manufacturer": {
-    "value": "Hersteller",
-    "confidence": 0.0-1.0,
-    "reasoning": "Begründung für die Extraktion"
-  },
-  "price": {
-    "value": "Preis als Zahl",
-    "confidence": 0.0-1.0,
-    "reasoning": "Begründung für die Extraktion"
-  },
-  "description": {
-    "value": "Produktbeschreibung",
-    "confidence": 0.0-1.0,
-    "reasoning": "Begründung für die Extraktion"
-  },
-  "specifications": {
-    "value": "Technische Spezifikationen",
-    "confidence": 0.0-1.0,
-    "reasoning": "Begründung für die Extraktion"
+  "fieldName": {
+    "value": "extrahierter Wert",
+    "confidence": 0.95,
+    "source": "URL oder Textstelle"
   }
 }
+
+Fokussiere dich auf:
+- Produktname und Beschreibung
+- Technische Spezifikationen
+- Preise und Verfügbarkeit
+- Hersteller- und Händlerinformationen
+- Maße und Gewicht
+- Materialien und Eigenschaften
+
+Gib nur gültiges JSON zurück, ohne zusätzlichen Text oder Erklärungen.
     `;
   }
-  
+
   private parseAIResponse(content: string | null): AIAnalysisResult {
     if (!content) {
       return this.createEmptyResult();
     }
 
     try {
-      // Remove markdown code blocks if present
-      let cleanContent = content.trim();
-      if (cleanContent.startsWith('```json')) {
-        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-      } else if (cleanContent.startsWith('```')) {
-        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      // Wenn content bereits ein Objekt ist, verwende es direkt
+      const data = typeof content === 'string' ? JSON.parse(content) : content;
+      
+      if (!data || typeof data !== 'object') {
+        console.warn('Invalid AI response format:', data);
+        return this.createEmptyResult();
       }
-      
-      console.log('DEBUG: Cleaned content for JSON parsing:', cleanContent.substring(0, 200) + '...');
-      
-      const parsed = JSON.parse(cleanContent);
-      const result = this.createEmptyResult();
-      
-      // Dynamically parse all fields from the response
-      for (const [fieldName, fieldData] of Object.entries(parsed)) {
-        if (this.isValidFieldName(fieldName) && fieldName in result) {
-          (result as any)[fieldName] = this.parseFieldData(fieldData);
+
+      const result: AIAnalysisResult = {
+        data: {},
+        searchQueries: [],
+        sources: [content.toString()],
+        error: null
+      };
+
+      // Iteriere über alle Felder im Response
+      for (const [fieldName, fieldData] of Object.entries(data)) {
+        if (this.isValidFieldName(fieldName)) {
+          result.data[fieldName] = this.parseFieldData(fieldData);
         }
       }
-      
+
       return result;
     } catch (error) {
-      console.error('Failed to parse Perplexity AI response:', error);
+      console.error('Error parsing AI response:', error);
       return this.createEmptyResult();
     }
   }
-  
+
   private isValidFieldName(fieldName: string): boolean {
-    // Add validation logic if needed
     return typeof fieldName === 'string' && fieldName.length > 0;
   }
-  
+
   private parseFieldData(fieldData: unknown): FieldData {
-    if (!fieldData || typeof fieldData !== 'object') {
-      return this.createEmptyField();
+    if (typeof fieldData === 'object' && fieldData !== null) {
+      const data = fieldData as any;
+      return {
+        value: data.value || '',
+        confidence: typeof data.confidence === 'number' ? data.confidence : 0.5,
+        source: data.source || ''
+      };
+    } else {
+      return {
+        value: String(fieldData || ''),
+        confidence: 0.5,
+        source: ''
+      };
     }
-    
-    const data = fieldData as any;
-    return {
-      value: data.value || '',
-      confidence: typeof data.confidence === 'number' ? Math.max(0, Math.min(1, data.confidence)) : 0,
-      reasoning: data.reasoning || '',
-      source: 'perplexity'
-    };
   }
-  
+
   private createEmptyField(): FieldData {
     return {
       value: '',
       confidence: 0,
-      reasoning: '',
-      source: 'perplexity'
+      source: ''
     };
   }
-  
+
   private createEmptyResult(): AIAnalysisResult {
-    const emptyField = this.createEmptyField();
     return {
-      // Basic product information
-      product_name: emptyField,
-      manufacturer: emptyField,
-      series: emptyField,
-      product_code: emptyField,
-      application_area: emptyField,
-      description: emptyField,
-      
-      // URLs
-      manufacturer_url: emptyField,
-      manufacturer_product_url: emptyField,
-      
-      // Retailer information
-      retailer_name: emptyField,
-      retailer_url: emptyField,
-      product_page_url: emptyField,
-      
-      // Pricing
-      price: emptyField,
-      unit: emptyField,
-      price_per_unit: emptyField,
-      availability: emptyField,
-      
-      // Specifications
-      dimensions: emptyField,
-      color: emptyField,
-      main_material: emptyField,
-      surface: emptyField,
-      weight_per_unit: emptyField,
-      fire_resistance: emptyField,
-      thermal_conductivity: emptyField,
-      u_value: emptyField,
-      sound_insulation: emptyField,
-      water_resistance: emptyField,
-      vapor_diffusion: emptyField,
-      installation_type: emptyField,
-      maintenance: emptyField,
-      environment_cert: emptyField,
-      
-      // Documents
-      datasheet_url: emptyField,
-      technical_sheet_url: emptyField,
-      additional_documents_url: emptyField,
-      catalog_url: emptyField,
-      
-      // Experience
-      project: emptyField,
-      sample_ordered: emptyField,
-      sample_stored_in: emptyField,
-      rating: emptyField,
-      notes: emptyField,
-      
-      confidence_scores: {}
+      data: {},
+      searchQueries: [],
+      sources: [],
+      error: null
     };
   }
   
@@ -365,15 +237,7 @@ Extrahiere die folgenden Produktinformationen und gib sie als JSON zurück:
       error: error instanceof Error ? error.message : 'Unknown error'
     };
   }
-} 
-
-// Export einer Instanz von PerplexityAnalyzer
-const apiKey = process.env.PERPLEXITY_API_KEY;
-if (!apiKey) {
-  throw new Error('PERPLEXITY_API_KEY environment variable is not set');
 }
-
-export const perplexityAnalyzer = new PerplexityAnalyzer(apiKey);
 
 // Export function for the enhanced analysis API with dynamic prompts
 export async function analyzeWithPerplexity(url: string, fieldDefinitions: any, customPrompt?: string): Promise<any> {
