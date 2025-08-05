@@ -1,7 +1,17 @@
-import * as APS from 'forge-apis';
+// Conditional import of forge-apis to avoid build errors when APS is not configured
+let APS: any = null;
 
 const CLIENT_ID = process.env.APS_CLIENT_ID;
 const CLIENT_SECRET = process.env.APS_CLIENT_SECRET;
+
+// Only import forge-apis if APS is configured
+if (CLIENT_ID && CLIENT_SECRET) {
+  try {
+    APS = require('forge-apis');
+  } catch (error) {
+    console.warn('forge-apis package not available - APS features will be disabled');
+  }
+}
 
 // Graceful handling of missing APS credentials
 if (!CLIENT_ID || !CLIENT_SECRET) {
@@ -9,9 +19,9 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
 }
 
 // APS OAuth2 Client (only if credentials are available)
-let oAuth2Client: APS.AuthClientTwoLegged | null = null;
+let oAuth2Client: any = null;
 
-if (CLIENT_ID && CLIENT_SECRET) {
+if (CLIENT_ID && CLIENT_SECRET && APS) {
   oAuth2Client = new APS.AuthClientTwoLegged(CLIENT_ID, CLIENT_SECRET, [
     'data:read',
     'data:write',
@@ -68,5 +78,8 @@ export async function getAPSCredentials() {
 
 // Helper function to check if APS is configured
 export function isAPSConfigured(): boolean {
-  return !!(CLIENT_ID && CLIENT_SECRET);
-} 
+  return !!(CLIENT_ID && CLIENT_SECRET && APS);
+}
+
+// Export APS for conditional use
+export { APS }; 

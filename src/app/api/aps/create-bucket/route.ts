@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as APS from 'forge-apis';
-import { getAPSCredentials, isAPSConfigured } from '@/lib/aps-token-manager';
+import { getAPSCredentials, isAPSConfigured, APS } from '@/lib/aps-token-manager';
 
 export async function POST(request: NextRequest) {
   try {
