@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from "react";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { Progress } from "@/ui/components/Progress";
 import { Select } from "@/ui/components/Select";
@@ -90,7 +90,7 @@ const debugLog = (message: string, data?: any) => {
   }
 };
 
-function Extractor() {
+function ExtractorContent() {
   const searchParams = useSearchParams();
   const productIdFromUrl = searchParams.get('id');
   
@@ -3141,6 +3141,29 @@ function Extractor() {
         </div>
       )}
     </DefaultPageLayout>
+  );
+}
+
+// Loading component for Suspense
+function ExtractorLoading() {
+  return (
+    <DefaultPageLayout>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900 mx-auto mb-4"></div>
+          <p className="text-neutral-600">Lade Extraktor...</p>
+        </div>
+      </div>
+    </DefaultPageLayout>
+  );
+}
+
+// Main component with Suspense boundary
+function Extractor() {
+  return (
+    <Suspense fallback={<ExtractorLoading />}>
+      <ExtractorContent />
+    </Suspense>
   );
 }
 
