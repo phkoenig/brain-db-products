@@ -1,19 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase-Client mit Secret Key für Server-Side-Operationen
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  }
-);
-
 export async function POST(request: NextRequest) {
   try {
     const { productId, captureId, url } = await request.json();
@@ -24,6 +11,25 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Supabase-Client mit Secret Key für Server-Side-Operationen - moved inside function
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+    
+    if (!supabaseUrl || !supabaseSecretKey) {
+      return NextResponse.json(
+        { error: 'Supabase configuration missing' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseSecretKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
 
     console.log(`🔄 Starte Bildübertragung für Product ${productId} von Capture ${captureId}`);
     console.log('API-Request:', { productId, captureId, url });
