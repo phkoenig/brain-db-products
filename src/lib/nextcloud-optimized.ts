@@ -18,9 +18,11 @@ export interface NextcloudFolder {
   path: string;
   type: 'folder' | 'file';
   size?: number;
-  lastModified?: Date;
+  lastModified?: Date | string;
   children?: NextcloudFolder[];
   hasChildren?: boolean;
+  mimeType?: string;
+  fileExtension?: string;
 }
 
 export class NextcloudOptimizedService {
@@ -37,10 +39,42 @@ export class NextcloudOptimizedService {
       throw new Error('Nextcloud credentials not configured');
     }
 
+    // Use the URL as provided in .env.local (should already include /remote.php/webdav)
     this.client = createClient(nextcloudUrl, {
       username: nextcloudUsername,
       password: nextcloudPassword,
     });
+  }
+
+  /**
+   * Get file extension and type from filename
+   */
+  private getFileInfo(filename: string): { extension: string; type: string } {
+    const extension = filename.split('.').pop()?.toLowerCase() || '';
+    
+    // Map common file extensions to types
+    const typeMap: Record<string, string> = {
+      'pdf': 'PDF',
+      'dwg': 'DWG',
+      'dxf': 'DXF',
+      'jpg': 'JPG',
+      'jpeg': 'JPG',
+      'png': 'PNG',
+      'gif': 'GIF',
+      'doc': 'DOC',
+      'docx': 'DOCX',
+      'xls': 'XLS',
+      'xlsx': 'XLSX',
+      'txt': 'TXT',
+      'zip': 'ZIP',
+      'rar': 'RAR',
+      '7z': '7Z',
+    };
+    
+    return {
+      extension,
+      type: typeMap[extension] || extension.toUpperCase()
+    };
   }
 
   /**
@@ -63,6 +97,8 @@ export class NextcloudOptimizedService {
       const items: NextcloudFolder[] = [];
       
       for (const item of contents as any[]) {
+        const fileInfo = this.getFileInfo(item.basename);
+        
         const folderItem: NextcloudFolder = {
           id: item.basename,
           label: item.basename,
@@ -71,6 +107,8 @@ export class NextcloudOptimizedService {
           size: item.size,
           lastModified: item.lastmod ? new Date(item.lastmod) : undefined,
           hasChildren: item.type === 'directory' ? true : false,
+          mimeType: item.mimeType,
+          fileExtension: fileInfo.extension,
         };
 
         // If recursive and it's a directory, fetch children
