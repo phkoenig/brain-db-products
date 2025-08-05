@@ -1,5 +1,81 @@
 # Logbuch - BRAIN DB Products A
 
+## 05.08.2025 - 17:50 - APS Integration: Bucket-Region-Problem identifiziert, Support kontaktiert
+
+**Aufgabe:** Autodesk Platform Services (APS) File Viewer Integration für CAD-Dateien
+
+**Durchgeführte Arbeiten:**
+- **APS Setup:** OAuth2 Two-Legged Authentication implementiert
+- **File Upload:** API-Route für Datei-Upload zu APS erstellt
+- **Bucket Management:** Dynamische Bucket-Erstellung mit UUID-Namen
+- **Token Management:** JWT Token Decoder für Scope-Verifizierung
+- **Viewer Integration:** APS Viewer Component für 3D-Modell-Anzeige
+
+**Implementierte Features:**
+- ✅ **APS Authentifizierung** funktioniert (Token-Erstellung erfolgreich)
+- ✅ **Bucket-Erstellung** funktioniert (Status 200)
+- ✅ **Token-Scopes** korrekt: `data:write data:create bucket:create bucket:read`
+- ✅ **Frontend Upload** mit Datei-Validierung (max 10MB)
+- ✅ **APS Viewer Component** für 3D-Modell-Anzeige
+
+**Identifiziertes Problem:**
+- **US-only Account:** APS-Account ist auf US-Region beschränkt
+- **Region-Parameter ignoriert:** `region: "EMEA"` wird von APS ignoriert
+- **Legacy-Buckets:** Alle Buckets werden ohne `region`-Feld erstellt
+- **Upload-Fehler:** `403 {"reason":"Legacy endpoint is deprecated"}`
+
+**Debugging-Schritte:**
+- **forge-apis → fetch:** Direkte HTTP-Requests statt SDK
+- **Bucket-Namen:** UUID-basierte eindeutige Namen
+- **Region-Strategien:** EMEA, US, keine Region getestet
+- **Token-Scopes:** Alle erforderlichen Scopes hinzugefügt
+- **Perplexity-Konsultation:** Problem als Account-Konfiguration identifiziert
+
+**Aktueller Status:**
+- **Code funktioniert** für US-only Accounts
+- **Support kontaktiert** für EMEA-Region-Freischaltung
+- **Arbeitslösung** implementiert (ohne Region-Verifizierung)
+
+**Nächste Schritte:**
+- APS Support-Antwort abwarten
+- EMEA-Region-Freischaltung beantragen
+- Upload-Tests nach Support-Feedback
+
+---
+
+## 05.08.2025 - 11:25 - GitHub-Commit: Doppelklick-Funktionalität erfolgreich implementiert
+
+**Commit:** `3f3a831` - Doppelklick-Funktionalität für Ordner-Öffnung implementiert
+
+**Geänderte Dateien:**
+- `src/app/plan/page.tsx` - Doppelklick-Handler und Hover-Effekte
+- `src/components/TreeMenuTemplate.tsx` - Import-Fix für NextcloudFolder-Typ
+- `logbuch/logbuch.md` - Dokumentation der neuen Features
+
+**Implementierte Features:**
+- ✅ **Doppelklick auf Ordner** öffnet Ordner und lädt Dokumente
+- ✅ **TreeView-Synchronisation** beim Ordner-Öffnen
+- ✅ **Datei-Logging** für späteren Datei-Viewer
+- ✅ **Sanfte Hover-Effekte** für Tabellenzeilen
+- ✅ **Interaktive Checkbox-Funktionalität** mit Klick-Handler
+- ✅ **More-Menu Hover-Effekt** für bessere UX
+
+**Technische Verbesserungen:**
+- **Event-Handling:** `onDoubleClick` und `onClick` mit `stopPropagation`
+- **CSS-Animationen:** `transition-colors duration-200`
+- **Group-Hover:** `group` und `group-hover:opacity-100`
+- **Typ-Sicherheit:** Korrekte NextcloudFolder-Imports
+
+**Status:** Alle Änderungen erfolgreich zu GitHub gepusht
+
+**Nächste Schritte:**
+- Datei-Viewer für Doppelklick auf Dateien implementieren
+- Download-Funktionalität hinzufügen
+- Bulk-Operationen für ausgewählte Dokumente
+- Suchfunktionalität in der Dokumenten-Tabelle
+
+---
+
 ## 05.08.2025 - 11:20 - Doppelklick-Funktionalität für Ordner-Öffnung implementiert
 
 **Aufgabe:** Doppelklick auf Ordner in der Dokumenten-Tabelle zum Öffnen von Ordnern
