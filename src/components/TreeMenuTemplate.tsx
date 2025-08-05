@@ -41,6 +41,8 @@ export function TreeMenuTemplate({
   // State Management
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [treeWidth, setTreeWidth] = useState(320); // Default width
+  const [isResizing, setIsResizing] = useState(false);
 
   // Sync expandedItems with expandedFolders from hook
   useEffect(() => {
@@ -70,6 +72,37 @@ export function TreeMenuTemplate({
     
     setExpandedItems(newExpandedItems);
   }, [expandedFolders, categories]);
+
+  // Resize handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = e.clientX;
+      if (newWidth >= 200 && newWidth <= 600) { // Min 200px, Max 600px
+        setTreeWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   // Filter categories based on search term
   const filteredCategories = categories.filter(category =>
@@ -118,16 +151,19 @@ export function TreeMenuTemplate({
   };
 
   return (
-    <div className="flex w-80 flex-none flex-col items-start gap-2 self-stretch px-4 py-4 shadow-lg overflow-auto">
+    <div 
+      className="flex flex-none flex-col items-start gap-2 self-stretch px-4 py-4 shadow-lg h-full relative"
+      style={{ width: `${treeWidth}px` }}
+    >
       {/* Header */}
-      <div className="flex w-full items-center gap-2 pl-2 py-2">
+      <div className="flex w-full items-center gap-2 pl-2 py-2 flex-shrink-0">
         <span className="grow shrink-0 basis-0 text-heading-3 font-heading-3 text-default-font">
           {title}
         </span>
       </div>
 
       {/* Search Field with Clear Button */}
-      <div className="flex w-full items-center gap-2">
+      <div className="flex w-full items-center gap-2 flex-shrink-0">
         <TextField
           className="h-auto grow shrink-0 basis-0"
           variant="filled"
@@ -166,24 +202,33 @@ export function TreeMenuTemplate({
         />
       </div>
 
-      {/* Tree View */}
-      <CustomTreeView
-        items={treeItems}
-        expandedItems={expandedItems}
-        onItemSelect={handleItemSelect}
-        onExpandedChange={handleExpandedChange}
-        selectedItemId={selectedCategoryId}
-        onExpandFolder={onExpandFolder}
-        loadingExpandedItems={loadingExpandedItems}
-      />
+      {/* Tree View Container with fixed height and scroll */}
+      <div className="flex-1 w-full overflow-y-auto overflow-x-hidden min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+        <CustomTreeView
+          items={treeItems}
+          expandedItems={expandedItems}
+          onItemSelect={handleItemSelect}
+          onExpandedChange={handleExpandedChange}
+          selectedItemId={selectedCategoryId}
+          onExpandFolder={onExpandFolder}
+          loadingExpandedItems={loadingExpandedItems}
+        />
+      </div>
 
       {/* Loading/Error States */}
       {loading && (
-        <div className="text-caption text-subtext-color mt-2">Lade Kategorien...</div>
+        <div className="text-caption text-subtext-color mt-2 flex-shrink-0">Lade Kategorien...</div>
       )}
       {error && (
-        <div className="text-caption text-red-500 mt-2">{error}</div>
+        <div className="text-caption text-red-500 mt-2 flex-shrink-0">{error}</div>
       )}
+
+      {/* Resize Handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-blue-200 transition-colors"
+        onMouseDown={handleMouseDown}
+        style={{ transform: 'translateX(50%)' }}
+      />
     </div>
   );
 } 

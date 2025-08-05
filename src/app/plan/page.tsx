@@ -18,7 +18,7 @@ export default function PlanPage() {
     expandFolder, 
     expandedFolders,
     loadingExpandedItems 
-  } = useNextcloud('/');
+  } = useNextcloud('/ARCH');
 
   const handleFolderSelect = (folderId: string) => {
     setSelectedFolderId(folderId);
@@ -45,7 +45,7 @@ export default function PlanPage() {
       <div className="flex h-full">
         {/* Tree Menu */}
         <TreeMenuTemplate
-          title="Nextcloud Ordner"
+          title="ARCH Projekte"
           categories={folders}
           loading={loading}
           error={error}
@@ -90,14 +90,14 @@ export default function PlanPage() {
             
             {loading && (
               <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-blue-600">Lade Nextcloud-Ordnerstruktur...</p>
+                <p className="text-blue-600">Lade ARCH-Projektstruktur...</p>
               </div>
             )}
             
             {!loading && !error && (
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-600">
-                  ✅ {folders.length} Ordner aus Nextcloud geladen
+                  ✅ {folders.length} ARCH-Projekte geladen
                 </p>
                 {expandedFolders.size > 0 && (
                   <p className="text-green-600 text-sm mt-1">

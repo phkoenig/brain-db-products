@@ -32,3 +32,45 @@ body {
     @apply text-sm text-gray-600;
   }
 }
+
+/* Dezentere Scrollbar Styles */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-gray-300 {
+    scrollbar-color: #d1d5db transparent;
+  }
+  
+  .scrollbar-thumb-gray-400 {
+    scrollbar-color: #9ca3af transparent;
+  }
+  
+  .scrollbar-track-transparent {
+    scrollbar-color: transparent transparent;
+  }
+  
+  /* Webkit Scrollbar Styles für Chrome/Safari */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thumb-gray-400::-webkit-scrollbar-thumb {
+    background-color: #9ca3af;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

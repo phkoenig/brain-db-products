@@ -124,7 +124,7 @@ const TreeItemComponent: React.FC<TreeItemProps> = ({
   return (
     <div className="w-full">
       <div
-        className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-neutral-50 ${
+        className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-neutral-50 min-h-[40px] ${
           isSelected ? "bg-brand-500 text-white" : ""
         }`}
         style={{ paddingLeft: `${level * 16 + 12}px` }}
@@ -138,11 +138,11 @@ const TreeItemComponent: React.FC<TreeItemProps> = ({
           <div className="w-4 h-4" />
         )}
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {getIcon()}
-          <span className={`text-body font-body text-default-font ${
+          <span className={`text-body font-body text-default-font truncate ${
             item.type === 'file' ? "text-subtext-color" : ""
-          }`}>
+          }`} title={item.label}>
             {item.label}
           </span>
         </div>
