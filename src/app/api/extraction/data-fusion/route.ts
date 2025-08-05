@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataFusionEngine } from '@/lib/extraction/dataFusion';
-import { WebScrapingResult, AIAnalysisResult } from '@/lib/types/extraction';
+import { fuseAIData } from '@/lib/extraction/dataFusion';
+import { AIAnalysisResult } from '@/lib/types/extraction';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,15 +20,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize data fusion engine
-    const fusionEngine = new DataFusionEngine();
+    // Fuse the data using the available function
+    const fusedResult = fuseAIData(aiData, webData);
     
-    // Fuse the data
-    const fusedResult = fusionEngine.fuseData(webData, aiData);
-    
-    // Get additional metadata
-    const fieldsNeedingReview = fusionEngine.getFieldsNeedingReview(fusedResult);
-    const overallConfidence = fusionEngine.getOverallConfidence(fusedResult);
+    // Calculate overall confidence
+    const overallConfidence = Object.values(fusedResult).reduce((acc: number, field: any) => {
+      return acc + (field.confidence || 0);
+    }, 0) / Object.keys(fusedResult).length;
+
+    // Find fields needing review (low confidence)
+    const fieldsNeedingReview = Object.entries(fusedResult)
+      .filter(([_, field]: [string, any]) => (field.confidence || 0) < 0.5)
+      .map(([fieldName, _]: [string, any]) => fieldName);
 
     return NextResponse.json({
       success: true,
