@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeWithPerplexity } from '@/lib/extraction/perplexityAnalyzer';
+import { PerplexityAnalyzer } from '@/lib/extraction/perplexityAnalyzer';
 import { generateDynamicPrompt } from '@/lib/extraction/dynamicPrompts';
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,13 @@ export async function POST(request: NextRequest) {
     console.log(`Spalten-Analyse: Dynamischer Prompt generiert (${prompt.length} Zeichen)`);
 
     // Führe Perplexity-Analyse durch
-    const result = await analyzeWithPerplexity(url, { fields: felder }, prompt);
+    const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+    if (!perplexityApiKey) {
+      throw new Error('Perplexity API key not configured');
+    }
+    
+    const analyzer = new PerplexityAnalyzer(perplexityApiKey);
+    const result = await analyzer.analyzeUrl(url, { fields: felder }, prompt);
 
     console.log(`Spalten-Analyse: ${spalte}-Analyse abgeschlossen`);
 

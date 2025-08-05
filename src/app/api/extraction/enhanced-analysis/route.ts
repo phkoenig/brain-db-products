@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loadProductFieldDefinitions } from '@/lib/schemas/product-fields';
 import { analyzeWithOpenAI } from '@/lib/extraction/aiAnalyzer';
-import { analyzeWithPerplexity } from '@/lib/extraction/perplexityAnalyzer';
+import { PerplexityAnalyzer } from '@/lib/extraction/perplexityAnalyzer';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +22,13 @@ export async function POST(request: NextRequest) {
     console.log('Enhanced Analysis: Starting Perplexity AI analysis...');
     let perplexityResult = null;
     try {
-      perplexityResult = await analyzeWithPerplexity(url, fieldDefinitions);
+      const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+      if (!perplexityApiKey) {
+        throw new Error('Perplexity API key not configured');
+      }
+      
+      const analyzer = new PerplexityAnalyzer(perplexityApiKey);
+      perplexityResult = await analyzer.analyzeUrl(url, fieldDefinitions);
       console.log('Enhanced Analysis: Perplexity analysis complete');
     } catch (error) {
       console.error('Enhanced Analysis: Perplexity analysis failed, continuing with OpenAI only:', error);
