@@ -87,21 +87,21 @@ const TreeItemComponent: React.FC<TreeItemProps> = ({
       if (onExpandedChange) {
         onExpandedChange(item.id, !isExpanded);
       }
-    } else {
-      // If it's a file, select it
-      if (onItemSelect) {
-        onItemSelect(item.id);
-      }
+    }
+    
+    // Always select the item (for both folders and files)
+    if (onItemSelect) {
+      onItemSelect(item.id);
     }
   };
 
   const getIcon = () => {
     if (item.type === 'file') {
-      return <FeatherFile size={16} className="text-neutral-500" />;
+      return <FeatherFile size={16} className={isSelected ? "text-brand-700" : "text-neutral-500"} />;
     }
     
     if (item.type === 'folder') {
-      return <FeatherFolder size={16} className="text-neutral-500" />;
+      return <FeatherFolder size={16} className={isSelected ? "text-brand-700" : "text-neutral-500"} />;
     }
     
     return null;
@@ -115,23 +115,25 @@ const TreeItemComponent: React.FC<TreeItemProps> = ({
     }
     
     if (isExpanded) {
-      return <FeatherChevronDown size={14} />;
+      return <FeatherChevronDown size={14} className={isSelected ? "text-brand-700" : "text-neutral-500"} />;
     }
     
-    return <FeatherChevronRight size={14} />;
+    return <FeatherChevronRight size={14} className={isSelected ? "text-brand-700" : "text-neutral-500"} />;
   };
 
   return (
     <div className="w-full">
       <div
-        className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-neutral-50 min-h-[40px] ${
-          isSelected ? "bg-brand-500 text-white" : ""
+        className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer min-h-[40px] transition-colors hover:bg-neutral-50 ${
+          isSelected 
+            ? "bg-brand-100 text-brand-700" 
+            : ""
         }`}
         style={{ paddingLeft: `${level * 16 + 12}px` }}
         onClick={handleRowClick}
       >
         {item.type === 'folder' ? (
-          <div className="flex items-center justify-center w-4 h-4 text-neutral-500">
+          <div className="flex items-center justify-center w-4 h-4">
             {getChevronIcon()}
           </div>
         ) : (
@@ -140,8 +142,8 @@ const TreeItemComponent: React.FC<TreeItemProps> = ({
         
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {getIcon()}
-          <span className={`text-body font-body text-default-font truncate ${
-            item.type === 'file' ? "text-subtext-color" : ""
+          <span className={`text-body font-body truncate ${
+            isSelected ? "text-brand-700" : item.type === 'file' ? "text-subtext-color" : "text-default-font"
           }`} title={item.label}>
             {item.label}
           </span>

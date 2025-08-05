@@ -1,3 +1,49 @@
+# 05.08.2025 - 07:45 - Tree-Navigation UX-Verbesserungen implementiert
+
+**Aufgaben:**
+- Dezentere Scrollbar für bessere visuelle Integration
+- Resizable TreeView-Spalte mit Drag-Handle
+- Text-Truncation für lange Ordnernamen
+- Vertikales Springen der Tree-View behoben
+- Benutzerfreundlichkeit der Navigation verbessert
+
+**Schwierigkeiten:**
+- Standard-Scrollbars sind zu prominent und störend
+- Tree-View sprang vertikal beim Aufklappen von Ordnern
+- Lange Ordnernamen brachen das Layout
+- Feste Spaltenbreite war nicht flexibel genug
+- Icon-Import-Probleme mit FeatherChevronDown
+
+**Lösungen:**
+- **Dezentere Scrollbar:** Custom CSS mit 6px Breite, grauen Farben, transparentem Track
+- **Resizable Panel:** Drag-Handle am rechten Rand, 200-600px Bereich, smooth Animation
+- **Text-Truncation:** `truncate` Klasse mit Tooltips für vollständige Namen
+- **Stabile Höhen:** `min-h-[40px]` für Tree-Items, `flex-1` Container mit `overflow-y-auto`
+- **Cross-Browser:** Webkit und Firefox Scrollbar-Styles implementiert
+
+**Erkannte Best Practices:**
+- **Custom Scrollbars:** Dezente, nicht störende Scrollbar-Designs
+- **Resizable UI:** Intuitive Drag-Handles mit visuellen Hinweisen
+- **Text-Handling:** Truncation mit Tooltips für bessere UX
+- **Layout-Stabilität:** Feste Höhen und Flex-Container für konsistente Darstellung
+- **Performance:** Event-Listener korrekt aufräumen, smooth Animationen
+
+**Ergebnis:**
+- ✅ **Dezente, 6px breite Scrollbar implementiert**
+- ✅ **Resizable TreeView (200-600px) mit Drag-Handle**
+- ✅ **Lange Ordnernamen werden sauber abgeschnitten**
+- ✅ **Kein vertikales Springen mehr beim Aufklappen**
+- ✅ **GitHub-Commit erfolgreich (Commit: 9df6129)**
+
+**Technische Details:**
+- Custom CSS-Layer für Scrollbar-Styles
+- Mouse-Event-Handling für Resize-Funktionalität
+- Flex-Layout mit `min-w-0` für korrekte Truncation
+- Hover-Effekte für bessere Interaktivität
+- Cross-Browser-Kompatibilität sichergestellt
+
+---
+
 # 05.08.2025 - 07:15 - Rekursive Tree-Struktur erfolgreich implementiert und getestet
 
 **Aufgaben:**
