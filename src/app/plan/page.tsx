@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { TreeMenuTemplate } from "@/components/TreeMenuTemplate";
-import { useNextcloud } from "@/hooks/useNextcloud";
+import { useNextcloudOptimized } from "@/hooks/useNextcloudOptimized";
 import { Table } from "@/ui/components/Table";
 import { Badge } from "@/ui/components/Badge";
 import { IconButton } from "@/ui/components/IconButton";
@@ -27,7 +27,7 @@ export default function PlanPage() {
     expandFolder, 
     expandedFolders, 
     loadingExpandedItems 
-  } = useNextcloud('/ARCH');
+  } = useNextcloudOptimized('/ARCH');
 
   const handleFolderSelect = (folderId: string) => {
     setSelectedFolderId(folderId);
