@@ -81,16 +81,32 @@ export default function PlanPage() {
     }
   };
 
-  const handleDocumentSelect = (documentId: string) => {
+  const handleDocumentSelect = (docId: string) => {
     setSelectedDocuments(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(documentId)) {
-        newSet.delete(documentId);
+      if (newSet.has(docId)) {
+        newSet.delete(docId);
       } else {
-        newSet.add(documentId);
+        newSet.add(docId);
       }
       return newSet;
     });
+  };
+
+  const handleDocumentDoubleClick = (doc: NextcloudFolder) => {
+    // Nur Ordner öffnen, nicht Dateien
+    if (doc.type === 'folder') {
+      console.log('Opening folder:', doc.label);
+      
+      // Dokumente für den neuen Pfad laden
+      fetchDocuments(doc.path);
+      
+      // TreeView aktualisieren - Ordner in TreeView öffnen
+      handleExpandFolder(doc.path);
+    } else {
+      console.log('File double-clicked:', doc.label);
+      // Hier später: Datei-Viewer öffnen
+    }
   };
 
   const formatFileSize = (bytes?: number): string => {
@@ -196,13 +212,26 @@ export default function PlanPage() {
               }
             >
               {documents.map((doc) => (
-                <Table.Row key={doc.id} onClick={() => handleDocumentSelect(doc.id)}>
+                <Table.Row 
+                  key={doc.id} 
+                  className="cursor-pointer transition-colors duration-200 hover:bg-neutral-50 group"
+                  onClick={() => handleDocumentSelect(doc.id)}
+                  onDoubleClick={() => handleDocumentDoubleClick(doc)}
+                >
                   <Table.Cell>
-                    {selectedDocuments.has(doc.id) ? (
-                      <FeatherSquareCheckBig className="text-heading-3 font-heading-3 text-default-font" />
-                    ) : (
-                      <FeatherSquare className="text-heading-3 font-heading-3 text-default-font" />
-                    )}
+                    <div 
+                      className="flex items-center justify-center w-6 h-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDocumentSelect(doc.id);
+                      }}
+                    >
+                      {selectedDocuments.has(doc.id) ? (
+                        <FeatherSquareCheckBig className="text-heading-3 font-heading-3 text-brand-primary" />
+                      ) : (
+                        <FeatherSquare className="text-heading-3 font-heading-3 text-neutral-400 hover:text-brand-primary transition-colors duration-200" />
+                      )}
+                    </div>
                   </Table.Cell>
                   <Table.Cell>
                     <div className="flex items-center gap-2">
@@ -236,6 +265,7 @@ export default function PlanPage() {
                           event.stopPropagation();
                           console.log('More options for:', doc.label);
                         }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                       />
                     </div>
                   </Table.Cell>

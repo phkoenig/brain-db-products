@@ -5,19 +5,11 @@ import { CustomTreeView } from "@/components/CustomTreeView";
 import { TextField } from "@/ui/components/TextField";
 import { IconButton } from "@/ui/components/IconButton";
 import { FeatherSearch, FeatherChevronDown } from "@subframe/core";
+import { NextcloudFolder } from "@/lib/nextcloud-optimized";
 
 interface TreeMenuTemplateProps {
   title?: string;
-  categories: Array<{
-    id: string;
-    label: string;
-    main_category: string;
-    sub_category: string;
-    path?: string;
-    type?: 'folder' | 'file';
-    children?: any[];
-    hasChildren?: boolean;
-  }>;
+  categories: NextcloudFolder[];
   loading?: boolean;
   error?: string | null;
   onCategorySelect: (categoryId: string) => void;
@@ -51,7 +43,7 @@ export function TreeMenuTemplate({
     // Convert Set to Record for CustomTreeView
     expandedFolders.forEach(path => {
       // Find the item with this path and use its id
-      const findItemByPath = (items: any[]): string | null => {
+      const findItemByPath = (items: NextcloudFolder[]): string | null => {
         for (const item of items) {
           if (item.path === path) {
             return item.id;
@@ -106,9 +98,7 @@ export function TreeMenuTemplate({
 
   // Filter categories based on search term
   const filteredCategories = categories.filter(category =>
-    category.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.main_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.sub_category.toLowerCase().includes(searchTerm.toLowerCase())
+    category.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Convert to tree structure for CustomTreeView
@@ -134,13 +124,13 @@ export function TreeMenuTemplate({
   };
 
   const toggleAllFolders = () => {
-    const allMainCategories = [...new Set(categories.map(cat => cat.main_category))];
-    const currentStates = allMainCategories.map(cat => expandedItems[cat] || false);
-    const allExpanded = currentStates.every(state => state);
+    const allExpanded = Object.values(expandedItems).every(state => state);
     
     const newStates: Record<string, boolean> = {};
-    allMainCategories.forEach(cat => {
-      newStates[cat] = !allExpanded;
+    categories.forEach(cat => {
+      if (cat.type === 'folder') {
+        newStates[cat.id] = !allExpanded;
+      }
     });
     
     setExpandedItems(newStates);
@@ -194,9 +184,7 @@ export function TreeMenuTemplate({
           variant="neutral-primary"
           onClick={toggleAllFolders}
           icon={(() => {
-            const allMainCategories = [...new Set(categories.map(cat => cat.main_category))];
-            const currentStates = allMainCategories.map(cat => expandedItems[cat] || false);
-            const allExpanded = currentStates.every(state => state);
+            const allExpanded = Object.values(expandedItems).every(state => state);
             return allExpanded ? <span>−</span> : <FeatherChevronDown />;
           })()}
         />

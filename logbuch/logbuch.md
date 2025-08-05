@@ -1,5 +1,81 @@
 # Logbuch - BRAIN DB Products A
 
+## 05.08.2025 - 11:20 - Doppelklick-Funktionalität für Ordner-Öffnung implementiert
+
+**Aufgabe:** Doppelklick auf Ordner in der Dokumenten-Tabelle zum Öffnen von Ordnern
+
+**Durchgeführte Arbeiten:**
+- **Doppelklick-Handler:** `onDoubleClick` für Tabellenzeilen hinzugefügt
+- **Ordner-Erkennung:** Prüfung auf `doc.type === 'folder'` vor Ordner-Öffnung
+- **Dokumente laden:** `fetchDocuments(doc.path)` für neuen Ordner-Pfad
+- **TreeView-Update:** `handleExpandFolder(doc.path)` für TreeView-Synchronisation
+- **Datei-Logging:** Console-Log für Datei-Doppelklicks (später für Datei-Viewer)
+
+**Implementierte Features:**
+- **Ordner-Doppelklick:** Öffnet Ordner und lädt Dokumente
+- **Datei-Doppelklick:** Logging für späteren Datei-Viewer
+- **TreeView-Sync:** Ordner wird auch in TreeView geöffnet
+- **Pfad-Update:** Dokumenten-Tabelle zeigt neue Ordner-Inhalte
+
+**Technische Details:**
+- **Event-Handler:** `onDoubleClick={() => handleDocumentDoubleClick(doc)}`
+- **Typ-Prüfung:** `doc.type === 'folder'` für Ordner-Erkennung
+- **Hook-Integration:** Verwendung von `fetchDocuments` und `handleExpandFolder`
+- **Pfad-Management:** Automatisches Laden der Dokumente für neuen Pfad
+
+**Ergebnis:**
+- ✅ **Doppelklick auf Ordner** öffnet Ordner und lädt Dokumente
+- ✅ **TreeView-Synchronisation** - Ordner wird auch in TreeView geöffnet
+- ✅ **Datei-Logging** für späteren Datei-Viewer vorbereitet
+- ✅ **Pfad-Management** funktioniert automatisch
+
+**Nächste Schritte:**
+- Datei-Viewer für Doppelklick auf Dateien implementieren
+- Download-Funktionalität hinzufügen
+- Bulk-Operationen für ausgewählte Dokumente
+- Suchfunktionalität in der Dokumenten-Tabelle
+
+---
+
+## 05.08.2025 - 11:15 - Hover-Effekte und Checkbox-Funktionalität für Dokumenten-Tabelle implementiert
+
+**Aufgabe:** Sanfte Hover-Effekte und interaktive Checkbox-Funktionalität für die Dokumenten-Tabelle auf der Plan-Seite
+
+**Durchgeführte Arbeiten:**
+- **Sanfte Hover-Effekte:** Tabellenzeilen mit `hover:bg-neutral-50` und `transition-colors duration-200`
+- **Checkbox-Funktionalität:** Klick-Handler für Checkbox-Auswahl mit `stopPropagation`
+- **More-Menu Hover:** More-Menu Button erscheint nur bei Hover mit `opacity-0 group-hover:opacity-100`
+- **Cursor-Pointer:** Zeilen sind klickbar mit `cursor-pointer`
+- **Import-Fix:** TreeMenuTemplate auf korrekten NextcloudFolder-Typ aktualisiert
+
+**Implementierte Features:**
+- **Sanfte Hover-Animation:** 200ms Übergang für Hintergrundfarbe
+- **Interaktive Checkboxen:** Klick auf Checkbox tickt/untickt Dokument
+- **Zeilen-Klick:** Klick auf Zeile tickt/untickt Dokument
+- **More-Menu Hover:** More-Menu Button erscheint nur bei Hover
+- **Visuelle Rückmeldung:** Checkbox-Farbe ändert sich bei Hover
+
+**Technische Details:**
+- **CSS-Klassen:** `transition-colors duration-200`, `hover:bg-neutral-50`
+- **Event-Handling:** `stopPropagation()` für Checkbox-Klicks
+- **Group-Hover:** `group` und `group-hover:opacity-100` für More-Menu
+- **Checkbox-Farben:** `text-neutral-400` → `text-brand-primary` bei Hover
+
+**Ergebnis:**
+- ✅ **Sanfte Hover-Effekte** für alle Tabellenzeilen
+- ✅ **Interaktive Checkbox-Funktionalität** mit Klick-Handler
+- ✅ **More-Menu Hover-Effekt** für bessere UX
+- ✅ **Visuelle Rückmeldung** bei Benutzerinteraktionen
+- ✅ **Import-Fehler behoben** in TreeMenuTemplate
+
+**Nächste Schritte:**
+- Datei-Vorschau implementieren
+- Download-Funktionalität hinzufügen
+- Bulk-Operationen für ausgewählte Dokumente
+- Suchfunktionalität in der Dokumenten-Tabelle
+
+---
+
 ## 05.08.2025 - 11:00 - Echte Nextcloud-Integration in Dokumenten-Tabelle implementiert
 
 **Aufgabe:** Dokumenten-Tabelle auf der Plan-Seite mit echten Nextcloud-Daten über optimierte WebDAV-Lösung verbinden
@@ -26,6 +102,11 @@
 - **Caching:** 30-Sekunden-Cache für optimale Performance
 - **Error-Handling:** Umfassende Fehlerbehandlung und User-Feedback
 
+**Schwierigkeiten und Lösungen:**
+- **Date-Fehler:** `date.getTime is not a function` - Behoben durch String/Date-Typ-Unterstützung
+- **WebDAV-URL-Konfiguration:** 405 Method Not Allowed - Behoben durch korrekte URL-Verwendung
+- **Feather-Icons:** Bekannte Linter-Fehler, funktionieren aber im Browser
+
 **Ergebnis:**
 - ✅ **Echte Nextcloud-Daten** in der Dokumenten-Tabelle
 - ✅ **Interaktive Dokumenten-Auswahl** mit Checkbox-System
@@ -33,6 +114,7 @@
 - ✅ **Formatierte Anzeige** von Größe und Zeitstempel
 - ✅ **Loading- und Error-States** für bessere UX
 - ✅ **Ordner-Navigation** funktioniert nahtlos
+- ✅ **GitHub-Commit erfolgreich** (Commit: ad010a3)
 
 **Nächste Schritte:**
 - Datei-Vorschau implementieren
