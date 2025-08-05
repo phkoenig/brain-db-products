@@ -7,9 +7,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Perplexity Service
-const perplexityService = new PerplexityService(process.env.PERPLEXITY_API_KEY || '');
-
 export async function POST(request: NextRequest) {
   try {
     const { productId } = await request.json();
@@ -22,6 +19,16 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`🔄 Starting price update for product: ${productId}`);
+
+    // Perplexity Service - moved inside function to avoid build-time instantiation
+    const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
+    if (!perplexityApiKey) {
+      return NextResponse.json(
+        { error: 'Perplexity API key not configured' },
+        { status: 500 }
+      );
+    }
+    const perplexityService = new PerplexityService(perplexityApiKey);
 
     // 1. Lade Produktdaten aus der Datenbank
     const { data: product, error: productError } = await supabase
