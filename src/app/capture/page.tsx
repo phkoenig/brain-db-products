@@ -690,30 +690,20 @@ function ExtractorContent() {
       // Verwende die aktuelle productId oder generiere eine neue
       const productId = currentProductId || generateProductId();
       
-      const response = await fetch("/api/extraction/spalten-analysis", {
+      // Verwende enhanced-analysis statt spalten-analysis für bessere Perplexity-Integration
+      const response = await fetch("/api/extraction/enhanced-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url,
-          spalte,
-          felder,
+          sourceType: 'reseller', // Standardwert, kann später dynamisch gemacht werden
           productId: productId
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        console.log(`Spalten-Analyse ${spalte} Antwort:`, result);
-        
-        // Zeige den generierten Prompt im Log an
-        if (result.generatedPrompt) {
-          const promptPreview = result.generatedPrompt.length > 800 
-            ? result.generatedPrompt.substring(0, 800) + '\n\n[... Prompt gekürzt - Vollständiger Prompt in Browser-Console ...]'
-            : result.generatedPrompt;
-          
-          setExtractionLog((prev) => prev + `\n\n📝 GENERIERTER ${spalte.toUpperCase()}-PROMPT:\n${'='.repeat(60)}\n${promptPreview}\n${'='.repeat(60)}\n`);
-          console.log(`📝 Vollständiger ${spalte.toUpperCase()}-Prompt:`, result.generatedPrompt);
-        }
+        console.log(`Enhanced Analysis ${spalte} Antwort:`, result);
         
         // Die API gibt { success: true, data: {...} } zurück
         const data = result.data || result;

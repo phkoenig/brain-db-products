@@ -88,15 +88,17 @@ export class PerplexityAnalyzer {
           cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/\s*```[\s\S]*$/, '');
         } else {
           // Versuche JSON-Array oder -Objekt zu finden
+          // PRIORITÄT: Erst nach dem äußersten Objekt suchen, dann nach Arrays
+          // Verwende non-greedy matching für das äußerste Objekt
+          const objectMatch = cleanedContent.match(/(\{[\s\S]*\})/);
           const arrayMatch = cleanedContent.match(/(\[[\s\S]*?\])/);
-          const objectMatch = cleanedContent.match(/(\{[\s\S]*?\})/);
           
-          if (arrayMatch) {
-            cleanedContent = arrayMatch[1];
-            console.log('DEBUG: Extracted JSON array from text');
-          } else if (objectMatch) {
+          if (objectMatch) {
             cleanedContent = objectMatch[1];
             console.log('DEBUG: Extracted JSON object from text');
+          } else if (arrayMatch) {
+            cleanedContent = arrayMatch[1];
+            console.log('DEBUG: Extracted JSON array from text');
           }
         }
         

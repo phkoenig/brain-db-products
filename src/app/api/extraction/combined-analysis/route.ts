@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get API keys from environment
+    // Get API keys from environment (moved inside function to avoid build-time errors)
     const openaiApiKey = process.env.OPENAI_KEY;
     const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
     

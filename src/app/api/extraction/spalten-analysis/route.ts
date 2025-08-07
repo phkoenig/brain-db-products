@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PerplexityAnalyzer } from '@/lib/extraction/perplexityAnalyzer';
 import { generateDynamicPrompt } from '@/lib/extraction/dynamicPrompts';
 
+// WICHTIG: Node.js Runtime verwenden statt Edge Functions
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { url, spalte, felder, productId } = await request.json();
@@ -26,7 +29,8 @@ export async function POST(request: NextRequest) {
     }
     
     const analyzer = new PerplexityAnalyzer(perplexityApiKey);
-    const result = await analyzer.analyzeUrl(url, { fields: felder }, prompt);
+    // Korrigierter Aufruf: analyzeUrl erwartet nur url und optional customPrompt
+    const result = await analyzer.analyzeUrl(url, prompt);
 
     console.log(`Spalten-Analyse: ${spalte}-Analyse abgeschlossen`);
 

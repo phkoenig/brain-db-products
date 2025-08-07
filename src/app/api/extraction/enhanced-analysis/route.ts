@@ -3,6 +3,9 @@ import { loadProductFieldDefinitions } from '@/lib/schemas/product-fields';
 import { analyzeWithOpenAI } from '@/lib/extraction/aiAnalyzer';
 import { PerplexityAnalyzer } from '@/lib/extraction/perplexityAnalyzer';
 
+// WICHTIG: Node.js Runtime verwenden statt Edge Functions
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { url, screenshotBase64, sourceType, productId } = await request.json();
@@ -20,6 +23,9 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Perplexity AI Analysis for enhancement
     console.log('Enhanced Analysis: Starting Perplexity AI analysis...');
+    console.log('Enhanced Analysis: URL to analyze:', url);
+    console.log('Enhanced Analysis: Perplexity API Key available:', !!process.env.PERPLEXITY_API_KEY);
+    
     let perplexityResult = null;
     try {
       const perplexityApiKey = process.env.PERPLEXITY_API_KEY;
@@ -28,16 +34,29 @@ export async function POST(request: NextRequest) {
       }
       
       const analyzer = new PerplexityAnalyzer(perplexityApiKey);
-      perplexityResult = await analyzer.analyzeUrl(url, fieldDefinitions);
+      console.log('Enhanced Analysis: PerplexityAnalyzer created, calling analyzeUrl...');
+      
+      // Korrigierter Aufruf: analyzeUrl erwartet nur url und optional customPrompt
+      const startTime = Date.now();
+      perplexityResult = await analyzer.analyzeUrl(url);
+      const endTime = Date.now();
+      
       console.log('Enhanced Analysis: Perplexity analysis complete');
+      console.log('Enhanced Analysis: Response time:', endTime - startTime, 'ms');
+      console.log('Enhanced Analysis: Raw result:', JSON.stringify(perplexityResult, null, 2));
+      
     } catch (error) {
       console.error('Enhanced Analysis: Perplexity analysis failed, continuing with OpenAI only:', error);
+      console.error('Enhanced Analysis: Error details:', error instanceof Error ? error.message : String(error));
       perplexityResult = null;
     }
 
     // Step 4: Use Perplexity result directly (no fusion needed)
     console.log('Enhanced Analysis: Using Perplexity result directly');
-    const fusedResult = perplexityResult || {};
+    
+    // PerplexityResult hat die Struktur { data: {...}, searchQueries: [], sources: [], error: null }
+    // Wir brauchen nur die data
+    const fusedResult = perplexityResult?.data || {};
     console.log('Enhanced Analysis: Final fusedResult:', JSON.stringify(fusedResult, null, 2));
     
     // 🔄 DATEN WERDEN NICHT MEHR AUTOMATISCH GESPEICHERT
