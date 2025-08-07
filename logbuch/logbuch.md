@@ -1,3 +1,55 @@
+# Logbuch - BRAIN DB Products
+
+## 2025-08-07 22:40 - Authentifizierung implementiert, aber noch nicht vollständig funktional
+
+**Aufgaben erledigt:**
+- ✅ Sign-in-Page mit Subframe-Design implementiert
+- ✅ Supabase Authentifizierung eingerichtet (Email/Password + Google OAuth)
+- ✅ AuthContext und AuthService erstellt
+- ✅ Protected Routes implementiert
+- ✅ CaptureForm und Admin-Dashboard erstellt
+- ✅ Google OAuth URLs konfiguriert (Google Cloud Console + Supabase)
+- ✅ Allowlist-System implementiert
+- ✅ RLS für auth_allowlist deaktiviert
+
+**Aktuelle Probleme:**
+- ❌ Allowlist-Prüfung funktioniert noch nicht vollständig
+- ❌ Email/Password-Anmeldung zeigt "Zugriff verweigert" trotz Allowlist-Eintrag
+- ❌ Google OAuth funktioniert technisch, aber Redirect-Probleme
+
+**Nächste Schritte:**
+- Allowlist-Prüfung debuggen
+- Google OAuth Redirect-URLs finalisieren
+- Email-Bestätigung testen
+- Vollständige Authentifizierung testen
+
+**Hinweis:** User muss ins Bett, morgen früh Sport. Arbeit wird morgen fortgesetzt.
+
+---
+
+## 2024-12-19 15:30 - Column Header Font Size Adjustment
+
+**Aufgabe:** Spaltenüberschriften auf Capture- und Edit-Seiten von heading-3 auf heading-2 vergrößern
+
+**Durchgeführte Änderungen:**
+- Font-Größe der Spaltenüberschriften von `text-heading-3 font-heading-3` (16px) auf `text-heading-2 font-heading-2` (20px) geändert
+- Betroffene Dateien: `src/app/capture/page.tsx` und `src/components/ProductDetailDrawer.tsx`
+- Alle sechs Spaltenüberschriften angepasst: PRODUKT, PARAMETER, DOKUMENTE, HÄNDLER, ERFAHRUNG, ERFASSUNG
+
+**Technische Details:**
+- Tailwind-Konfiguration bestätigt: heading-2 (20px) > heading-3 (16px)
+- Konsistente Anwendung in beiden Komponenten für einheitliches Design
+- Keine Auswirkungen auf andere UI-Elemente
+
+**Ergebnis:** Bessere Lesbarkeit der Spaltenüberschriften durch größere Schriftgröße
+
+**Erkannte Best Practices:**
+- Design-Tokens aus Tailwind-Konfiguration für konsistente Typografie verwenden
+- Änderungen in allen betroffenen Komponenten synchron durchführen
+- Vor Änderungen verfügbare Font-Größen in der Konfiguration prüfen
+
+---
+
 # Logbuch - BRAIN DB Products A
 
 ## 2025-08-07 18:50 - Perplexity-Integration erfolgreich repariert! 🎉
@@ -423,245 +475,6 @@ const fusedResult = perplexityResult?.data || {};
 **Commit:** `27104a8` - feat: Dokumenten-Tabelle auf Plan-Seite implementiert
 
 ---
-
-## 05.08.2025 - 08:15 - Tree-View Auswahl-Hervorhebung optimiert
-
-**Aufgabe:** Farbliche Hervorhebung des ausgewählten Ordners/Datei in der TreeView implementieren
-
-**Durchgeführte Arbeiten:**
-- **Subframe Brand-Farben:** Implementierung der korrekten Subframe UI Brand-Farbpalette
-- **Kontrast-Optimierung:** Anpassung der Farben für ausreichenden Kontrast
-- **Hover-Effekte:** Konsistente Hover-Effekte ohne vertikales Springen
-- **Icon-Farben:** Dynamische Anpassung der Icon-Farben basierend auf Auswahl-Status
-
-**Implementierte Lösung:**
-- **Auswahl-Hintergrund:** `bg-brand-100` (gedämpftes Rot)
-- **Auswahl-Text/Icons:** `text-brand-700` (dunkles Rot für Kontrast)
-- **Hover-Effekt:** `hover:bg-neutral-50` (konsistent für alle Items)
-- **Hover bei Auswahl:** `hover:bg-brand-200` (leicht dunkleres Rot)
-
-**Technische Details:**
-- Dynamische CSS-Klassen basierend auf `isSelected`-Status
-- Konsistente Hover-Effekte verhindern vertikales Springen
-- Optimierte Kontrast-Werte für bessere Lesbarkeit
-- Integration mit bestehender TreeView-Komponente
-
-**Behobene Probleme:**
-- ✅ Vertikales Springen beim Aufklappen von Ordnern
-- ✅ Zu knallige Farben durch Abdämpfung
-- ✅ Unzureichender Kontrast bei Hover-Effekten
-- ✅ Inkonsistente Icon-Farben
-
-**Commit:** `a1b2c3d` - feat: TreeView Auswahl-Hervorhebung mit Subframe Brand-Farben
-
----
-
-# 05.08.2025 - 07:45 - Tree-Navigation UX-Verbesserungen implementiert
-
-**Aufgaben:**
-- Dezentere Scrollbar für bessere visuelle Integration
-- Resizable TreeView-Spalte mit Drag-Handle
-- Text-Truncation für lange Ordnernamen
-- Vertikales Springen der Tree-View behoben
-- Benutzerfreundlichkeit der Navigation verbessert
-
-**Schwierigkeiten:**
-- Standard-Scrollbars sind zu prominent und störend
-- Tree-View sprang vertikal beim Aufklappen von Ordnern
-- Lange Ordnernamen brachen das Layout
-- Feste Spaltenbreite war nicht flexibel genug
-- Icon-Import-Probleme mit FeatherChevronDown
-
-**Lösungen:**
-- **Dezentere Scrollbar:** Custom CSS mit 6px Breite, grauen Farben, transparentem Track
-- **Resizable Panel:** Drag-Handle am rechten Rand, 200-600px Bereich, smooth Animation
-- **Text-Truncation:** `truncate` Klasse mit Tooltips für vollständige Namen
-- **Stabile Höhen:** `min-h-[40px]` für Tree-Items, `flex-1` Container mit `overflow-y-auto`
-- **Cross-Browser:** Webkit und Firefox Scrollbar-Styles implementiert
-
-**Erkannte Best Practices:**
-- **Custom Scrollbars:** Dezente, nicht störende Scrollbar-Designs
-- **Resizable UI:** Intuitive Drag-Handles mit visuellen Hinweisen
-- **Text-Handling:** Truncation mit Tooltips für bessere UX
-- **Layout-Stabilität:** Feste Höhen und Flex-Container für konsistente Darstellung
-- **Performance:** Event-Listener korrekt aufräumen, smooth Animationen
-
-**Ergebnis:**
-- ✅ **Dezente, 6px breite Scrollbar implementiert**
-- ✅ **Resizable TreeView (200-600px) mit Drag-Handle**
-- ✅ **Lange Ordnernamen werden sauber abgeschnitten**
-- ✅ **Kein vertikales Springen mehr beim Aufklappen**
-- ✅ **GitHub-Commit erfolgreich (Commit: 9df6129)**
-
-**Technische Details:**
-- Custom CSS-Layer für Scrollbar-Styles
-- Mouse-Event-Handling für Resize-Funktionalität
-- Flex-Layout mit `min-w-0` für korrekte Truncation
-- Hover-Effekte für bessere Interaktivität
-- Cross-Browser-Kompatibilität sichergestellt
-
----
-
-# 05.08.2025 - 07:15 - Rekursive Tree-Struktur erfolgreich implementiert und getestet
-
-**Aufgaben:**
-- Rekursive Tree-Struktur für unbegrenzte Ordner-Tiefe implementiert
-- useNextcloud Hook mit updateFolderChildren-Funktion erweitert
-- TreeMenuTemplate mit expandedFolders-Synchronisation verbessert
-- Loading-States und Error-Handling für tiefe Navigation optimiert
-- Vollständige Tests der rekursiven Funktionalität durchgeführt
-
-**Schwierigkeiten:**
-- Ursprünglich nur direkte Kinder der Root-Ordner geladen
-- State-Synchronisation zwischen Hook und UI-Komponenten komplex
-- Icon-Import-Probleme mit FeatherChevronUp (nicht verfügbar)
-- Git-Add-Probleme durch zu lange Dateinamen in node_modules
-
-**Lösungen:**
-- **Rekursive Update-Funktion:** `updateFolderChildren()` durchsucht gesamte Baumstruktur
-- **State-Synchronisation:** useEffect in TreeMenuTemplate synchronisiert expandedItems
-- **Icon-Fix:** FeatherChevronUp durch einfaches Minus-Symbol ersetzt
-- **Git-Problem:** Nur relevante Dateien (src/, logbuch/, package.json) committed
-
-**Erkannte Best Practices:**
-- **Rekursive Algorithmen:** Effiziente Baumdurchsuchung für Updates
-- **State-Management:** Zentrale Verwaltung in Hook, UI-Synchronisation
-- **Loading-States:** Benutzer-Feedback während API-Calls
-- **Error-Boundaries:** Robuste Fehlerbehandlung für tiefe Navigation
-- **Performance:** Lazy Loading nur bei Bedarf, keine unnötigen API-Calls
-
-**Ergebnis:**
-- ✅ **5+ Ebenen Tiefe erfolgreich getestet**
-- ✅ **ARCH → F16 → Fontaneallee → 3 Ausschreibung → 44 Unterordner**
-- ✅ **Unbegrenzte Verschachtelung funktioniert**
-- ✅ **Loading-Spinner für bessere UX**
-- ✅ **GitHub-Commit erfolgreich (Commit: 3c26eec)**
-
-**Technische Details:**
-- Rekursive Funktion findet Ordner an jeder Tiefe korrekt
-- State-Updates erfolgen nur für betroffene Ordner
-- API-Calls werden nur bei Bedarf ausgeführt
-- UI reagiert sofort auf Benutzer-Interaktionen
-
----
-
-# 05.08.2025 - 06:30 - Nextcloud-Integration mit rekursiver Tree-Struktur implementiert
-
-**Aufgaben:**
-- Plan-Seite mit Tree-Struktur erstellt (wie DB-Seite)
-- Nextcloud-Integration über WebDAV-Protokoll implementiert
-- Rekursive Ordnerstrukturen mit unbegrenzter Tiefe
-- Dynamisches Laden von Unterordnern (Lazy Loading)
-- Datei- und Ordner-Unterstützung mit verschiedenen Icons
-- Loading-States und Error-Handling implementiert
-
-**Schwierigkeiten:**
-- TypeScript-Fehler bei WebDAV-Bibliothek (FileStat-Typen)
-- Zu lange Dateinamen in node_modules verhinderten Git-Add
-- Komplexe rekursive Tree-Struktur für unbegrenzte Ordner-Tiefe
-- Dynamisches Laden von Unterordnern ohne Performance-Probleme
-
-**Lösungen:**
-- **TypeScript-Fixes:** `as any[]` Casting für WebDAV-Response-Typen
-- **Git-Problem:** Nur relevante Dateien (src/, package.json) committed
-- **Rekursive Struktur:** NextcloudService mit getSubfolders() und expandFolder()
-- **Performance:** Lazy Loading - Unterordner nur bei Bedarf geladen
-- **UI/UX:** Loading-Spinner, verschiedene Icons für Dateien/Ordner
-
-**Erkannte Best Practices:**
-- **Lazy Loading:** Unterordner nur beim Expandieren laden
-- **Error Boundaries:** Umfassende Fehlerbehandlung für WebDAV-Calls
-- **Loading States:** Benutzer-Feedback während API-Calls
-- **Type Safety:** TypeScript-Interfaces für Nextcloud-Daten
-- **Modulare Architektur:** Separate Service-Klasse, API-Routes, Hooks
-
-**Ergebnis:**
-- ✅ Nextcloud-Integration funktioniert mit echten Daten
-- ✅ 19 Hauptordner erfolgreich geladen
-- ✅ Rekursive Unterordner-Navigation (ARCH → ANG → etc.)
-- ✅ Dateien und Ordner werden unterschiedlich behandelt
-- ✅ Loading-States für bessere UX
-- ✅ GitHub-Commit erfolgreich
-
----
-
-## 2025-01-05 15:45 - ProductDetailDrawer vollständig überarbeitet und funktionsfähig gemacht
-
-**Aufgaben:**
-- ProductDetailDrawer von 3 auf 6 Spalten erweitert (PRODUKT, PARAMETER, DOKUMENTE, HÄNDLER, ERFAHRUNG, ERFASSUNG)
-- Drawer-Breite auf 60% des Bildschirms gesetzt
-- useProjects Hook für Projekt-Dropdown erstellt
-- Kategorie-Dropdown debuggt und korrigiert
-- Alle Parameter-Felder aus Capture-Seite hinzugefügt
-- Debug-Logs für bessere Daten-Sichtbarkeit implementiert
-
-**Schwierigkeiten:**
-- Drawer zeigte nur 3 Spalten statt 6 wie in Capture-Seite
-- Dropdown-Felder für Kategorie und Projekt funktionierten nicht
-- Daten wurden nicht korrekt angezeigt (z.B. Hersteller-Feld leer)
-- Fehlende Parameter-Felder in PARAMETER-Spalte
-
-**Lösungen:**
-- **Layout-Erweiterung:** 6-Spalten-Layout mit `w-1/6` für gleichmäßige Verteilung
-- **Drawer-Breite:** `w-[60%]` für optimale Bildschirmnutzung
-- **useProjects Hook:** Neue Hook erstellt für Projekt-Daten aus Supabase
-- **Projekt-Dropdown:** Funktionale Dropdown mit echten Daten aus projects-Tabelle
-- **Kategorie-Dropdown:** Array-Handling korrigiert mit Debug-Logs
-- **Parameter-Felder:** Alle fehlenden Felder hinzugefügt (Feuerwiderstand, Wärmeleitfähigkeit, etc.)
-- **Debug-Logs:** Console-Logs für Datenladung und Feld-Werte
-
-**Erkannte Best Practices:**
-- **Feature-Parität:** Drawer sollte identisch zur Capture-Seite sein
-- **Hook-basierte Datenverwaltung:** Separate Hooks für verschiedene Datenquellen
-- **Debug-Logs:** Console-Logs für bessere Transparenz bei Datenproblemen
-- **Responsive Design:** Prozentuale Breiten für flexible Layouts
-- **Inkrementelle Entwicklung:** Kleine Änderungen, sofort testen
-
-**Ergebnis:**
-- ✅ 6-Spalten-Layout funktioniert
-- ✅ 60% Bildschirmbreite optimal
-- ✅ Projekt-Dropdown funktioniert mit echten Daten
-- ✅ Kategorie-Dropdown korrekt debuggt
-- ✅ Alle Parameter-Felder verfügbar
-- ✅ Debug-Logs für bessere Sichtbarkeit
-- ✅ Vollständige Feature-Parität mit Capture-Seite
-
----
-
-## 2025-01-04 22:30 - CustomTreeView erfolgreich implementiert
-
-**Aufgaben:**
-- Subframe TreeView-Komponente durch eigene CustomTreeView ersetzt
-- Vollständige Expand/Collapse-Funktionalität implementiert
-- Brand Color Hervorhebung für selektierte Kategorien
-
-**Schwierigkeiten:**
-- Subframe TreeView hatte API-Limitationen (keine open/onOpenChange Props)
-- Komplexe Logik für Hauptkategorien vs. Subkategorien
-- Event-Handling zwischen Expand/Collapse und Selection
-
-**Lösungen:**
-- Eigene CustomTreeView-Komponente von Grund auf erstellt
-- handleRowClick-Logik: Hauptkategorien expandieren, Subkategorien werden ausgewählt
-- Brand Color Hervorhebung (bg-brand-500 text-white) für selektierte Items
-- Ganze Zeile klickbar für bessere UX
-
-**Erkannte Best Practices:**
-- Bei API-Limitationen: Eigene Komponente erstellen statt Workarounds
-- Klare Trennung zwischen Expand/Collapse und Selection-Logik
-- Konsistente Brand Color Verwendung für visuelle Hierarchie
-- Event-Bubbling verhindern mit stopPropagation()
-
-**Ergebnis:**
-- ✅ Vollständige Expand/Collapse-Funktionalität
-- ✅ Brand Color Hervorhebung funktioniert
-- ✅ Ganze Zeile klickbar
-- ✅ Konsistente Subframe-Styling-Klassen
-- ✅ Hauptbutton toggelt alle Kategorien
-
----
-
-# BRAIN DB - Entwicklungslogbuch
 
 ## 2025-08-04 21:00 - Navbar-Fixes und Icon-Troubleshooting dokumentiert
 
