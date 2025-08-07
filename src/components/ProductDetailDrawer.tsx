@@ -215,9 +215,9 @@ export default function ProductDetailDrawer({ open, onOpenChange, productId }: P
                                  {/* PRODUKT */}
                  <div className="flex w-1/6 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
                   <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-                    <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                      {"PRODUKT"}
-                    </span>
+                            <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"PRODUKT"}
+        </span>
                     <Progress value={0}/>
                     <div className="flex w-full flex-col items-start gap-1">
                       <div className="flex flex-col items-start gap-1 pt-4">
@@ -437,9 +437,9 @@ export default function ProductDetailDrawer({ open, onOpenChange, productId }: P
                                  {/* PARAMETER */}
                  <div className="flex w-1/6 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
                   <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-                    <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                      {"PARAMETER"}
-                    </span>
+                            <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"PARAMETER"}
+        </span>
                     <Progress value={0}/>
                     
                     {/* Parameter Fields */}
@@ -756,9 +756,9 @@ export default function ProductDetailDrawer({ open, onOpenChange, productId }: P
                                  {/* HÄNDLER */}
                  <div className="flex w-1/6 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
                   <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-                    <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                      {"HÄNDLER"}
-                    </span>
+                            <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"HÄNDLER"}
+        </span>
                     <Progress value={0}/>
                     
                     {/* Händler Fields */}
@@ -934,9 +934,9 @@ export default function ProductDetailDrawer({ open, onOpenChange, productId }: P
                                  {/* DOKUMENTE */}
                  <div className="flex w-1/6 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
                   <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-                    <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                      {"DOKUMENTE"}
-                    </span>
+                            <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"DOKUMENTE"}
+        </span>
                     <Progress value={0}/>
                     
                     {/* Dokumente Fields */}
@@ -1079,9 +1079,9 @@ export default function ProductDetailDrawer({ open, onOpenChange, productId }: P
                                  {/* ERFAHRUNG */}
                  <div className="flex w-1/6 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
                   <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-                    <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                      {"ERFAHRUNG"}
-                    </span>
+                            <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"ERFAHRUNG"}
+        </span>
                     <Progress value={0}/>
                     
                     {/* Erfahrung Fields */}
@@ -1194,9 +1194,9 @@ export default function ProductDetailDrawer({ open, onOpenChange, productId }: P
                                  {/* ERFASSUNG */}
                  <div className="flex w-1/6 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
                   <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-                    <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                      {"ERFASSUNG"}
-                    </span>
+                            <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"ERFASSUNG"}
+        </span>
                     <Progress value={0}/>
                     
                     {/* Erfassung Fields */}

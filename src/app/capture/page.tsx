@@ -1875,9 +1875,9 @@ function ExtractorContent() {
           {/* PRODUKT */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                {"PRODUKT"}
-              </span>
+                      <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"PRODUKT"}
+        </span>
               <Progress value={spaltenProgress.produkt}/>
               <div className="flex w-full flex-col items-start gap-1">
                   <div className="flex flex-col items-start gap-1 pt-4">
@@ -2097,9 +2097,9 @@ function ExtractorContent() {
           {/* PARAMETER */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                {"PARAMETER"}
-              </span>
+                      <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"PARAMETER"}
+        </span>
               <Progress value={spaltenProgress.parameter}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
@@ -2400,9 +2400,9 @@ function ExtractorContent() {
           {/* DOKUMENTE */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                {"DOKUMENTE"}
-              </span>
+                      <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"DOKUMENTE"}
+        </span>
               <Progress value={spaltenProgress.dokumente}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
@@ -2514,9 +2514,9 @@ function ExtractorContent() {
           {/* HÄNDLER */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                {"HÄNDLER"}
-              </span>
+                      <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"HÄNDLER"}
+        </span>
               <Progress value={spaltenProgress.haendler}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
@@ -2726,9 +2726,9 @@ function ExtractorContent() {
           {/* ERFAHRUNG */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full whitespace-pre-wrap text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
-                {"ERFAHRUNG"}
-              </span>
+                      <span className="w-full whitespace-pre-wrap text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
+          {"ERFAHRUNG"}
+        </span>
               <Progress value={spaltenProgress.erfahrung}/>
               <div className="flex w-full flex-col items-start gap-1 pt-4">
                 <span className="whitespace-pre-wrap text-caption font-caption text-default-font">
@@ -2829,7 +2829,7 @@ function ExtractorContent() {
           {/* ERFASSUNG */}
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-2 self-stretch rounded-lg border border-solid border-neutral-border bg-default-background px-2 py-2 shadow-md">
             <div className="flex w-full grow shrink-0 basis-0 flex-col items-start gap-2 px-2 py-2">
-              <span className="w-full text-heading-3 font-heading-3 text-default-font text-center bg-neutral-50 rounded-md py-2 px-4 border border-neutral-200">
+              <span className="w-full text-heading-2 font-heading-2 text-default-font text-center py-2 px-4">
                 ERFASSUNG
               </span>
               <Progress value={spaltenProgress.erfassung}/>
