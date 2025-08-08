@@ -67,27 +67,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {};
     },
     async signInWithEmail(email: string, password: string) {
-      console.log("🔍 DEBUG: AuthContext.signInWithEmail called with:", { email, password });
-      
       // Use direct Supabase auth for now to ensure session is set correctly
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email: email.toLowerCase().trim(), 
         password: password 
       });
       
-      console.log("🔍 DEBUG: Supabase auth result:", { data, error });
-      
       if (error) {
-        console.log("🔍 DEBUG: Auth error:", error);
         return { error: error.message };
       }
       
       if (!data.user) {
-        console.log("🔍 DEBUG: No user returned");
         return { error: "Authentication failed" };
       }
       
-      console.log("🔍 DEBUG: Auth successful, user:", data.user.email);
       return {};
     },
     async signInWithGoogle() {

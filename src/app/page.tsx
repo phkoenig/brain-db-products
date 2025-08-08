@@ -72,26 +72,20 @@ function ZeptaSignIn() {
       setIsLoading(true);
       setError("");
       
-      console.log("🔍 DEBUG: handleEmailAuth called with:", { email, password, isSignUp });
-      
       if (isSignUp) {
-        console.log("🔍 DEBUG: Attempting signup...");
         await signUpWithEmail(email, password);
         setError("Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.");
       } else {
-        console.log("🔍 DEBUG: Attempting signin...");
         const result = await signInWithEmail(email, password);
-        console.log("🔍 DEBUG: Signin result:", result);
         
         if (result.error) {
           setError(`Anmeldung fehlgeschlagen: ${result.error}`);
         } else {
-          console.log("🔍 DEBUG: Signin successful, redirecting...");
           router.push("/capture");
         }
       }
     } catch (error: any) {
-      console.error("🔍 DEBUG: Email auth error:", error);
+      console.error("Email auth error:", error);
       setError(error.message || "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Eingaben.");
     } finally {
       setIsLoading(false);
@@ -109,11 +103,6 @@ function ZeptaSignIn() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-neutral-50">
-      {/* DEBUG BOX - SEHR SICHTBAR */}
-      <div className="fixed top-0 left-0 right-0 bg-yellow-400 text-black p-4 text-center font-bold z-50">
-        🚨 DEBUG: KRITISCHER SICHERHEITS-FIX AKTIV - Version 2.0 🚨
-      </div>
-      
       <div className="flex w-full max-w-[384px] flex-col items-center justify-center gap-10 rounded-lg border border-solid border-neutral-border bg-white px-12 py-12 shadow-lg">
         <img
           className="w-80 flex-none"
