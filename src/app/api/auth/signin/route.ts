@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Authentication failed" }, { status: 401 });
     }
 
-    // Return success with user data
-    return NextResponse.json({ 
+    // Create response with user data
+    const response = NextResponse.json({ 
       message: "Authentication successful",
       user: {
         id: authData.user.id,
@@ -51,6 +51,26 @@ export async function POST(req: NextRequest) {
         email_confirmed_at: authData.user.email_confirmed_at
       }
     }, { status: 200 });
+
+    // Set session cookies if available
+    if (authData.session) {
+      // Set the session cookie
+      response.cookies.set('sb-access-token', authData.session.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: authData.session.expires_in
+      });
+      
+      response.cookies.set('sb-refresh-token', authData.session.refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30 // 30 days
+      });
+    }
+
+    return response;
   } catch (err: any) {
     console.error("Signin error:", err);
     return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 500 });

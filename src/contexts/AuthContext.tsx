@@ -67,11 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {};
     },
     async signInWithEmail(email: string, password: string) {
-      // Use API route for consistent allowlist checking and error handling
+      // Use API route for authentication and session management
       const res = await fetch("/api/auth/signin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include" // Include cookies
       });
       
       if (!res.ok) {
@@ -79,9 +80,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: body.error || "Signin failed" };
       }
       
-      // If API signin successful, also sign in with Supabase client for session management
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) return { error: error.message };
+      // Force refresh the auth state to pick up the new session
+      await supabase.auth.refreshSession();
+      
       return {};
     },
     async signInWithGoogle() {
