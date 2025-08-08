@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { OAuthSocialButton } from "@/ui/components/OAuthSocialButton";
 import { TextField } from "@/ui/components/TextField";
 import { Button } from "@/ui/components/Button";
@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 function ZeptaSignIn() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, loading } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, loading, user } = useAuth();
   const router = useRouter();
   
   const [email, setEmail] = useState("");
@@ -16,6 +16,27 @@ function ZeptaSignIn() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect authenticated users to capture page
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/capture");
+    }
+  }, [user, loading, router]);
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-neutral-50">
+        <div className="text-lg">Lade...</div>
+      </div>
+    );
+  }
+
+  // Don't show login form if user is authenticated
+  if (user) {
+    return null;
+  }
 
   const handleGoogleSignIn = async () => {
     try {
