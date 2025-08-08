@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Button } from "@/ui/components/Button";
 import { TextField } from "@/ui/components/TextField";
-import { supabase } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 interface AllowlistUser {
   id: string;
@@ -25,7 +25,7 @@ function AdminPage() {
   const [newRole, setNewRole] = useState("user");
 
   // Check if user is admin
-  if (user?.role !== "admin") {
+  if ((user as any)?.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -136,7 +136,6 @@ function AdminPage() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
-          
           {/* Add User Form */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
             <h2 className="text-xl font-semibold mb-4">Neuen Benutzer hinzufügen</h2>
@@ -151,17 +150,13 @@ function AdminPage() {
                   placeholder="user@example.com"
                 />
               </TextField>
-              
               <TextField
                 label="Name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
               >
-                <TextField.Input
-                  placeholder="Vollständiger Name"
-                />
+                <TextField.Input placeholder="Vollständiger Name" />
               </TextField>
-              
               <select
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
@@ -170,13 +165,11 @@ function AdminPage() {
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
               </select>
-              
               <Button onClick={addUser} className="h-10">
                 Hinzufügen
               </Button>
             </div>
           </div>
-
           {/* Users List */}
           <div>
             <h2 className="text-xl font-semibold mb-4">Allowlist Benutzer</h2>
@@ -214,25 +207,29 @@ function AdminPage() {
                         {user.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.role === 'admin' 
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.role === "admin"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
                           {user.role}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {user.is_active ? 'Aktiv' : 'Inaktiv'}
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.is_active
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {user.is_active ? "Aktiv" : "Inaktiv"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.created_at).toLocaleDateString('de-DE')}
+                        {new Date(user.created_at).toLocaleDateString("de-DE")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
@@ -241,7 +238,7 @@ function AdminPage() {
                             onClick={() => toggleUserStatus(user.id, user.is_active)}
                             className="text-xs"
                           >
-                            {user.is_active ? 'Deaktivieren' : 'Aktivieren'}
+                            {user.is_active ? "Deaktivieren" : "Aktivieren"}
                           </Button>
                           <Button
                             size="small"
