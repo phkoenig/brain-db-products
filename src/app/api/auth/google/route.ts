@@ -3,10 +3,11 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   try {
-    // Use the correct callback URL that matches our Next.js routing
+    // Use our custom callback URL
     const redirectTo = `${req.nextUrl.origin}/auth/callback`;
     
     console.log("Starting Google OAuth flow with redirectTo:", redirectTo);
+    console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
