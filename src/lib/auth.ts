@@ -1,127 +1,72 @@
-import { createClient } from '@supabase/supabase-js'
+export type AllowlistConfig = {
+  emails: string[];
+  domains: string[];
+};
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+function normalizeDomain(domain: string): string {
+  return domain.trim().toLowerCase().replace(/^\./, "");
+}
 
-export interface AuthUser {
-  id: string
-  email: string
-  name?: string
-  role: string
+function extractDomainFromEmail(email: string): string | null {
+  const atIndex = email.lastIndexOf("@");
+  if (atIndex === -1 || atIndex === email.length - 1) {
+    return null;
+  }
+  return email.slice(atIndex + 1).toLowerCase();
+}
+
+function parseEnvList(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(/[,\n;]/)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
 }
 
 export class AuthService {
-  // Google OAuth Sign In
-  static async signInWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-    
-    if (error) {
-      console.error('Google sign in error:', error)
-      throw error
-    }
-    
-    return data
+  static getAllowlistConfig(): AllowlistConfig {
+    const emailList = parseEnvList(process.env.ALLOWLIST_EMAILS).map(normalizeEmail);
+    const domainList = parseEnvList(process.env.ALLOWLIST_DOMAINS).map(normalizeDomain);
+    return { emails: emailList, domains: domainList };
   }
 
-  // Email/Password Sign In
-  static async signInWithEmail(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    
-    if (error) {
-      console.error('Email sign in error:', error)
-      throw error
-    }
-    
-    return data
-  }
+  /**
+   * Checks if the provided email is allowed to sign up based on configured allowlists.
+   * - Exact email matches in ALLOWLIST_EMAILS
+   * - Domain matches in ALLOWLIST_DOMAINS (supports subdomains)
+   * If no allowlist envs are set, default to deny-by-default for safety.
+   */
+  static checkAllowlist(email: string): boolean {
+    const normalizedEmail = normalizeEmail(email);
+    const config = this.getAllowlistConfig();
 
-  // Email Sign Up
-  static async signUpWithEmail(email: string, password: string) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-    
-    if (error) {
-      console.error('Email sign up error:', error)
-      throw error
-    }
-    
-    return data
-  }
-
-  // Check if user is in allowlist
-  static async checkAllowlist(email: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('auth_allowlist')
-      .select('email, is_active')
-      .eq('email', email)
-      .eq('is_active', true)
-      .single()
-    
-    if (error) {
-      console.error('Allowlist check error:', error)
-      return false
-    }
-    
-    return !!data
-  }
-
-  // Get current user
-  static async getCurrentUser(): Promise<AuthUser | null> {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error || !user) {
-      return null
+    // If no allowlist entries exist, prevent signups by default
+    if (config.emails.length === 0 && config.domains.length === 0) {
+      return false;
     }
 
-    // Get user details from allowlist
-    const { data: allowlistData } = await supabase
-      .from('auth_allowlist')
-      .select('name, role')
-      .eq('email', user.email)
-      .single()
-
-    return {
-      id: user.id,
-      email: user.email!,
-      name: allowlistData?.name || user.user_metadata?.full_name,
-      role: allowlistData?.role || 'user'
+    // Exact email allow
+    if (config.emails.includes(normalizedEmail)) {
+      return true;
     }
-  }
 
-  // Sign Out
-  static async signOut() {
-    const { error } = await supabase.auth.signOut()
-    
-    if (error) {
-      console.error('Sign out error:', error)
-      throw error
-    }
-  }
+    // Domain allow
+    const domain = extractDomainFromEmail(normalizedEmail);
+    if (!domain) return false;
 
-  // Listen to auth changes
-  static onAuthStateChange(callback: (user: AuthUser | null) => void) {
-    return supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const user = await this.getCurrentUser()
-        callback(user)
-      } else if (event === 'SIGNED_OUT') {
-        callback(null)
-      }
-    })
+    const normalizedDomain = normalizeDomain(domain);
+
+    // Match exact domain or parent domain segments
+    // e.g., if allowlist has "example.com", then user@sub.example.com is allowed
+    return config.domains.some((allowedDomain) => {
+      if (normalizedDomain === allowedDomain) return true;
+      return normalizedDomain.endsWith(`.${allowedDomain}`);
+    });
   }
 }
+
+export default AuthService;

@@ -1,136 +1,80 @@
 "use client";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import AuthService from "@/lib/auth";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AuthService, AuthUser } from '@/lib/auth';
+export type AuthUser = {
+  id: string;
+  email: string | null;
+};
 
-interface AuthContextType {
+export type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<{ error?: string }>; 
+  signInWithEmail: (email: string, password: string) => Promise<{ error?: string }>; 
   signOut: () => Promise<void>;
-  checkAllowlist: (email: string) => Promise<boolean>;
-}
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check initial auth state
-    const checkUser = async () => {
-      try {
-        const currentUser = await AuthService.getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error('Error checking user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkUser();
-
-    // Listen to auth changes
-    const { data: { subscription } } = AuthService.onAuthStateChange((user) => {
-      setUser(user);
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { id: session.user.id, email: session.user.email } : null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ? { id: data.session.user.id, email: data.session.user.email } : null);
+      setLoading(false);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  const signInWithGoogle = async () => {
-    try {
-      setLoading(true);
-      await AuthService.signInWithGoogle();
-    } catch (error) {
-      console.error('Google sign in failed:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      
-      // Check allowlist first
-      const isAllowed = await AuthService.checkAllowlist(email);
-      if (!isAllowed) {
-        throw new Error('Zugriff verweigert. Ihre E-Mail ist nicht in der Allowlist.');
-      }
-      
-      await AuthService.signInWithEmail(email, password);
-    } catch (error) {
-      console.error('Email sign in failed:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUpWithEmail = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      
-      // Check allowlist first
-      const isAllowed = await AuthService.checkAllowlist(email);
-      if (!isAllowed) {
-        throw new Error('Zugriff verweigert. Ihre E-Mail ist nicht in der Allowlist.');
-      }
-      
-      await AuthService.signUpWithEmail(email, password);
-    } catch (error) {
-      console.error('Email sign up failed:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      await AuthService.signOut();
-      setUser(null);
-    } catch (error) {
-      console.error('Sign out failed:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkAllowlist = async (email: string) => {
-    return await AuthService.checkAllowlist(email);
-  };
-
-  const value = {
+  const value = useMemo<AuthContextValue>(() => ({
     user,
     loading,
-    signInWithGoogle,
-    signInWithEmail,
-    signUpWithEmail,
-    signOut,
-    checkAllowlist,
-  };
+    async signUpWithEmail(email: string, password: string) {
+      if (!AuthService.checkAllowlist(email)) {
+        return { error: "Email not allowed" };
+      }
+      // Delegate to server API to avoid exposing service key
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        return { error: body.error || "Signup failed" };
+      }
+      // Optionally sign in the user
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: error.message };
+      return {};
+    },
+    async signInWithEmail(email: string, password: string) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return { error: error.message };
+      return {};
+    },
+    async signOut() {
+      await supabase.auth.signOut();
+    }
+  }), [user, loading]);
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 }

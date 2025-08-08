@@ -128,4 +128,20 @@ Environment: Production
 
 **Status**: 📋 Checkliste bereit  
 **Letzte Aktualisierung**: Dezember 2024  
+<<<<<<< Current (Your changes)
 **Nächster Schritt**: Vercel Dashboard Setup 
+=======
+**Nächster Schritt**: Vercel Dashboard Setup
+
+## 🔒 Auth Allowlist
+
+Zur Steuerung, wer sich registrieren darf, setze eine Allowlist:
+
+```
+ALLOWLIST_EMAILS=alice@example.com,bob@example.com
+ALLOWLIST_DOMAINS=example.com,partner.org
+```
+
+- Wenn beide Listen leer sind, ist Signup standardmäßig deaktiviert (deny-by-default).
+- `ALLOWLIST_DOMAINS` erlaubt auch Subdomains (z. B. `user@sub.example.com`). 
+>>>>>>> Incoming (Background Agent changes)
