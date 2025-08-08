@@ -25,12 +25,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { id: session.user.id, email: session.user.email } : null);
+      setUser(session?.user ? { id: session.user.id, email: session.user.email || null } : null);
       setLoading(false);
     });
 
     supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ? { id: data.session.user.id, email: data.session.user.email } : null);
+      setUser(data.session?.user ? { id: data.session.user.id, email: data.session.user.email || null } : null);
       setLoading(false);
     });
 
@@ -67,6 +67,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {};
     },
     async signInWithEmail(email: string, password: string) {
+      // Use API route for consistent allowlist checking and error handling
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        return { error: body.error || "Signin failed" };
+      }
+      
+      // If API signin successful, also sign in with Supabase client for session management
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
       return {};

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,29 +27,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email not allowed" }, { status: 403 });
     }
 
-    // Check if user exists
-    const { data: existingUser, error: userError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (userError) {
-      return NextResponse.json({ error: "User check failed" }, { status: 500 });
+    // Actually verify the password using Supabase auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password: password
+    });
+
+    if (authError) {
+      console.error("Authentication error:", authError);
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    const user = existingUser.users.find(u => u.email === email.toLowerCase().trim());
-    
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (!authData.user) {
+      return NextResponse.json({ error: "Authentication failed" }, { status: 401 });
     }
 
-    // Return success - actual signin should be done client-side
+    // Return success with user data
     return NextResponse.json({ 
-      message: "User exists and is allowed to sign in",
+      message: "Authentication successful",
       user: {
-        id: user.id,
-        email: user.email,
-        email_confirmed_at: user.email_confirmed_at
+        id: authData.user.id,
+        email: authData.user.email,
+        email_confirmed_at: authData.user.email_confirmed_at
       }
     }, { status: 200 });
   } catch (err: any) {
+    console.error("Signin error:", err);
     return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 500 });
   }
 }
