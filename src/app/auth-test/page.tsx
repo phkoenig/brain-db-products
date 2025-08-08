@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { Button } from "@/ui/components/Button";
@@ -13,6 +13,32 @@ export default function AuthTestPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [realUser, setRealUser] = useState<any>(null);
+
+  // Validate if user is actually authenticated
+  useEffect(() => {
+    const validateUser = async () => {
+      if (user) {
+        try {
+          const res = await fetch("/api/auth/debug");
+          const data = await res.json();
+          
+          if (data.currentSession && data.currentSession.user.id === user.id) {
+            setRealUser(data.currentSession.user);
+          } else {
+            setRealUser(null);
+          }
+        } catch (error) {
+          console.error("User validation failed:", error);
+          setRealUser(null);
+        }
+      } else {
+        setRealUser(null);
+      }
+    };
+
+    validateUser();
+  }, [user]);
 
   const handleSignUp = async () => {
     setMessage("");
@@ -73,9 +99,21 @@ export default function AuthTestPage() {
             Authentifizierung Test
           </h1>
           
-          {user && (
+          {realUser && (
             <Alert variant="success">
-              ✅ Angemeldet als: {user.email} (ID: {user.id})
+              ✅ ECHT angemeldet als: {realUser.email} (ID: {realUser.id})
+            </Alert>
+          )}
+
+          {user && !realUser && (
+            <Alert variant="error">
+              ⚠️ FALSCHER User-State: {user.email} (ID: {user.id}) - Keine echte Session!
+            </Alert>
+          )}
+
+          {!user && !realUser && (
+            <Alert variant="neutral">
+              ℹ️ Nicht angemeldet - Bitte testen Sie die Authentifizierung
             </Alert>
           )}
 
@@ -124,7 +162,7 @@ export default function AuthTestPage() {
               </Button>
               
               {user && (
-                <Button onClick={handleSignOut} variant="outline">
+                <Button onClick={handleSignOut} variant="neutral-secondary">
                   Abmelden
                 </Button>
               )}

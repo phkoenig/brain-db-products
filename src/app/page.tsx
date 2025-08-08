@@ -19,8 +19,23 @@ function ZeptaSignIn() {
 
   // Redirect authenticated users to capture page
   useEffect(() => {
-    if (!loading && user) {
-      router.push("/capture");
+    if (!loading && user && user.id && user.email) {
+      // Additional validation: check if user is actually authenticated
+      const checkAuth = async () => {
+        try {
+          const res = await fetch("/api/auth/debug");
+          const data = await res.json();
+          
+          // Only redirect if there's a valid session
+          if (data.currentSession && data.currentSession.user.id === user.id) {
+            router.push("/capture");
+          }
+        } catch (error) {
+          console.error("Auth validation failed:", error);
+        }
+      };
+      
+      checkAuth();
     }
   }, [user, loading, router]);
 
