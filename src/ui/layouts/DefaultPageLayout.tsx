@@ -64,12 +64,14 @@ const DefaultPageLayoutRoot = React.forwardRef<
                 Settings
               </SidebarRailWithLabels.NavItem>
             </Link>
-            <SidebarRailWithLabels.NavItem 
-              icon={<FeatherUserCircle />}
-              className="w-16 h-16"
-            >
-              User
-            </SidebarRailWithLabels.NavItem>
+            <Link href="/logout">
+              <SidebarRailWithLabels.NavItem 
+                icon={<FeatherUserCircle />}
+                className="w-16 h-16"
+              >
+                Logout
+              </SidebarRailWithLabels.NavItem>
+            </Link>
           </>
         }
       >

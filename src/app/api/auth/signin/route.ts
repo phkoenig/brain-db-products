@@ -26,17 +26,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email not allowed" }, { status: 403 });
     }
 
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    // Check if user exists
+    const { data: existingUser, error: userError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (userError) {
+      return NextResponse.json({ error: "User check failed" }, { status: 500 });
     }
 
-    return NextResponse.json({ user: data.user }, { status: 201 });
+    const user = existingUser.users.find(u => u.email === email.toLowerCase().trim());
+    
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Return success - actual signin should be done client-side
+    return NextResponse.json({ 
+      message: "User exists and is allowed to sign in",
+      user: {
+        id: user.id,
+        email: user.email,
+        email_confirmed_at: user.email_confirmed_at
+      }
+    }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? "Unknown error" }, { status: 500 });
   }

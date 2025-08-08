@@ -43,9 +43,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     async signUpWithEmail(email: string, password: string) {
-      if (!AuthService.checkAllowlist(email)) {
+      // Check allowlist via API instead of local AuthService
+      const allowlistRes = await fetch(`/api/auth/allowlist/validate?email=${encodeURIComponent(email)}`);
+      const allowlistData = await allowlistRes.json();
+      
+      if (!allowlistData.allowed) {
         return { error: "Email not allowed" };
       }
+      
       // Delegate to server API to avoid exposing service key
       const res = await fetch("/api/auth/signup", {
         method: "POST",
