@@ -2,7 +2,6 @@
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import AuthService from "@/lib/auth";
 
 function CallbackInner() {
   const router = useRouter();
@@ -20,9 +19,16 @@ function CallbackInner() {
       }
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email || "";
-      if (!email || !AuthService.checkAllowlist(email)) {
+      if (!email) {
+        router.replace("/auth/auth-code-error?reason=missing_email");
+        return;
+      }
+      // DB-first allowlist validation via server endpoint
+      const res = await fetch(`/api/auth/allowlist/validate?email=${encodeURIComponent(email)}`, { cache: "no-store" });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.allowed) {
         await supabase.auth.signOut();
-        router.replace("/auth/auth-code-error?reason=not-allowed");
+        router.replace(`/auth/auth-code-error?reason=not-allowed&source=${body.source || "unknown"}`);
         return;
       }
       router.replace("/");
