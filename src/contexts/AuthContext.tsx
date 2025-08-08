@@ -67,6 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {};
     },
     async signInWithEmail(email: string, password: string) {
+      console.log("🔍 DEBUG: AuthContext.signInWithEmail called with:", { email, password });
+      
       // Use API route for authentication and session management
       const res = await fetch("/api/auth/signin", {
         method: "POST",
@@ -75,14 +77,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: "include" // Include cookies
       });
       
+      console.log("🔍 DEBUG: API response status:", res.status);
+      
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        console.log("🔍 DEBUG: API error response:", body);
         return { error: body.error || "Signin failed" };
       }
+      
+      const responseData = await res.json();
+      console.log("🔍 DEBUG: API success response:", responseData);
       
       // Force refresh the auth state to pick up the new session
       await supabase.auth.refreshSession();
       
+      console.log("🔍 DEBUG: Session refreshed, returning success");
       return {};
     },
     async signInWithGoogle() {
