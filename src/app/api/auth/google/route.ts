@@ -3,8 +3,10 @@ import { supabase } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   try {
-    // Use our custom callback URL
-    const redirectTo = `${req.nextUrl.origin}/auth/callback`;
+    // Use the Supabase default callback URL format as per documentation
+    // This should be: https://<project-id>.supabase.co/auth/v1/callback
+    const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const redirectTo = `${projectUrl}/auth/v1/callback`;
     
     console.log("Starting Google OAuth flow with redirectTo:", redirectTo);
     console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
