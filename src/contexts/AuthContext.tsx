@@ -13,6 +13,7 @@ export type AuthContextValue = {
   loading: boolean;
   signUpWithEmail: (email: string, password: string) => Promise<{ error?: string }>; 
   signInWithEmail: (email: string, password: string) => Promise<{ error?: string }>; 
+  signInWithGoogle: () => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
 };
 
@@ -64,6 +65,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { error: error.message };
       return {};
+    },
+    async signInWithGoogle() {
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+          },
+        });
+
+        if (error) {
+          return { error: error.message };
+        }
+
+        if (!data?.url) {
+          return { error: "No OAuth URL returned" };
+        }
+
+        // Redirect to Google OAuth
+        window.location.href = data.url;
+        return {};
+      } catch (error: any) {
+        return { error: error?.message || "Google OAuth failed" };
+      }
     },
     async signOut() {
       await supabase.auth.signOut();
