@@ -69,29 +69,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async signInWithEmail(email: string, password: string) {
       console.log("🔍 DEBUG: AuthContext.signInWithEmail called with:", { email, password });
       
-      // Use API route for authentication and session management
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        credentials: "include" // Include cookies
+      // Use direct Supabase auth for now to ensure session is set correctly
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: email.toLowerCase().trim(), 
+        password: password 
       });
       
-      console.log("🔍 DEBUG: API response status:", res.status);
+      console.log("🔍 DEBUG: Supabase auth result:", { data, error });
       
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        console.log("🔍 DEBUG: API error response:", body);
-        return { error: body.error || "Signin failed" };
+      if (error) {
+        console.log("🔍 DEBUG: Auth error:", error);
+        return { error: error.message };
       }
       
-      const responseData = await res.json();
-      console.log("🔍 DEBUG: API success response:", responseData);
+      if (!data.user) {
+        console.log("🔍 DEBUG: No user returned");
+        return { error: "Authentication failed" };
+      }
       
-      // Force refresh the auth state to pick up the new session
-      await supabase.auth.refreshSession();
-      
-      console.log("🔍 DEBUG: Session refreshed, returning success");
+      console.log("🔍 DEBUG: Auth successful, user:", data.user.email);
       return {};
     },
     async signInWithGoogle() {
