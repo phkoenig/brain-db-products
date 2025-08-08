@@ -6,6 +6,8 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get("code");
 
   if (code) {
+    const response = NextResponse.redirect(requestUrl.origin);
+    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -15,9 +17,9 @@ export async function GET(request: NextRequest) {
             return request.cookies.getAll();
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              request.cookies.set(name, value, options)
-            );
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
           },
         },
       }
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
       }
       
       console.log("Session exchanged successfully, redirecting to home");
-      return NextResponse.redirect(requestUrl.origin);
+      return response;
       
     } catch (error) {
       console.error("Unexpected error in callback:", error);
