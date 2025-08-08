@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useCaptureForm } from '@/hooks/useCaptureForm';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/ui/components/Button';
+import { TextField } from '@/ui/components/TextField';
 import { useRouter } from 'next/navigation';
 
 export default function CaptureForm() {
@@ -93,18 +95,20 @@ export default function CaptureForm() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <button
+              <Button
                 onClick={() => router.push('/admin')}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                variant="outline"
+                size="small"
               >
                 Admin
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSignOut}
-                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+                variant="outline"
+                size="small"
               >
                 Abmelden
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -112,92 +116,212 @@ export default function CaptureForm() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">Produktdaten erfassen</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Produktname *
-              </label>
-              <input
-                type="text"
-                value={formData.name || ''}
-                onChange={(e) => updateField('name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Produktname eingeben"
-              />
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Produkt Informationen</h2>
+            
+            {/* Basic Product Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <TextField
+                label="Hersteller *"
+                value={formData.produkt_hersteller}
+                onChange={(e) => updateField('produkt_hersteller', e.target.value)}
+              >
+                <TextField.Input
+                  placeholder="z.B. Knauf, Saint-Gobain"
+                />
+              </TextField>
+              
+              <TextField
+                label="Produktname/Modell *"
+                value={formData.produkt_name_modell}
+                onChange={(e) => updateField('produkt_name_modell', e.target.value)}
+              >
+                <TextField.Input
+                  placeholder="z.B. Diamant, Rigips"
+                />
+              </TextField>
+              
+              <TextField
+                label="Produktlinie/Serie"
+                value={formData.produkt_produktlinie_serie}
+                onChange={(e) => updateField('produkt_produktlinie_serie', e.target.value)}
+              >
+                <TextField.Input
+                  placeholder="z.B. A-Mark, Plafond"
+                />
+              </TextField>
+              
+              <TextField
+                label="Code/ID"
+                value={formData.produkt_code_id}
+                onChange={(e) => updateField('produkt_code_id', e.target.value)}
+              >
+                <TextField.Input
+                  placeholder="z.B. 123456, ABC-001"
+                />
+              </TextField>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Kategorie
-              </label>
-              <input
-                type="text"
-                value={formData.category || ''}
-                onChange={(e) => updateField('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Kategorie eingeben"
-              />
+            {/* Description */}
+            <div className="mb-6">
+              <TextField
+                label="Beschreibung"
+                value={formData.produkt_beschreibung}
+                onChange={(e) => updateField('produkt_beschreibung', e.target.value)}
+              >
+                <TextField.TextArea
+                  placeholder="Detaillierte Produktbeschreibung..."
+                  rows={3}
+                />
+              </TextField>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Preis (€)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.price || ''}
-                onChange={(e) => updateField('price', parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0.00"
-              />
+            {/* URLs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <TextField
+                label="Hersteller Website"
+                value={formData.produkt_hersteller_webseite}
+                onChange={(e) => updateField('produkt_hersteller_webseite', e.target.value)}
+              >
+                <TextField.Input
+                  type="url"
+                  placeholder="https://www.hersteller.de"
+                />
+              </TextField>
+              
+              <TextField
+                label="Produkt URL"
+                value={formData.produkt_hersteller_produkt_url}
+                onChange={(e) => updateField('produkt_hersteller_produkt_url', e.target.value)}
+              >
+                <TextField.Input
+                  type="url"
+                  placeholder="https://www.hersteller.de/produkt"
+                />
+              </TextField>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hersteller
-              </label>
-              <input
-                type="text"
-                value={formData.manufacturer || ''}
-                onChange={(e) => updateField('manufacturer', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Hersteller eingeben"
-              />
+            {/* Parameters */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Parameter</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <TextField
+                  label="Maße"
+                  value={formData.parameter_masse}
+                  onChange={(e) => updateField('parameter_masse', e.target.value)}
+                >
+                  <TextField.Input
+                    placeholder="z.B. 1200x600mm"
+                  />
+                </TextField>
+                
+                <TextField
+                  label="Farbe"
+                  value={formData.parameter_farbe}
+                  onChange={(e) => updateField('parameter_farbe', e.target.value)}
+                >
+                  <TextField.Input
+                    placeholder="z.B. Weiß, Grau"
+                  />
+                </TextField>
+                
+                <TextField
+                  label="Hauptmaterial"
+                  value={formData.parameter_hauptmaterial}
+                  onChange={(e) => updateField('parameter_hauptmaterial', e.target.value)}
+                >
+                  <TextField.Input
+                    placeholder="z.B. Gips, Holz"
+                  />
+                </TextField>
+              </div>
+            </div>
+
+            {/* Retailer Info */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Händler Informationen</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <TextField
+                  label="Händlername"
+                  value={formData.haendler_haendlername}
+                  onChange={(e) => updateField('haendler_haendlername', e.target.value)}
+                >
+                  <TextField.Input
+                    placeholder="z.B. Bauhaus, Hornbach"
+                  />
+                </TextField>
+                
+                <TextField
+                  label="Preis"
+                  value={formData.haendler_preis}
+                  onChange={(e) => updateField('haendler_preis', e.target.value)}
+                >
+                  <TextField.Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
+                </TextField>
+                
+                <TextField
+                  label="Einheit"
+                  value={formData.haendler_einheit}
+                  onChange={(e) => updateField('haendler_einheit', e.target.value)}
+                >
+                  <TextField.Input
+                    placeholder="z.B. m², Stück"
+                  />
+                </TextField>
+                
+                <TextField
+                  label="Verfügbarkeit"
+                  value={formData.haendler_verfuegbarkeit}
+                  onChange={(e) => updateField('haendler_verfuegbarkeit', e.target.value)}
+                >
+                  <TextField.Input
+                    placeholder="z.B. Verfügbar, Lieferbar"
+                  />
+                </TextField>
+              </div>
+            </div>
+
+            {/* Source URL */}
+            <div className="mb-6">
+              <TextField
+                label="Quell-URL"
+                value={formData.erfassung_quell_url}
+                onChange={(e) => updateField('erfassung_quell_url', e.target.value)}
+              >
+                <TextField.Input
+                  type="url"
+                  placeholder="https://www.example.com/produkt"
+                />
+              </TextField>
             </div>
           </div>
 
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Beschreibung
-            </label>
-            <textarea
-              value={formData.description || ''}
-              onChange={(e) => updateField('description', e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Produktbeschreibung eingeben"
-            />
-          </div>
-
-          <div className="mt-6 flex justify-end space-x-4">
-            <button
-              onClick={resetForm}
-              disabled={!isDirty}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Zurücksetzen
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving || !isDirty}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? 'Speichern...' : 'Speichern'}
-            </button>
+          {/* Action Buttons */}
+          <div className="flex justify-between items-center pt-6 border-t">
+            <div className="flex space-x-4">
+              <Button
+                onClick={resetForm}
+                variant="outline"
+                disabled={isSaving}
+              >
+                Zurücksetzen
+              </Button>
+            </div>
+            
+            <div className="flex space-x-4">
+              <Button
+                onClick={handleSave}
+                disabled={!isDirty || isSaving}
+                className="min-w-[120px]"
+              >
+                {isSaving ? 'Wird gespeichert...' : 'Speichern'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

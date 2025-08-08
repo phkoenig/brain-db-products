@@ -33,6 +33,33 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
   );
 });
 
+interface TextAreaProps
+  extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "placeholder"> {
+  placeholder?: React.ReactNode;
+  value?: string;
+  onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  className?: string;
+  rows?: number;
+}
+
+const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(function TextArea(
+  { placeholder, className, rows = 3, ...otherProps }: TextAreaProps,
+  ref
+) {
+  return (
+    <textarea
+      className={SubframeUtils.twClassNames(
+        "h-full w-full border-none bg-transparent text-body font-body text-default-font outline-none placeholder:text-neutral-400 resize-none",
+        className
+      )}
+      placeholder={placeholder as string}
+      rows={rows}
+      ref={ref}
+      {...otherProps}
+    />
+  );
+});
+
 interface TextFieldRootProps
   extends React.LabelHTMLAttributes<HTMLLabelElement> {
   disabled?: boolean;
@@ -125,4 +152,5 @@ const TextFieldRoot = React.forwardRef<HTMLLabelElement, TextFieldRootProps>(
 
 export const TextField = Object.assign(TextFieldRoot, {
   Input,
+  TextArea,
 });
