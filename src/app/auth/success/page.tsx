@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Button } from '@/ui/components/Button';
 import { useSearchParams } from 'next/navigation';
 
-export default function OAuthSuccessPage() {
+function OAuthSuccessContent() {
   const searchParams = useSearchParams();
   const [tokenInfo, setTokenInfo] = useState<{
     access_token: string;
@@ -91,5 +91,22 @@ export default function OAuthSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OAuthSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-8 max-w-2xl">
+        <div className="bg-white border rounded-lg p-8 shadow-md">
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <h1 className="text-3xl font-bold mb-6 text-gray-600">Lade...</h1>
+          </div>
+        </div>
+      </div>
+    }>
+      <OAuthSuccessContent />
+    </Suspense>
   );
 }
