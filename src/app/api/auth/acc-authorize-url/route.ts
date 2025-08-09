@@ -5,14 +5,19 @@ export async function GET(request: NextRequest) {
   try {
     console.log("🔍 ACC OAuth API: Generating authorization URL...");
     
-    // Generate authorization URL on server side
-    const authorizationUrl = ACCOAuthService.getAuthorizationUrl();
+    // Extract origin from request headers
+    const origin = request.headers.get('origin') || request.headers.get('referer');
+    console.log("🔍 ACC OAuth API: Request origin:", origin);
+    
+    // Generate authorization URL on server side with origin
+    const authorizationUrl = ACCOAuthService.getAuthorizationUrl(origin || undefined);
     
     console.log("🔍 ACC OAuth API: Authorization URL generated successfully");
     
     return NextResponse.json({
       success: true,
-      authorizationUrl: authorizationUrl
+      authorizationUrl: authorizationUrl,
+      origin: origin
     });
 
   } catch (error) {

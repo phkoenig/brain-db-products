@@ -2,17 +2,7 @@
 // Verwendet die gleiche OAuth2-Authentifizierung wie APS
 
 import { ACCOAuthService } from './acc-oauth';
-
-export interface ACCProject {
-  id: string;
-  name: string;
-  status: string;
-  startDate?: string;
-  endDate?: string;
-  projectType?: string;
-  value?: number;
-  currency?: string;
-}
+import { ACCProject } from '../types/products';
 
 export interface ACCItem {
   id: string;
@@ -80,7 +70,7 @@ export class ACCService {
   private static readonly ACC_ACCOUNT_ID = '969ae436-36e7-4a4b-8744-298cf384974a';
   
   // Updated base URL for construction admin API
-  private static readonly ACC_BASE_URL = 'https://developer.api.autodesk.com/construction/admin/v1';
+  private static ACC_BASE_URL = 'https://developer.api.autodesk.com/construction/admin/v1';
 
   static async getToken(): Promise<string> {
     try {
@@ -139,36 +129,85 @@ export class ACCService {
     const token = await this.getToken();
     console.log('🔍 ACC: Fetching projects...');
 
-    // Use the correct endpoint with account ID
-    const url = `${this.ACC_BASE_URL}/accounts/${this.ACC_ACCOUNT_ID}/projects`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'x-ads-region': 'EMEA'
-      }
-    });
+    let allProjects: ACCProject[] = [];
+    let offset = 0;
+    const limit = 200; // Maximale Seitengröße für V1 API
+    let hasMorePages = true;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔍 ACC: Projects request failed:', errorText);
+    while (hasMorePages) {
+      // Use the correct V1 endpoint with limit and offset pagination
+      const url = `${this.ACC_BASE_URL}/accounts/${this.ACC_ACCOUNT_ID}/projects?limit=${limit}&offset=${offset}`;
       
-      if (response.status === 404) {
-        console.error('🔍 ACC: 404 Error - Endpoint nicht gefunden. Mögliche Ursachen:');
-        console.error('🔍 ACC: 1. Falsche API-Version');
-        console.error('🔍 ACC: 2. Fehlende Berechtigungen');
-        console.error('🔍 ACC: 3. Falsche Region');
-        console.error('🔍 ACC: 4. ACC-Projekte nicht verfügbar');
+      console.log(`🔍 ACC: Fetching projects with limit=${limit}, offset=${offset}...`);
+      console.log(`🔍 ACC: URL: ${url}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'x-ads-region': 'EMEA'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔍 ACC: Projects request failed:', errorText);
+        
+        if (response.status === 404) {
+          console.error('🔍 ACC: 404 Error - Endpoint nicht gefunden. Mögliche Ursachen:');
+          console.error('🔍 ACC: 1. Falsche API-Version');
+          console.error('🔍 ACC: 2. Fehlende Berechtigungen');
+          console.error('🔍 ACC: 3. Falsche Region');
+          console.error('🔍 ACC: 4. ACC-Projekte nicht verfügbar');
+        }
+        
+        throw new Error(`ACC Projects request failed: ${response.status} - ${errorText}`);
       }
+
+      const projectsData = await response.json();
+      console.log(`🔍 ACC: Data received:`, projectsData);
       
-      throw new Error(`ACC Projects request failed: ${response.status} - ${errorText}`);
+      const pageProjects = projectsData.data || projectsData.results || [];
+      allProjects = allProjects.concat(pageProjects);
+      
+      console.log(`🔍 ACC: Batch loaded: ${pageProjects.length} projects, total: ${allProjects.length}`);
+      
+      // Check if there are more pages
+      if (pageProjects.length < limit) {
+        hasMorePages = false;
+        console.log('🔍 ACC: No more pages available');
+      } else {
+        offset += limit;
+        // Safety check to prevent infinite loops
+        if (offset > 4000) { // Erhöht auf 4000 (20 Seiten à 200)
+          console.warn('🔍 ACC: Reached maximum offset limit (4000), stopping pagination');
+          hasMorePages = false;
+        }
+      }
     }
-
-    const projectsData = await response.json();
-    console.log('🔍 ACC: Projects data received:', projectsData);
     
-    return projectsData.data || projectsData.results || [];
+    console.log(`🔍 ACC: Total projects loaded: ${allProjects.length}`);
+    
+    // Filter out archived projects
+    const activeProjects = allProjects.filter((project: ACCProject) => {
+      const status = project.status?.toLowerCase();
+      return status !== 'archived' && status !== 'archive' && status !== 'closed';
+    });
+    
+    console.log(`🔍 ACC: Filtered ${activeProjects.length} active projects from ${allProjects.length} total projects`);
+    
+    // Sort projects alphabetically by name
+    const sortedProjects = activeProjects.sort((a: ACCProject, b: ACCProject) => {
+      return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' });
+    });
+    
+    console.log('🔍 ACC: Projects sorted alphabetically');
+    
+    // Log first few projects for debugging
+    console.log('🔍 ACC: First 10 projects:', sortedProjects.slice(0, 10).map(p => p.name));
+    console.log('🔍 ACC: Last 10 projects:', sortedProjects.slice(-10).map(p => p.name));
+    
+    return sortedProjects;
   }
 
   static async getProject(projectId: string): Promise<ACCProject> {

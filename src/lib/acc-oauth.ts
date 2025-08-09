@@ -14,9 +14,23 @@ export class ACCOAuthService {
   // OAuth2 Configuration
   private static readonly CLIENT_ID = process.env.APS_WEB_APP_CLIENT_ID!;
   private static readonly CLIENT_SECRET = process.env.APS_WEB_APP_CLIENT_SECRET!;
-  private static readonly REDIRECT_URI = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:3000/auth/callback' 
-    : 'https://megabrain.cloud/auth/callback';
+  
+  // Dynamic redirect URI based on origin
+  private static getRedirectUri(origin?: string): string {
+    // If origin is provided, use it to determine redirect URI
+    if (origin) {
+      if (origin.includes('localhost:3000')) {
+        return 'http://localhost:3000/auth/callback';
+      } else if (origin.includes('megabrain.cloud')) {
+        return 'https://megabrain.cloud/auth/callback';
+      }
+    }
+    
+    // Fallback based on NODE_ENV
+    return process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:3000/auth/callback' 
+      : 'https://megabrain.cloud/auth/callback';
+  }
   
   // Scopes for Data Management API
   private static readonly SCOPES = [
@@ -65,11 +79,13 @@ export class ACCOAuthService {
   /**
    * Generate OAuth2 authorization URL for 3-legged flow
    */
-  static getAuthorizationUrl(): string {
+  static getAuthorizationUrl(origin?: string): string {
+    const redirectUri = this.getRedirectUri(origin);
+    
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: this.CLIENT_ID,
-      redirect_uri: this.REDIRECT_URI,
+      redirect_uri: redirectUri,
       scope: this.SCOPES,
       state: this.generateState()
     });
@@ -78,7 +94,8 @@ export class ACCOAuthService {
     
     console.log('🔍 ACC OAuth: Authorization URL generated:');
     console.log('🔍 ACC OAuth: - Client ID:', this.CLIENT_ID.substring(0, 10) + '...');
-    console.log('🔍 ACC OAuth: - Redirect URI:', this.REDIRECT_URI);
+    console.log('🔍 ACC OAuth: - Origin:', origin || 'not provided');
+    console.log('🔍 ACC OAuth: - Redirect URI:', redirectUri);
     console.log('🔍 ACC OAuth: - Scopes:', this.SCOPES);
     console.log('🔍 ACC OAuth: - Full URL:', authUrl);
 
@@ -88,10 +105,13 @@ export class ACCOAuthService {
   /**
    * Exchange authorization code for access tokens
    */
-  static async exchangeCodeForTokens(code: string): Promise<OAuthTokens> {
+  static async exchangeCodeForTokens(code: string, origin?: string): Promise<OAuthTokens> {
+    const redirectUri = this.getRedirectUri(origin);
+    
     console.log('🔍 ACC OAuth: Exchanging code for tokens...');
     console.log('🔍 ACC OAuth: Client ID:', this.CLIENT_ID.substring(0, 10) + '...');
-    console.log('🔍 ACC OAuth: Redirect URI:', this.REDIRECT_URI);
+    console.log('🔍 ACC OAuth: Origin:', origin || 'not provided');
+    console.log('🔍 ACC OAuth: Redirect URI:', redirectUri);
     console.log('🔍 ACC OAuth: Code length:', code.length);
 
     const requestBody = new URLSearchParams({
@@ -99,46 +119,27 @@ export class ACCOAuthService {
       client_secret: this.CLIENT_SECRET,
       grant_type: 'authorization_code',
       code: code,
-      redirect_uri: this.REDIRECT_URI
+      redirect_uri: redirectUri
     });
-
-    console.log('🔍 ACC OAuth: Request body:', requestBody.toString());
 
     const response = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'x-ads-region': 'EMEA'
       },
-      body: requestBody
+      body: requestBody.toString()
     });
 
-    console.log('🔍 ACC OAuth: Response status:', response.status);
-    console.log('🔍 ACC OAuth: Response headers:', Object.fromEntries(response.headers.entries()));
-
-    const responseText = await response.text();
-    console.log('🔍 ACC OAuth: Response body:', responseText);
-
     if (!response.ok) {
-      console.error('🔍 ACC OAuth: Token exchange failed - Status:', response.status);
-      console.error('🔍 ACC OAuth: Token exchange failed - Body:', responseText);
-      throw new Error(`OAuth token exchange failed: ${response.status} - ${responseText}`);
+      const errorText = await response.text();
+      console.error('🔍 ACC OAuth: Token exchange failed:', response.status, errorText);
+      throw new Error(`Token exchange failed: ${response.status} - ${errorText}`);
     }
 
-    let tokens;
-    try {
-      tokens = JSON.parse(responseText);
-      console.log('🔍 ACC OAuth: Tokens parsed successfully');
-    } catch (parseError) {
-      console.error('🔍 ACC OAuth: Failed to parse response as JSON:', parseError);
-      throw new Error(`OAuth response parsing failed: ${responseText}`);
-    }
-
+    const tokens: OAuthTokens = await response.json();
     console.log('🔍 ACC OAuth: Tokens received successfully');
-
-    // Cache tokens
+    
     this.storeTokens(tokens);
-
     return tokens;
   }
 
@@ -148,74 +149,73 @@ export class ACCOAuthService {
   static async refreshTokens(refreshToken: string): Promise<OAuthTokens> {
     console.log('🔍 ACC OAuth: Refreshing tokens...');
 
+    const requestBody = new URLSearchParams({
+      client_id: this.CLIENT_ID,
+      client_secret: this.CLIENT_SECRET,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    });
+
     const response = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'x-ads-region': 'EMEA'
       },
-      body: new URLSearchParams({
-        client_id: this.CLIENT_ID,
-        client_secret: this.CLIENT_SECRET,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken
-      })
+      body: requestBody.toString()
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('🔍 ACC OAuth: Token refresh failed:', errorText);
-      throw new Error(`OAuth token refresh failed: ${response.status} - ${errorText}`);
+      console.error('🔍 ACC OAuth: Token refresh failed:', response.status, errorText);
+      throw new Error(`Token refresh failed: ${response.status} - ${errorText}`);
     }
 
-    const tokens = await response.json();
+    const tokens: OAuthTokens = await response.json();
     console.log('🔍 ACC OAuth: Tokens refreshed successfully');
-
-    // Cache tokens
+    
     this.storeTokens(tokens);
-
     return tokens;
   }
 
   /**
-   * Get valid access token (cached or refreshed)
+   * Get valid access token (refresh if needed)
    */
   static async getAccessToken(): Promise<string> {
-    // Check if we have valid cached tokens
-    const cachedTokens = this.loadTokens();
-    if (cachedTokens && Date.now() < cachedTokens.expiresAt) {
-      return cachedTokens.tokens.access_token;
+    const cached = this.loadTokens();
+    
+    if (cached && Date.now() < cached.expiresAt) {
+      console.log('🔍 ACC OAuth: Using cached access token');
+      return cached.tokens.access_token;
     }
 
-    // If we have cached tokens but they're expired, try to refresh
-    if (cachedTokens && cachedTokens.tokens.refresh_token) {
+    if (cached && cached.tokens.refresh_token) {
+      console.log('🔍 ACC OAuth: Refreshing expired access token');
       try {
-        const newTokens = await this.refreshTokens(cachedTokens.tokens.refresh_token);
+        const newTokens = await this.refreshTokens(cached.tokens.refresh_token);
         return newTokens.access_token;
       } catch (error) {
-        console.error('🔍 ACC OAuth: Token refresh failed, need re-authorization');
-        // Clear cache and require re-authorization
-        this.tokenCache = null;
-        (global as any).accOAuthTokens = null; // Clear global storage
+        console.error('🔍 ACC OAuth: Token refresh failed, clearing cache');
+        this.clearTokens();
+        throw error;
       }
     }
 
-    throw new Error('No valid OAuth tokens available. User needs to authorize the application.');
+    throw new Error('No valid access token available. Please re-authenticate.');
   }
 
   /**
-   * Generate random state for OAuth security
+   * Generate random state parameter for OAuth security
    */
   private static generateState(): string {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
 
   /**
-   * Clear cached tokens (for logout)
+   * Clear stored tokens
    */
   static clearTokens(): void {
     this.tokenCache = null;
-    (global as any).accOAuthTokens = null; // Clear global storage
-    console.log('🔍 ACC OAuth: Tokens cleared');
+    (global as any).accOAuthTokens = null;
+    console.log('🔍 ACC OAuth: Tokens cleared from cache and global storage');
   }
 }

@@ -15,6 +15,7 @@ import { FeatherPlus } from "@subframe/core";
 import { FeatherSettings } from "@subframe/core";
 import { FeatherUserCircle } from "@subframe/core";
 import { FeatherFolder } from "@subframe/core";
+import { FeatherCloud } from "@subframe/core";
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/ui/components/Button';
 
@@ -38,6 +39,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
   const isCapturePage = pathname === "/capture";
   const isSettingsPage = pathname === "/settings";
   const isPlanPage = pathname === "/plan";
+  const isACCBrowserPage = pathname === "/acc-browser";
   const { user, signOut } = useAuth();
 
   return (
@@ -103,6 +105,15 @@ const DefaultPageLayoutRoot = React.forwardRef<
             className="w-16 h-16"
           >
             Plan
+          </SidebarRailWithLabels.NavItem>
+        </Link>
+        <Link href="/acc-browser">
+          <SidebarRailWithLabels.NavItem 
+            icon={<FeatherCloud />}
+            selected={isACCBrowserPage}
+            className="w-16 h-16"
+          >
+            ACC
           </SidebarRailWithLabels.NavItem>
         </Link>
         <Link href="/aps-test" className="w-16 h-16">

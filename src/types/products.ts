@@ -101,3 +101,15 @@ export type ProductFormData = {
   alternative_retailer_price_per_unit?: string;
   alternative_retailer_ai_research_progress?: string;
 };
+
+// ACC Project Interface für Autodesk Construction Cloud
+export interface ACCProject {
+  id: string;
+  name: string;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  projectType?: string;
+  value?: number;
+  currency?: string;
+}

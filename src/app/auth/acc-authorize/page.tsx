@@ -12,7 +12,14 @@ export default function ACCAuthorizePage() {
     const generateAuthUrl = async () => {
       try {
         console.log('🔍 ACC OAuth: Generating authorization URL...');
-        const response = await fetch('/api/auth/acc-authorize-url');
+        console.log('🔍 ACC OAuth: Current origin:', window.location.origin);
+        
+        const response = await fetch('/api/auth/acc-authorize-url', {
+          headers: {
+            'Origin': window.location.origin,
+            'Referer': window.location.href
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`Failed to generate auth URL: ${response.status}`);
@@ -21,6 +28,7 @@ export default function ACCAuthorizePage() {
         const data = await response.json();
         setAuthorizationUrl(data.authorizationUrl);
         console.log('🔍 ACC OAuth: Authorization URL received:', data.authorizationUrl);
+        console.log('🔍 ACC OAuth: Origin detected:', data.origin);
       } catch (error) {
         console.error('Error generating authorization URL:', error);
         setError(error instanceof Error ? error.message : 'Unknown error');
@@ -35,6 +43,7 @@ export default function ACCAuthorizePage() {
   const handleAuthorize = () => {
     if (authorizationUrl) {
       console.log('🔍 ACC OAuth: Redirecting to authorization URL:', authorizationUrl);
+      console.log('🔍 ACC OAuth: Current origin:', window.location.origin);
       // Redirect to Autodesk OAuth authorization page
       window.location.href = authorizationUrl;
     }
@@ -84,6 +93,7 @@ export default function ACCAuthorizePage() {
               <li>• Melde dich mit deinem Autodesk-Account an</li>
               <li>• Erlaube den Zugriff auf deine ACC-Projekte</li>
               <li>• Du wirst zurück zu dieser App geleitet</li>
+              <li>• <strong>Origin-Erkennung:</strong> {window.location.origin}</li>
             </ul>
           </div>
 
@@ -98,18 +108,22 @@ export default function ACCAuthorizePage() {
             </ul>
           </div>
 
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h2 className="font-semibold text-purple-800 mb-2">🔄 Intelligente Weiterleitung:</h2>
+            <p className="text-purple-700 text-sm">
+              Das System erkennt automatisch, ob du von <strong>localhost:3000</strong> oder 
+              <strong>megabrain.cloud</strong> kommst und leitet dich entsprechend zurück.
+            </p>
+          </div>
+
           <div className="flex justify-center">
             <Button
               onClick={handleAuthorize}
               disabled={!authorizationUrl}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold"
             >
               🔐 Mit Autodesk autorisieren
             </Button>
-          </div>
-
-          <div className="text-center text-sm text-gray-500">
-            <p>Nach der Autorisierung kannst du deine ACC-Projekte durchsuchen</p>
           </div>
         </div>
       </div>
