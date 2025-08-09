@@ -1,5 +1,70 @@
 # Logbuch - BRAIN DB Products
 
+## 2025-12-08 18:15 - Intelligente Datei-Indikatoren Konzept erstellt! 🎯
+
+### **ERREICHT:**
+- ✅ **APS File Indicators Konzept** vollständig ausgearbeitet
+- ✅ **Intelligente Datei-Status-Anzeige** für Nextcloud-Integration
+- ✅ **Kostenkontrolle und Transparenz** für Benutzer
+- ✅ **Cache-basierte Duplikat-Erkennung** mit Hash-Verfahren
+- ✅ **Visuelle Status-Indikatoren** (🟢🟡🔴⚪) für verschiedene Zustände
+
+### **KONZEPT-DETAILS:**
+- **Dateityp-Klassifikation:** Direkt anzeigbar vs. Translation-required
+- **Kosten-Schätzung:** Pro Dateityp und Größe
+- **Cache-Integration:** Hash-basierte Duplikat-Erkennung
+- **UI-Enhancement:** Status-Indikatoren in Nextcloud-File-List
+- **Analytics:** Cache-Statistiken und Kosten-Tracking
+
+### **NEUE DOKUMENTATION:**
+```
+docs/
+├── README_APS_FILE_INDICATORS.md # Intelligente Datei-Indikatoren
+├── README_APS_VIEWER_V7.md      # Viewer v7 spezifische Details
+├── README_APS_REFERENCES.md     # Zentrale APS-Referenzen
+├── README_APS_INTEGRATION.md    # Vollständige Integration
+└── README_APS_TROUBLESHOOTING.md # Problembehebung
+```
+
+### **IMPLEMENTIERUNGSPLAN:**
+1. **Phase 1:** Grundlegende Funktionalität (Dateityp-Klassifikation, File Status Service)
+2. **Phase 2:** Cache-Integration (Hash-basierte Duplikat-Erkennung)
+3. **Phase 3:** Erweiterte Features (Kosten-Schätzung, Batch-Operationen)
+4. **Phase 4:** Optimierung (Performance, UI/UX)
+
+---
+
+## 2025-12-08 17:30 - APS-Dokumentation systematisch organisiert! 📚
+
+### **ERREICHT:**
+- ✅ **APS Viewer v7 Dokumentation** vollständig dokumentiert
+- ✅ **Zentrale Referenz-Datei** mit allen wichtigen APS-Links erstellt
+- ✅ **Lokale Dokumentation** für schnellen Zugriff organisiert
+- ✅ **APS-Testseite** vollständig funktional und getestet
+- ✅ **Autodesk Viewer v7** Integration erfolgreich implementiert
+
+### **NEUE DOKUMENTATION:**
+```
+docs/
+├── README_APS_VIEWER_V7.md      # Viewer v7 spezifische Details
+├── README_APS_REFERENCES.md     # Zentrale APS-Referenzen
+├── README_APS_INTEGRATION.md    # Vollständige Integration
+└── README_APS_TROUBLESHOOTING.md # Problembehebung
+```
+
+### **WICHTIGE LINKS ORGANISIERT:**
+- **Hauptdokumentation:** [APS Viewer v7 Developer Guide](https://aps.autodesk.com/en/docs/viewer/v7/developers_guide/overview/)
+- **API-Referenz:** [Viewer API Reference](https://aps.autodesk.com/en/docs/viewer/v7/reference/)
+- **Code-Beispiele:** [Viewer Examples](https://aps.autodesk.com/en/docs/viewer/v7/developers_guide/examples/)
+
+### **APS-TESTSEITE STATUS:**
+- **URL:** http://localhost:3000/aps-test
+- **Status:** ✅ Vollständig funktional
+- **Features:** File Upload, Translation, 3D-Viewer
+- **Browser-Kompatibilität:** Chrome, Firefox, Safari, Edge
+
+---
+
 ## 2025-08-08 16:00 - Authentifizierungssystem erfolgreich implementiert! 🎉
 
 ### **ERREICHT:**
@@ -1515,5 +1580,87 @@ const fusedResult = perplexityResult?.data || {};
 *   **Robuste Viewer-Initialisierung ist entscheidend:** Das dynamische Laden des SDKs und die Initialisierung innerhalb eines `useEffect`-Hooks ist der stabilste Ansatz in React/Next.js.
 *   **Klares User-Feedback:** Visuelle Indikatoren (Toasts, Fortschrittsbalken) sind unerlässlich für langwierige Prozesse wie Upload und Übersetzung.
 *   **Serverseitige Logik für Translation-Management:** Die Logik zum Starten und Überwachen von Übersetzungen gehört ins Backend (`/api/aps/translate`), um den Prozess zuverlässig zu steuern.
+
+---
+
+# BRAIN DB Products - Logbuch
+
+## 2025-12-08 19:00 - ACC Integration: Teilweise erfolgreich! 🎯
+### **ERREICHT:**
+- ✅ **ACC Custom Integration** erfolgreich erstellt und aktiviert
+- ✅ **Account ID gefunden:** `969ae436-36e7-4a4b-8744-298cf384974a`
+- ✅ **Projekte abrufen funktioniert:** 20 ACC-Projekte erfolgreich gefunden
+- ✅ **Korrekte API-Endpoints** implementiert: `/construction/admin/v1/accounts/{account_id}/projects`
+- ✅ **OAuth2 Token** funktioniert mit erweiterten Scopes
+
+### **PROBLEM IDENTIFIZIERT:**
+- ❌ **Projekt-Details abrufen** schlägt fehl mit 404-Fehler
+- ❌ **Endpoint:** `/construction/admin/v1/accounts/{account_id}/projects/{project_id}`
+- ❌ **Fehler:** "The requested resource does not exist"
+
+### **PERPLEXITY LÖSUNG:**
+1. **Project-ID Format:** Ohne "b."-Präfix verwenden (korrekt implementiert)
+2. **Endpoint:** `/construction/admin/v1/accounts/{account_id}/projects/{project_id}` (korrekt)
+3. **Header:** Authorization + Content-Type (korrekt)
+4. **Mögliche Ursachen:**
+   - Custom Integration hat keine Berechtigung für einzelne Projekte
+   - Project-ID aus Projektliste ist nicht für Details-Endpoint gültig
+   - ACC-Admin-Berechtigungen fehlen
+
+### **NÄCHSTE SCHRITTE:**
+1. **ACC Admin Panel prüfen:** Custom Integration Berechtigungen
+2. **Projekt-spezifische Berechtigungen** konfigurieren
+3. **Alternative Endpoints** testen (falls verfügbar)
+4. **ACC-Integration vervollständigen** für Datei-Browser
+
+### **TECHNISCHE DETAILS:**
+```
+Account ID: 969ae436-36e7-4a4b-8744-298cf384974a
+Scopes: account:read user-profile:read data:read data:write bucket:create bucket:read bucket:delete
+Region: EMEA
+Projekte gefunden: 20
+Status: Teilweise funktional
+```
+
+---
+
+## 2025-01-09 18:45 - ACC Integration Durchbruch! 🎉
+
+### Erfolgreich implementiert:
+- ✅ **ACC 3-legged OAuth funktioniert perfekt!**
+- ✅ **Data Management API v1 erfolgreich integriert!**
+- ✅ **Projekt-Inhalte werden abgerufen: 11 Ordner gefunden!**
+- ✅ **Root-Folder-ID wird korrekt automatisch erkannt!**
+
+### Technische Lösung:
+**Das Problem war:** ACC-Projekte haben keine generische "root" Folder-ID - sie haben spezifische Root-Folder-IDs!
+
+**Die Lösung:**
+1. **Project API v1** zum Auflisten der Projekte
+2. **Hub-spezifische Suche** um das Projekt zu finden
+3. **Root-Folder-ID extrahieren** aus `projectData.data.relationships.rootFolder.data.id`
+4. **Data Management API v1** mit der korrekten Folder-ID verwenden
+
+**Korrekte URL-Struktur:**
+```
+https://developer.api.autodesk.com/data/v1/projects/b.{GUID}/folders/{SPECIFIC_FOLDER_ID}/contents
+```
+
+### Code-Änderungen:
+- `src/lib/acc.ts`: Automatische Root-Folder-ID-Erkennung implementiert
+- `src/app/aps-test/page.tsx`: UI für Ordner-Anzeige erweitert
+- `src/app/api/acc/test-folders/route.ts`: Systematische Projekt-ID-Format-Tests
+
+### Nächste Schritte:
+- [ ] ACC-Viewer-Integration implementieren
+- [ ] Translation-Caching für übersetzte Modelle
+- [ ] Intelligente Datei-Indikatoren (🟢🔴⚪)
+- [ ] Vollständiger ACC-Dateibrowser
+
+### Best Practices erkannt:
+- **3-legged OAuth ist MANDATORISCH** für ACC Data Management API
+- **Zwei verschiedene APIs:** Project API für Metadaten, Data Management API für Inhalte
+- **Spezifische Folder-IDs** statt generischer "root" verwenden
+- **Systematisches Debugging** mit verschiedenen Projekt-ID-Formaten
 
 ---

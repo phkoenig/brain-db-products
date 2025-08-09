@@ -1,0 +1,24 @@
+
+Ich arbeite mit der Autodesk Construction Cloud (ACC) API und habe ein Problem mit der Projekt-ID-Formatierung.
+
+KONTEXT:
+- Ich verwende die Project API v1 (/project/v1/hubs/{hub_id}/projects) um Projekte aufzulisten
+- Ich bekomme eine Projekt-ID zurück, z.B.: "e4a2d0c3-1ca2-4a10-b381-f184c303a1c1"
+- Ich versuche dann die Data Management API v1 (/data/v1/projects/{project_id}/folders/root/contents) zu verwenden
+- Ich bekomme immer "400 BAD_INPUT" mit "The provided urn is invalid" oder "project id is invalid"
+
+PROBLEM:
+Die Projekt-ID aus der Project API funktioniert nicht direkt mit der Data Management API.
+
+FRAGEN:
+1. Welches ist das KORREKTE Format für project_id in der Data Management API v1 für ACC-Projekte?
+2. Muss ich die Projekt-ID aus der Project API in ein anderes Format konvertieren?
+3. Gibt es einen speziellen Endpunkt um die "Data Management Projekt-ID" aus der "Project API Projekt-ID" zu bekommen?
+4. Welche URN-Formate werden für ACC-Projekte verwendet vs. ACC-Dateien/Items?
+5. Ist das "b."-Präfix für ACC-Projekte korrekt oder nur für BIM 360?
+
+BEISPIELE:
+- Project API gibt zurück: "e4a2d0c3-1ca2-4a10-b381-f184c303a1c1"
+- Data Management API erwartet: ???
+
+Bitte gib mir die KORREKTE Lösung mit Code-Beispielen in JavaScript/Node.js.
