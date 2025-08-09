@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
     // TypeScript-Fehler als Warnungen behandeln
     ignoreBuildErrors: true,
   },
+  // Rewrite-Regel für APS Viewer ACM Session
+  async rewrites() {
+    return [
+      {
+        source: '/oss-ext/v2/acmsessions',
+        destination: '/api/oss-ext/v2/acmsessions'
+      }
+    ];
+  },
   // Neue Turbopack-Konfiguration (stabil)
   turbopack: {
     rules: {

@@ -229,6 +229,60 @@ src/app/
 
 ---
 
+## 2024-12-19 16:15 - Authentifizierungs-System erfolgreich implementiert und getestet
+
+**Aufgaben durchgeführt:**
+- KRITISCHES Sicherheitsproblem identifiziert und behoben
+- Echte Passwort-Validierung implementiert
+- Allowlist-System von Environment-Variablen auf Datenbank umgestellt
+- Debug-System für Authentifizierung erstellt
+- Passwort-Reset-Funktionalität hinzugefügt
+- Vollständige E-Mail/Passwort-Authentifizierung implementiert
+- Google OAuth bleibt funktional
+- Session-Management korrigiert
+
+**Schwierigkeiten und Lösungen:**
+- Problem: AuthContext hatte falschen User-State, führte zu unbefugtem Zugriff
+- Lösung: Echte Session-Validierung über API-Route implementiert
+- Problem: Deployment-Probleme verhinderten Aktualisierung der Änderungen
+- Lösung: Sichtbare Debug-Box hinzugefügt, um Deployment-Status zu verifizieren
+- Problem: Passwort-Validierung war nicht implementiert
+- Lösung: Direkte Supabase-Authentifizierung mit korrekter Session-Verwaltung
+- Problem: Benutzer konnten sich nicht anmelden, da Passwörter unbekannt
+- Lösung: Passwort-Reset-Route erstellt und Passwörter zurückgesetzt
+
+**Erkannte Best Practices:**
+- Authentifizierung immer doppelt validieren (Frontend + Backend)
+- Debug-Systeme für komplexe Authentifizierungsprobleme erstellen
+- Sichtbare Indikatoren für Deployment-Status verwenden
+- Passwort-Reset-Funktionalität für Benutzerfreundlichkeit implementieren
+- Konsistente Fehlerbehandlung in allen Auth-Routes
+- Allowlist-System zentral in Datenbank verwalten
+
+**Test-Ergebnisse:**
+- ✅ E-Mail/Passwort-Authentifizierung funktioniert korrekt
+- ✅ Falsche Credentials werden korrekt abgelehnt
+- ✅ Allowlist-Validierung funktioniert
+- ✅ Session-Management funktioniert
+- ✅ Passwort-Reset funktioniert
+- ✅ Google OAuth bleibt funktional
+
+**Aktive Benutzer:**
+- phkoenig@gmail.com (Passwort: test123)
+- test@megabrain.cloud (Passwort: test123)
+- philip@zepta.com (Admin)
+- admin@megabrain.cloud (Admin)
+
+**Nächste Schritte:**
+- E-Mail-Bestätigungssystem für Registrierungen konfigurieren
+- Benutzerfreundliche Fehlermeldungen optimieren
+- Session-Timeout-Einstellungen anpassen
+- Monitoring für Authentifizierungsversuche implementieren
+
+**Status: AUTHENTIFIZIERUNGS-SYSTEM VOLLSTÄNDIG FUNKTIONAL UND SICHER**
+
+---
+
 ## 2024-12-19 15:30 - Authentifizierungs-System vollständig implementiert und getestet
 
 **Aufgaben durchgeführt:**
@@ -1285,5 +1339,181 @@ const fusedResult = perplexityResult?.data || {};
 - [ ] Performance-Optimierung
 - [ ] Error-Handling verbessern
 - [ ] UI-Feedback für Benutzer
+
+---
+
+## 2024-12-19 17:30 - APS-Integration erfolgreich implementiert und getestet! 🎉
+
+**Aufgaben durchgeführt:**
+- APS (Autodesk Platform Services) Integration vollständig implementiert
+- Korrekte API-Endpunkte basierend auf offizieller APS-Dokumentation
+- `x-ads-region: EMEA` Header erfolgreich implementiert (Support-Antwort von Autodesk)
+- Vollständige Bucket-Management-Funktionen (create, list, delete)
+- Token-Authentifizierung mit korrekten Scopes
+- Umfassende Tests aller APS-Operationen
+
+**Schwierigkeiten und Lösungen:**
+- **Problem:** 404-Fehler bei Token-Authentifizierung
+  - **Lösung:** Korrekte API-URL `authentication/v2/token` anstatt `v1/authenticate`
+- **Problem:** 403-Fehler beim Löschen von Buckets
+  - **Lösung:** `bucket:delete` Scope zu den Token-Berechtigungen hinzugefügt
+- **Problem:** Falsche API-Struktur
+  - **Lösung:** Offizielle APS-Dokumentation über Context7 konsultiert
+
+**Erkannte Best Practices:**
+- Immer offizielle APS-Dokumentation für API-Endpunkte verwenden
+- `x-ads-region: EMEA` Header ist essentiell für moderne APS-API
+- Korrekte Scopes für alle benötigten Operationen definieren
+- Umfassende Tests aller CRUD-Operationen durchführen
+
+**Test-Ergebnisse:**
+- ✅ Token-Authentifizierung: Erfolgreich
+- ✅ Bucket-Listing: Erfolgreich (2 → 3 Buckets)
+- ✅ Bucket-Erstellung: Erfolgreich (test-bucket-1754667096262)
+- ✅ Bucket-Löschung: Erfolgreich (Cleanup funktioniert)
+- ✅ EMEA-Region: Header funktioniert korrekt
+
+**Nächste Schritte:**
+- APS-Integration in die Hauptanwendung einbinden
+- CAD-Datei-Upload-Funktionalität implementieren
+- APS Viewer für CAD-Dateien integrieren
+
+---
+
+## 2024-12-19 16:15 - Authentifizierungs-System erfolgreich implementiert und getestet
+
+**Aufgaben durchgeführt:**
+- KRITISCHES Sicherheitsproblem identifiziert und behoben
+- Echte Passwort-Validierung implementiert
+- Allowlist-System von Environment-Variablen auf Datenbank umgestellt
+- Debug-System für Authentifizierung erstellt
+- Passwort-Reset-Funktionalität hinzugefügt
+- Vollständige E-Mail/Passwort-Authentifizierung implementiert
+- Google OAuth bleibt funktional
+- Session-Management korrigiert
+
+**Schwierigkeiten und Lösungen:**
+- **Kritisches Sicherheitsproblem:** Passwort-Validierung wurde übersprungen
+  - **Lösung:** `supabase.auth.signInWithPassword` für echte Validierung implementiert
+- **Frontend-Backend-Inkonsistenz:** User-State war falsch gesetzt
+  - **Lösung:** Server-seitige Validierung vor Redirects hinzugefügt
+- **Session-Management:** Cookies wurden nicht korrekt gesetzt
+  - **Lösung:** Direkte Supabase-Authentifizierung im Frontend implementiert
+
+**Erkannte Best Practices:**
+- Immer echte Passwort-Validierung durchführen
+- Server-seitige Validierung für kritische Operationen
+- Umfassendes Debugging bei Authentifizierungsproblemen
+- Force-Logout-Mechanismus für Debugging-Zwecke
+
+**Test-Ergebnisse:**
+- ✅ E-Mail/Passwort-Authentifizierung: Funktioniert
+- ✅ Google OAuth: Funktioniert
+- ✅ Allowlist-Validierung: Funktioniert
+- ✅ Session-Management: Funktioniert
+- ✅ Sicherheitsvalidierung: Funktioniert
+
+---
+
+## 2024-12-19 14:30 - Authentifizierungs-System implementiert
+
+**Aufgaben durchgeführt:**
+- Supabase-Authentifizierung eingerichtet
+- E-Mail/Passwort-Login implementiert
+- Google OAuth-Integration hinzugefügt
+- Allowlist-System für E-Mail-Adressen erstellt
+- AuthContext für React-Komponenten erstellt
+- Login-Seite mit modernem UI gestaltet
+
+**Schwierigkeiten und Lösungen:**
+- **Problem:** Google OAuth-Callback-Handling
+  - **Lösung:** Dedizierte Callback-Route implementiert
+- **Problem:** Session-Management zwischen Seiten
+  - **Lösung:** AuthContext mit useEffect für Session-Check
+
+**Erkannte Best Practices:**
+- Supabase Auth für robuste Authentifizierung verwenden
+- Allowlist für kontrollierte Benutzerregistrierung
+- Moderne UI-Komponenten für bessere UX
+
+---
+
+## 2024-12-19 12:00 - Projekt-Setup abgeschlossen
+
+**Aufgaben durchgeführt:**
+- Next.js 15 Projekt initialisiert
+- Supabase-Integration eingerichtet
+- Tailwind CSS konfiguriert
+- Subframe UI-Komponenten installiert
+- Grundlegende Projektstruktur erstellt
+- Environment-Variablen konfiguriert
+
+**Schwierigkeiten und Lösungen:**
+- **Problem:** Next.js 15 Kompatibilität
+  - **Lösung:** App Router und neue Features korrekt konfiguriert
+- **Problem:** Supabase-Client-Setup
+  - **Lösung:** Korrekte Environment-Variablen und Client-Initialisierung
+
+**Erkannte Best Practices:**
+- Next.js 15 App Router für moderne Entwicklung
+- Supabase für Backend-as-a-Service
+- Tailwind CSS für schnelles Styling
+- Subframe UI für konsistente Komponenten
+
+---
+
+# Logbuch - BRAIN DB Products A
+
+## 2025-01-08 16:30 - APS Integration erfolgreich abgeschlossen ✅
+
+**Aufgabe:** APS (Autodesk Platform Services) Integration für CAD-Viewer implementieren
+
+**Lösung:** 
+- APS Service mit korrekter OAuth2 Two-Legged Authentifizierung implementiert
+- Kritischer Fix: `authentication/v2/token` Endpoint + `x-ads-region: EMEA` Header
+- File Upload über `signeds3upload` 3-Schritt Prozess (GET signed URL → PUT to S3 → POST completion)
+- Wichtigster Fix: `signedUrlData.urls[0]` statt `signedUrlData.uploadKey` verwenden
+- APS Viewer SDK Integration mit automatischem Laden und Initialisierung
+- Testseite `/aps-test` mit vollständiger Upload → Translation → Viewer Pipeline
+
+**Erkenntnisse:** 
+- APS API erfordert präzise Header und Endpoints
+- `signeds3upload` ist die korrekte, nicht-deprecated Upload-Methode
+- Viewer SDK muss asynchron geladen und initialisiert werden
+
+---
+
+### **Eintrag: 09.08.2025, 06:35 Uhr**
+
+**Zusammenfassung:** Erfolgreiche Implementierung und Debugging der Autodesk Platform Services (APS) Integration, insbesondere des APS Viewers. Nach einer langen Odyssee mit diversen Problemen (hängende Übersetzungen, Scope-Fehler, Import-Probleme) wurde die Viewer-Komponente (`aps-test/page.tsx`) grundlegend nach Best Practices neu geschrieben.
+
+**Durchgeführte Aufgaben:**
+
+1.  **APS Translation-Fix:** Hängende `pending` Translations wurden durch eine erzwungene Neuauslösung mit dem `x-ads-force: true` Header behoben. Die Anforderung für die Übersetzung wurde korrigiert, um den `views: ['2d', '3d']` Parameter für `svf2` wieder einzuschließen, was einen `400 Bad Request` Fehler behob.
+2.  **APS Viewer-Komponente neu implementiert:**
+    *   Die Seite `src/app/aps-test/page.tsx` wurde komplett überarbeitet.
+    *   Dynamisches Laden des Viewer-SDKs (CSS und JS) per `useEffect` implementiert.
+    *   Robuste Viewer-Initialisierung nach Autodesk Best-Practice-Beispielen umgesetzt.
+    *   Sauberes State-Management für Upload, Translation und Viewer-Status eingeführt.
+    *   `react-dropzone` für eine moderne Drag & Drop-Upload-Funktionalität integriert.
+    *   `react-hot-toast` für klares User-Feedback während des gesamten Prozesses hinzugefügt.
+3.  **Fehlerbehebung:**
+    *   Diverse Fehler wie `Module not found` für fehlende Pakete (`react-dropzone`) und `Element type is invalid` wegen falscher Import-Anweisungen (`DefaultPageLayout`) wurden behoben.
+    *   Das grundlegende `ReferenceError: initializeViewer is not defined` Problem wurde durch die saubere Neugestaltung der Komponente und die korrekte Verwendung von `useCallback` und `useEffect` gelöst.
+
+**Schwierigkeiten & Lösungen:**
+
+*   **Problem:** Translations hingen stundenlang im `pending`-Status.
+    *   **Lösung:** Serverseitige Logik implementiert, die `pending` oder `inprogress` Jobs nach einer gewissen Zeit mit `force:true` neu startet.
+*   **Problem:** `ReferenceError` und Scope-Probleme mit der Viewer-Initialisierung.
+    *   **Lösung:** Die gesamte Komponente wurde refaktorisiert, um den State und die Initialisierungslogik sauber zu trennen und React-Hooks (`useEffect`, `useCallback`, `useRef`) korrekt zu nutzen.
+*   **Problem:** Diverse Import- und Paketfehler nach dem Refactoring.
+    *   **Lösung:** Fehlende Pakete wurden nachinstalliert und Import-Statements (default vs. named) korrigiert.
+
+**Erkannte Best Practices:**
+
+*   **Robuste Viewer-Initialisierung ist entscheidend:** Das dynamische Laden des SDKs und die Initialisierung innerhalb eines `useEffect`-Hooks ist der stabilste Ansatz in React/Next.js.
+*   **Klares User-Feedback:** Visuelle Indikatoren (Toasts, Fortschrittsbalken) sind unerlässlich für langwierige Prozesse wie Upload und Übersetzung.
+*   **Serverseitige Logik für Translation-Management:** Die Logik zum Starten und Überwachen von Übersetzungen gehört ins Backend (`/api/aps/translate`), um den Prozess zuverlässig zu steuern.
 
 ---

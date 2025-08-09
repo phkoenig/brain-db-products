@@ -41,6 +41,25 @@ export default function RootLayout({
             {children}
           </AuthProvider>
         </ErrorBoundary>
+        {/* React DevTools for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if (typeof window !== 'undefined') {
+                  const script = document.createElement('script');
+                  script.src = 'https://unpkg.com/react-devtools@^4.28.0/standalone/globalHook.js';
+                  script.onload = () => {
+                    const script2 = document.createElement('script');
+                    script2.src = 'https://unpkg.com/react-devtools@^4.28.0/standalone/backend.js';
+                    document.head.appendChild(script2);
+                  };
+                  document.head.appendChild(script);
+                }
+              `,
+            }}
+          />
+        )}
       </body>
     </html>
   );

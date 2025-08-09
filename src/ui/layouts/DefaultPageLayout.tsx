@@ -15,6 +15,8 @@ import { FeatherPlus } from "@subframe/core";
 import { FeatherSettings } from "@subframe/core";
 import { FeatherUserCircle } from "@subframe/core";
 import { FeatherFolder } from "@subframe/core";
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/ui/components/Button';
 
 interface DefaultPageLayoutRootProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -36,6 +38,7 @@ const DefaultPageLayoutRoot = React.forwardRef<
   const isCapturePage = pathname === "/capture";
   const isSettingsPage = pathname === "/settings";
   const isPlanPage = pathname === "/plan";
+  const { user, signOut } = useAuth();
 
   return (
     <div
@@ -100,6 +103,15 @@ const DefaultPageLayoutRoot = React.forwardRef<
             className="w-16 h-16"
           >
             Plan
+          </SidebarRailWithLabels.NavItem>
+        </Link>
+        <Link href="/aps-test" className="w-16 h-16">
+          <SidebarRailWithLabels.NavItem 
+            icon={<FeatherFolder />}
+            selected={false}
+            className="w-16 h-16"
+          >
+            APS Test
           </SidebarRailWithLabels.NavItem>
         </Link>
       </SidebarRailWithLabels>
