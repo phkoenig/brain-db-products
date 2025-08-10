@@ -28,7 +28,7 @@ function ZeptaSignIn() {
           
           // Only redirect if there's a valid session
           if (data.currentSession && data.currentSession.user.id === user.id) {
-            router.push("/capture");
+            router.push("/acc");
           }
         } catch (error) {
           console.error("Auth validation failed:", error);
@@ -81,7 +81,7 @@ function ZeptaSignIn() {
         if (result.error) {
           setError(`Anmeldung fehlgeschlagen: ${result.error}`);
         } else {
-          router.push("/capture");
+          router.push("/acc");
         }
       }
     } catch (error: any) {

@@ -39,7 +39,8 @@ const DefaultPageLayoutRoot = React.forwardRef<
   const isCapturePage = pathname === "/capture";
   const isSettingsPage = pathname === "/settings";
   const isPlanPage = pathname === "/plan";
-  const isACCBrowserPage = pathname === "/acc-browser";
+  const isACCBrowserPage = pathname === "/acc";
+  const isNextcloudPage = pathname === "/plan";
   const { user, signOut } = useAuth();
 
   return (
@@ -104,16 +105,25 @@ const DefaultPageLayoutRoot = React.forwardRef<
             selected={isPlanPage}
             className="w-16 h-16"
           >
-            Plan
+            NC
           </SidebarRailWithLabels.NavItem>
         </Link>
-        <Link href="/acc-browser">
+        <Link href="/acc">
           <SidebarRailWithLabels.NavItem 
             icon={<FeatherCloud />}
             selected={isACCBrowserPage}
             className="w-16 h-16"
           >
             ACC
+          </SidebarRailWithLabels.NavItem>
+        </Link>
+        <Link href="/plan">
+          <SidebarRailWithLabels.NavItem 
+            icon={<FeatherFolder />}
+            selected={isNextcloudPage}
+            className="w-16 h-16"
+          >
+            NC
           </SidebarRailWithLabels.NavItem>
         </Link>
         <Link href="/aps-test" className="w-16 h-16">
