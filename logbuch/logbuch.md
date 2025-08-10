@@ -2431,3 +2431,51 @@ ACC Cloud File Browser analog zum Nextcloud Browser mit APS Viewer Integration
 - TypeScript für Type Safety
 
 ---
+
+# Logbuch - BRAIN DB Products A
+
+## 2025-08-10 11:30 - APS Viewer Custom "Pläne und Ansichten" Panel erfolgreich implementiert! 🎯
+
+**Problem:** 
+- APS Viewer zeigte Revit-Dateien an, aber das "Pläne und Ansichten" Panel fehlte
+- Model-Typ-Erkennung funktionierte nicht (`modelData.type` war `undefined`)
+- Button für View Panel war funktionslos
+
+**Lösung durch Perplexity AI:**
+- **Nicht auf Model-Typ-Erkennung verlassen** - `modelData.type` ist in APS Viewer v7 unzuverlässig
+- **Direkte Viewable-Extraktion** aus dem Document-Objekt verwenden
+- **Document-Objekt nutzen:** `doc.getRoot().search({ type: 'geometry' })` und `doc.getRoot().search({ type: 'sheet' })`
+
+**Implementierung:**
+1. **Viewable-Extraktion** beim Viewer-Start (2 Sekunden Wartezeit)
+2. **Robuste Namensgebung** mit Fallbacks: `viewable.data?.name || viewable.name`
+3. **Zusätzliche Metadaten** speichern: `role`, `guid`
+4. **Custom UI Panel** mit 2D/3D Tabs und klickbaren Views
+5. **View-Wechsel** über `viewer.loadDocumentNode(doc, viewable)`
+
+**Technische Details:**
+- **Geometry Viewables:** 3D-Ansichten (`type: 'geometry'`)
+- **Sheet Viewables:** 2D-Pläne (`type: 'sheet'`)
+- **View-Loading:** `viewer.loadDocumentNode(currentDocument, view.viewable)`
+- **Panel-Toggle:** Custom Button mit Server-Side Logging
+
+**Ergebnis:**
+✅ **Custom "Pläne und Ansichten" Panel funktioniert**
+✅ **Viewables werden korrekt extrahiert**
+✅ **Button funktioniert und toggelt Panel**
+✅ **2D/3D Tabs mit klickbaren Views**
+✅ **View-Wechsel zwischen verschiedenen Revit-Ansichten**
+
+**Best Practice gelernt:**
+- **Immer Document-Objekt für Viewable-Extraktion verwenden**
+- **Nicht auf Model-Typ-Properties verlassen**
+- **Perplexity AI für APS Viewer v7 Fragen nutzen**
+
+**Nächste Schritte:**
+- Panel-Design optimieren
+- Weitere Dateitypen testen (DWG, IFC)
+- Performance-Optimierung
+
+---
+
+## 2025-12-08 19:45 - ACC Browser Projekt-Pagination erfolgreich behoben! 🎯
