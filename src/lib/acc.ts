@@ -366,8 +366,151 @@ export class ACCService {
   }
 
   static generateViewerURN(itemId: string): string {
-    // Generate URN for ACC items
-    return `urn:adsk.wipprod:dm.lineage:${itemId}`;
+    // Convert ACC URN to APS Viewer URN using the correct conversion logic
+    return this.convertAccUrnToApsViewerUrn(itemId);
+  }
+
+  static convertAccUrnToApsViewerUrn(accUrn: string): string {
+    // Step 1: Check and replace the region
+    let apsUrn = accUrn.replace('wipemea', 'wipprod');
+
+    // Step 2: Convert Lineage URN to Version URN if necessary
+    const lineageUrnRegex = /^urn:adsk\.wip(prod|emea):dm\.lineage:([a-zA-Z0-9]+)\?version=(\d+)$/;
+    if (lineageUrnRegex.test(apsUrn)) {
+      // Extract the IDs
+      const match = apsUrn.match(lineageUrnRegex);
+      if (match) {
+        const region = match[1];
+        const lineageId = match[2];
+        const version = match[3];
+        // Build the correct Viewer URN - APS Viewer expects dm.lineage format!
+        apsUrn = `urn:adsk.wipprod:dm.lineage:${lineageId}?version=${version}`;
+      }
+    }
+
+    // Step 3: Ensure we have the correct production region
+    if (apsUrn.includes('wipemea:')) {
+      apsUrn = apsUrn.replace('wipemea:', 'wipprod:');
+    }
+
+    console.log(`🔍 ACC: URN converted: ${accUrn} → ${apsUrn}`);
+    return apsUrn;
+  }
+
+  static urnToBase64(urn: string): string {
+    // Remove 'urn:' prefix if present
+    const plainUrn = urn.startsWith('urn:') ? urn.substring(4) : urn;
+    // Base64-url-Encoding (replace +, /, =)
+    return btoa(plainUrn)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
+  static async getVersionURN(itemId: string, projectId?: string): Promise<string> {
+    // For ACC files, we need to return the design URN (dm.lineage) for APS Viewer
+    // The APS Viewer expects the design URN, not the version URN!
+    try {
+      // If we have a projectId and it's already a lineage URN, just convert the region
+      if (projectId && itemId.includes('dm.lineage:')) {
+        // Just convert the region from wipemea to wipprod
+        const apsUrn = itemId.replace('wipemea', 'wipprod');
+        console.log(`🔍 ACC: Using original lineage URN (region converted): ${apsUrn}`);
+        return apsUrn;
+      }
+      
+      // Fallback: convert the provided URN using the proper conversion
+      const fallbackUrn = this.convertAccUrnToApsViewerUrn(itemId);
+      console.log(`🔍 ACC: Using fallback URN (converted): ${fallbackUrn}`);
+      return fallbackUrn;
+      
+    } catch (error) {
+      console.error('🔍 ACC: Error getting version URN:', error);
+      return this.convertAccUrnToApsViewerUrn(itemId);
+    }
+  }
+
+  static async getTranslationURN(itemId: string, projectId?: string): Promise<string> {
+    // For Translation Jobs, we need to return the VERSION URN (fs.file:vf.) for APS
+    // The Translation API expects the version URN, not the design URN!
+    try {
+      // If we have a projectId and it's already a lineage URN, get the version URN
+      if (projectId && itemId.includes('dm.lineage:')) {
+        const token = await this.getToken();
+        
+        // Get item details to find the version URN
+        const itemDetailsUrl = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/items/${itemId}`;
+        
+        console.log(`🔍 ACC: Getting item details for translation URN: ${itemDetailsUrl}`);
+        
+        const itemResponse = await fetch(itemDetailsUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (itemResponse.ok) {
+          const itemData = await itemResponse.json();
+          console.log('🔍 ACC: Item details received for translation:', itemData);
+          
+          // Get the tip version URN - this is the correct URN for Translation Jobs
+          const tipVersionId = itemData.data?.relationships?.tip?.data?.id;
+          if (tipVersionId) {
+            // Convert to APS Translation URN (version format)
+            const translationUrn = this.convertAccUrnToApsTranslationUrn(tipVersionId);
+            console.log(`🔍 ACC: Using tip version URN for translation: ${translationUrn}`);
+            return translationUrn;
+          }
+          
+          // Alternative: Get the first version if tip is not available
+          const versions = itemData.data?.relationships?.versions?.data;
+          if (versions && versions.length > 0) {
+            const firstVersionId = versions[0].id;
+            // Convert to APS Translation URN (version format)
+            const translationUrn = this.convertAccUrnToApsTranslationUrn(firstVersionId);
+            console.log(`🔍 ACC: Using first version URN for translation: ${translationUrn}`);
+            return translationUrn;
+          }
+        }
+      }
+      
+      // Fallback: convert the provided URN using the translation conversion
+      const fallbackUrn = this.convertAccUrnToApsTranslationUrn(itemId);
+      console.log(`🔍 ACC: Using fallback URN for translation: ${fallbackUrn}`);
+      return fallbackUrn;
+      
+    } catch (error) {
+      console.error('🔍 ACC: Error getting translation URN:', error);
+      return this.convertAccUrnToApsTranslationUrn(itemId);
+    }
+  }
+
+  static convertAccUrnToApsTranslationUrn(accUrn: string): string {
+    // Step 1: Check and replace the region
+    let apsUrn = accUrn.replace('wipemea', 'wipprod');
+
+    // Step 2: Convert Lineage URN to Version URN for Translation Jobs
+    const lineageUrnRegex = /^urn:adsk\.wip(prod|emea):dm\.lineage:([a-zA-Z0-9]+)\?version=(\d+)$/;
+    if (lineageUrnRegex.test(apsUrn)) {
+      // Extract the IDs
+      const match = apsUrn.match(lineageUrnRegex);
+      if (match) {
+        const region = match[1];
+        const lineageId = match[2];
+        const version = match[3];
+        // Build the correct Translation URN (Version format)
+        apsUrn = `urn:adsk.wipprod:fs.file:vf.${lineageId}?version=${version}`;
+      }
+    }
+
+    // Step 3: Ensure we have the correct production region
+    if (apsUrn.includes('wipemea:')) {
+      apsUrn = apsUrn.replace('wipemea:', 'wipprod:');
+    }
+
+    console.log(`🔍 ACC: URN converted for translation: ${accUrn} → ${apsUrn}`);
+    return apsUrn;
   }
 
   static isViewerCompatible(item: ACCItem): boolean {
@@ -406,5 +549,127 @@ export class ACCService {
       icon: '⚪',
       description: 'Format unbekannt'
     };
+  }
+
+  // Get top-level folders for a project
+  static async getProjectTopFolders(projectId: string): Promise<any[]> {
+    const token = await this.getToken();
+    console.log(`🔍 ACC: Fetching top-level folders for project ${projectId}...`);
+
+    // Convert Account ID to Hub ID (b. + accountId)
+    const hubId = `b.${this.ACC_ACCOUNT_ID}`;
+    
+    const url = `https://developer.api.autodesk.com/project/v1/hubs/${hubId}/projects/${projectId}/topFolders`;
+    
+    console.log(`🔍 ACC: URL: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔍 ACC: Top-level folders request failed:', errorText);
+      throw new Error(`ACC Top-level folders request failed: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('🔍 ACC: Top-level folders data received:', data);
+    
+    return data.data || [];
+  }
+
+  // Get folder contents
+  static async getFolderContents(projectId: string, folderId: string): Promise<any[]> {
+    const token = await this.getToken();
+    console.log(`🔍 ACC: Fetching folder contents for project ${projectId}, folder ${folderId}...`);
+
+    const url = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/folders/${folderId}/contents`;
+    
+    console.log(`🔍 ACC: URL: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔍 ACC: Folder contents request failed:', errorText);
+      throw new Error(`ACC Folder contents request failed: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('🔍 ACC: Folder contents data received:', data);
+    
+    return data.data || [];
+  }
+
+  // Get projects using Data Management API (returns correct project IDs for folder API)
+  static async getProjectsDataManagement(): Promise<ACCProject[]> {
+    const token = await this.getToken();
+    console.log('🔍 ACC: Fetching projects via Data Management API...');
+
+    // Convert Account ID to Hub ID (b. + accountId)
+    const hubId = `b.${this.ACC_ACCOUNT_ID}`;
+    
+    const url = `https://developer.api.autodesk.com/project/v1/hubs/${hubId}/projects`;
+    
+    console.log(`🔍 ACC: Data Management API URL: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔍 ACC: Data Management projects request failed:', errorText);
+      throw new Error(`ACC Data Management projects request failed: ${response.status} - ${errorText}`);
+    }
+
+    const projectsData = await response.json();
+    console.log('🔍 ACC: Data Management projects data received:', projectsData);
+    
+    const projects = projectsData.data || [];
+    
+    // Filter out archived projects
+    const activeProjects = projects.filter((project: any) => {
+      const status = project.attributes?.status?.toLowerCase();
+      return status !== 'archived' && status !== 'archive' && status !== 'closed';
+    });
+    
+    console.log(`🔍 ACC: Filtered ${activeProjects.length} active projects from ${projects.length} total projects`);
+    
+    // Sort projects alphabetically by name
+    const sortedProjects = activeProjects.sort((a: any, b: any) => {
+      return a.attributes.name.localeCompare(b.attributes.name, 'de', { sensitivity: 'base' });
+    });
+    
+    console.log('🔍 ACC: Projects sorted alphabetically');
+    
+    // Convert to ACCProject format
+    const accProjects: ACCProject[] = sortedProjects.map((project: any) => ({
+      id: project.id,
+      name: project.attributes.name,
+      status: project.attributes.status || 'active',
+      startDate: project.attributes.startDate,
+      endDate: project.attributes.endDate,
+      projectType: project.attributes.projectType,
+      value: project.attributes.value,
+      currency: project.attributes.currency
+    }));
+    
+    console.log('🔍 ACC: Converted to ACCProject format');
+    console.log('🔍 ACC: First 10 projects:', accProjects.slice(0, 10).map(p => p.name));
+    
+    return accProjects;
   }
 }

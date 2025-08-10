@@ -1,5 +1,42 @@
 # Logbuch - BRAIN DB Products
 
+## 2025-12-08 19:45 - ACC Browser Projekt-Pagination erfolgreich behoben! 🎯
+
+### **ERREICHT:**
+- ✅ **ACC Browser Projekt-Auswahl** vollständig funktional
+- ✅ **Korrekte API-Pagination** mit limit/offset statt page[number]/page[size]
+- ✅ **Alle 48 Projekte geladen** (27 aktive, 21 archivierte gefiltert)
+- ✅ **Projekte G bis Z** jetzt verfügbar: MEL, MVO, P10, R20, S52, S61, TER, UPK, W78, WES
+- ✅ **Alphabetische Sortierung** mit deutscher Locale
+- ✅ **ACCProject Interface** zu types hinzugefügt
+
+### **PROBLEM GELÖST:**
+**Ursache:** Falsche Pagination-Parameter in ACC Construction Admin API
+- **Falsch:** `page[number]` und `page[size]` (nur 20 Projekte geladen)
+- **Richtig:** `limit` und `offset` (alle 200 Projekte pro Seite möglich)
+
+### **TECHNISCHE ÄNDERUNGEN:**
+```typescript
+// Vorher (falsch)
+const url = `${ACC_BASE_URL}/accounts/${ACC_ACCOUNT_ID}/projects?page[number]=${pageNumber}&page[size]=${pageSize}`;
+
+// Nachher (korrekt)
+const url = `${ACC_BASE_URL}/accounts/${ACC_ACCOUNT_ID}/projects?limit=${limit}&offset=${offset}`;
+```
+
+### **API-DOKUMENTATION VIA CONTEXT7:**
+- **Tool:** Context7 MCP für Autodesk Platform Services
+- **Erkenntnis:** V1 API verwendet limit/offset, nicht page[number]/page[size]
+- **Maximum:** 200 Projekte pro Seite möglich
+
+### **NÄCHSTE SCHRITTE:**
+1. **Dateimanagement-API** implementieren (Projekt-Inhalte laden)
+2. **Dateien und Ordner** in Tabelle anzeigen
+3. **Navigation durch Ordner** implementieren
+4. **APS Viewer Integration** für Dateien
+
+---
+
 ## 2025-12-08 18:15 - Intelligente Datei-Indikatoren Konzept erstellt! 🎯
 
 ### **ERREICHT:**
@@ -1664,3 +1701,137 @@ https://developer.api.autodesk.com/data/v1/projects/b.{GUID}/folders/{SPECIFIC_F
 - **Systematisches Debugging** mit verschiedenen Projekt-ID-Formaten
 
 ---
+
+## 2024-12-19 15:30 - APS Viewer Integration: Aktueller Stand
+
+### Was erreicht wurde:
+✅ **ACC File Browser vollständig implementiert**
+- Projekt-Auswahl Dropdown (alle 29 Projekte A-Z geladen)
+- Ordner-Navigation mit Breadcrumbs
+- Automatische Navigation in "Project Files" Ordner
+- Datei-Liste mit View-Buttons
+
+✅ **APS Viewer Komponente erstellt**
+- Fullscreen Drawer Implementation
+- Dynamisches Laden der APS Viewer Scripts
+- Loading und Error States
+
+✅ **URN-Konvertierung implementiert**
+- `convertAccUrnToApsViewerUrn()` für Viewer URNs
+- `convertAccUrnToApsTranslationUrn()` für Translation Jobs
+- Base64-URL Encoding für APS API Calls
+- Region-Konvertierung: `wipemea` → `wipprod`
+
+### Aktuelles Problem:
+❌ **"Invalid 'design' parameter" Fehler beim APS Viewer**
+
+**Fehler-Details:**
+```
+🔍 APS Viewer: Token generation failed: {"diagnostic":"Invalid 'design' parameter."}
+```
+
+**Versuchte Lösungen:**
+1. ✅ Base64-URL Encoding implementiert
+2. ✅ Separate URN-Typen für Viewer vs Translation
+3. ✅ 2-legged OAuth statt 3-legged OAuth
+4. ✅ Korrekte Scopes: `viewables:read data:read`
+5. ✅ Region-Konvertierung: `wipemea` → `wipprod`
+
+**Aktuelle URNs:**
+- Viewer URN: `urn:adsk.wipprod:dm.lineage:Dz8kcVs8TeiwXXPaP4pLiA`
+- Translation URN: `urn:adsk.wipprod:fs.file:vf.Dz8kcVs8TeiwXXPaP4pLiA?version=1`
+- Base64 Translation URN: `YWRzay53aXBwcm9kOmZzLmZpbGU6dmYuRHo4a2NWczhUZWl3WFhQYVA0cExpQT92ZXJzaW9uPTE`
+
+### Nächste Schritte:
+1. **Perplexity Research**: URN-Format für Translation Jobs überprüfen
+2. **APS Dokumentation**: Offizielle Beispiele für ACC → APS URN-Konvertierung
+3. **Alternative Ansätze**: Direkte APS Bucket-Upload statt ACC-Integration
+
+### Technische Details:
+- **ACC Service**: Vollständig implementiert mit Data Management API
+- **APS Viewer Token API**: `/api/aps/viewer-token` mit 2-legged OAuth
+- **URN-Konvertierung**: Komplexe Logik für verschiedene URN-Typen
+- **Base64-Encoding**: Korrekt implementiert für APS API Calls
+
+### Erkenntnisse:
+- ACC und APS verwenden unterschiedliche URN-Formate
+- Translation Jobs benötigen Version URNs (`fs.file:vf.`)
+- Viewer benötigt Design URNs (`dm.lineage:`)
+- 2-legged OAuth ist korrekt für APS Viewer
+- Base64-Encoding ist erforderlich für APS API
+
+---
+
+## 2024-12-19 14:15 - ACC File Browser: Breadcrumb Navigation implementiert
+
+### Was erreicht wurde:
+✅ **Breadcrumb Navigation hinzugefügt**
+- Zeigt aktuellen Pfad an: "Project Files > Ordner1 > Unterordner"
+- Automatische Navigation in "Project Files" beim Projekt-Wechsel
+- Korrekte Pfad-Verwaltung bei Ordner-Navigation
+
+✅ **Double-Click Navigation**
+- Ordner: Double-Click navigiert in Ordner
+- Dateien: View-Button öffnet APS Viewer
+
+### Technische Details:
+- `currentPath` State für Breadcrumb-Verwaltung
+- `currentFolderId` State für API-Calls
+- Automatische "Project Files" Erkennung und Navigation
+
+---
+
+## 2024-12-19 13:45 - ACC File Browser: Projekt-Auswahl korrigiert
+
+### Was erreicht wurde:
+✅ **Alle Projekte A-Z geladen**
+- Pagination implementiert für Construction Admin API v1
+- Korrekte Parameter: `limit=200` und `offset`
+- 29 aktive Projekte erfolgreich geladen
+
+✅ **Data Management API Integration**
+- Wechsel von Construction Admin API zu Data Management API
+- Korrekte Projekt-IDs mit "b." Präfix
+- Kompatible IDs für Folder-API-Calls
+
+### Problem gelöst:
+- **Vorher**: Nur Projekte A-F geladen (20er Limit)
+- **Jetzt**: Alle 29 Projekte A-Z geladen
+
+---
+
+## 2024-12-19 12:30 - ACC File Browser: Grundfunktionalität implementiert
+
+### Was erreicht wurde:
+✅ **ACC Button in NavBar hinzugefügt**
+✅ **ACC Browser Seite erstellt** (`/acc-browser`)
+✅ **Projekt-Auswahl Dropdown**
+✅ **Datei-Liste mit Ordner-Navigation**
+✅ **APS Viewer Integration gestartet**
+
+### Technische Details:
+- `useACC` Hook für State Management
+- ACC Service mit OAuth2-Authentifizierung
+- Data Management API für Projekt-Inhalte
+- APS Viewer Komponente für Datei-Anzeige
+
+---
+
+## 2024-12-19 11:15 - Projekt-Start: ACC Cloud Integration
+
+### Ziel:
+ACC Cloud File Browser analog zum Nextcloud Browser mit APS Viewer Integration
+
+### Anforderungen:
+- ACC Button in NavBar
+- Projekt-Auswahl Dropdown
+- File Browser mit Ordner-Navigation
+- APS Viewer für Datei-Anzeige
+- Fullscreen Drawer für Viewer
+
+### Technologie-Stack:
+- Next.js 15, React 19, TypeScript
+- Supabase für Datenbank
+- ACC Data Management API
+- APS Viewer für 3D-Modelle
+- OAuth2 für Authentifizierung

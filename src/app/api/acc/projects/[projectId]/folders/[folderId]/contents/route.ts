@@ -1,32 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
-import { ACCService } from "@/lib/acc";
+import { NextRequest, NextResponse } from 'next/server';
+import { ACCService } from '@/lib/acc';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string; folderId: string } }
+  { params }: { params: Promise<{ projectId: string; folderId: string }> }
 ) {
   try {
-    const { projectId, folderId } = params;
-    console.log("🔍 ACC Browser: Fetching folder contents for:", projectId, folderId);
+    const { projectId, folderId } = await params;
+    console.log(`🔍 ACC API: Getting contents for folder ${folderId} in project ${projectId}`);
     
-    const contents = await ACCService.getProjectContents(projectId, folderId);
+    const folderContents = await ACCService.getFolderContents(projectId, folderId);
     
-    console.log("🔍 ACC Browser: Folder contents fetched successfully");
+    console.log(`🔍 ACC API: Found ${folderContents.length} items in folder`);
     
-    return NextResponse.json({
-      success: true,
-      folders: contents.folders || [],
-      items: contents.items || []
-    });
-    
+    return NextResponse.json({ data: folderContents });
   } catch (error) {
-    console.error("🔍 ACC Browser: Error fetching folder contents:", error);
-    
-    return NextResponse.json({
-      success: false,
-      error: {
-        message: error instanceof Error ? error.message : "Unknown error"
-      }
-    }, { status: 500 });
+    console.error('🔍 ACC API: Error getting folder contents:', error);
+    return NextResponse.json(
+      { error: 'Failed to get folder contents' },
+      { status: 500 }
+    );
   }
 }
