@@ -67,7 +67,13 @@ export default function APSViewer({ urn, token, onClose, fileName, base64Urn }: 
         };
 
         window.Autodesk.Viewing.Initializer(options, () => {
+          // Create viewer with Revit-specific UI components
           const viewer = new window.Autodesk.Viewing.GuiViewer3D(viewerRef.current);
+          
+          // Enable Revit-specific UI components
+          viewer.setTheme('light-theme');
+          
+          // Start the viewer
           viewer.start();
 
           // Load the document using base64 URN if available, otherwise use regular URN
@@ -80,6 +86,34 @@ export default function APSViewer({ urn, token, onClose, fileName, base64Urn }: 
               console.log('🔍 APS Viewer: Document loaded successfully');
               const defaultModel = doc.getRoot().getDefaultGeometry();
               viewer.loadDocumentNode(doc, defaultModel);
+              
+              // Enable Revit-specific UI after document is loaded
+              setTimeout(() => {
+                try {
+                  // Enable the Revit View Selector (Model Browser)
+                  if (viewer.impl && viewer.impl.model) {
+                    console.log('🔍 APS Viewer: Enabling Revit View Selector...');
+                    
+                    // Show the model browser panel (contains Revit views)
+                    viewer.showPanel(window.Autodesk.Viewing.UI.PANEL_ID.MODELBROWSER);
+                    
+                    // Enable Revit-specific features
+                    if (viewer.impl.model.getData().type === 'rvt') {
+                      console.log('🔍 APS Viewer: Revit model detected, enabling view selector');
+                      
+                      // Force refresh of the model browser to show Revit views
+                      const modelBrowser = viewer.getPanel(window.Autodesk.Viewing.UI.PANEL_ID.MODELBROWSER);
+                      if (modelBrowser) {
+                        modelBrowser.setVisible(true);
+                        modelBrowser.update();
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.log('🔍 APS Viewer: Could not enable Revit View Selector:', err);
+                }
+              }, 2000); // Wait 2 seconds for document to fully load
+              
               setLoading(false);
             },
             (error: any) => {

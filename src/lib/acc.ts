@@ -3,6 +3,7 @@
 
 import { ACCOAuthService } from './acc-oauth';
 import { ACCProject } from '../types/products';
+import { UrnProcessor } from './urn-processor';
 
 export interface ACCItem {
   id: string;
@@ -408,25 +409,70 @@ export class ACCService {
   }
 
   static async getVersionURN(itemId: string, projectId?: string): Promise<string> {
-    // For ACC files, we need to return the design URN (dm.lineage) for APS Viewer
-    // The APS Viewer expects the design URN, not the version URN!
+    console.log(`🔍 ACC getVersionURN: Called with itemId=${itemId}, projectId=${projectId}`);
+    
+    // For ACC files, we need to return the VERSION URN (fs.file:vf.) for APS Viewer
+    // According to Perplexity AI, both Viewer and Translation need Version-URN, not Lineage-URN!
     try {
-      // If we have a projectId and it's already a lineage URN, just convert the region
+      // If we have a projectId and it's already a lineage URN, get the version URN
       if (projectId && itemId.includes('dm.lineage:')) {
-        // Just convert the region from wipemea to wipprod
-        const apsUrn = itemId.replace('wipemea', 'wipprod');
-        console.log(`🔍 ACC: Using original lineage URN (region converted): ${apsUrn}`);
-        return apsUrn;
+        console.log(`🔍 ACC getVersionURN: Processing lineage URN with projectId`);
+        const token = await this.getToken();
+        
+        // Get item details to find the version URN
+        const itemDetailsUrl = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/items/${itemId}`;
+        
+        console.log(`🔍 ACC: Getting item details for viewer URN: ${itemDetailsUrl}`);
+        
+        const itemResponse = await fetch(itemDetailsUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!itemResponse.ok) {
+          throw new Error(`Failed to get item details: ${itemResponse.status}`);
+        }
+
+        const itemData = await itemResponse.json();
+        console.log(`🔍 ACC: Item details received for viewer:`, itemData);
+
+        // Get the tip version URN from the included versions
+        if (itemData.included && itemData.included.length > 0) {
+          const tipVersion = itemData.included.find((version: any) => 
+            version.type === 'versions' && version.id.includes('fs.file:vf.')
+          );
+          
+          if (tipVersion) {
+            const versionUrn = tipVersion.id;
+            console.log(`🔍 ACC: Using tip version URN for viewer: ${versionUrn}`);
+            
+            // Use UrnProcessor to get the correct APS-compatible URN
+            console.log(`🔍 ACC getVersionURN: Calling UrnProcessor.processDerivativeUrn with: ${versionUrn}`);
+            const apsUrn = UrnProcessor.processDerivativeUrn(versionUrn);
+            console.log(`🔍 ACC: APS-compatible URN: ${apsUrn}`);
+            
+            return apsUrn;
+          }
+        }
       }
       
-      // Fallback: convert the provided URN using the proper conversion
-      const fallbackUrn = this.convertAccUrnToApsViewerUrn(itemId);
-      console.log(`🔍 ACC: Using fallback URN (converted): ${fallbackUrn}`);
-      return fallbackUrn;
+      // Fallback: if it's already a version URN, process it directly
+      if (itemId.includes('fs.file:vf.')) {
+        console.log(`🔍 ACC getVersionURN: Processing existing version URN: ${itemId}`);
+        console.log(`🔍 ACC getVersionURN: Calling UrnProcessor.processDerivativeUrn with: ${itemId}`);
+        return UrnProcessor.processDerivativeUrn(itemId);
+      }
+      
+      // Final fallback: return the original itemId
+      console.log(`🔍 ACC getVersionURN: Using original itemId as fallback: ${itemId}`);
+      return itemId;
       
     } catch (error) {
       console.error('🔍 ACC: Error getting version URN:', error);
-      return this.convertAccUrnToApsViewerUrn(itemId);
+      // Fallback to original itemId
+      return itemId;
     }
   }
 

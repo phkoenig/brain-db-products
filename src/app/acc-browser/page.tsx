@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { DefaultPageLayout } from '@/ui/layouts/DefaultPageLayout';
+import { Breadcrumbs } from '@/ui/components/Breadcrumbs';
 import APSViewer from '@/components/APSViewer';
+import React from 'react'; // Added missing import for React
 
 interface ACCProject {
   id: string;
@@ -46,6 +48,7 @@ export default function ACCBrowserPage() {
   const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPath, setCurrentPath] = useState<string[]>([]);
+  const [currentFolderIds, setCurrentFolderIds] = useState<string[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string>('');
   const [viewerOpen, setViewerOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<ACCContent | null>(null);
@@ -109,12 +112,14 @@ export default function ACCBrowserPage() {
         console.log('🔍 ACC Browser: Found Project Files folder, navigating to it...');
         // Reset breadcrumbs and navigate to the Project Files folder
         setCurrentPath(['Project Files']);
+        setCurrentFolderIds([projectFilesFolder.id]);
         setCurrentFolderId(projectFilesFolder.id);
         await handleFolderClick(projectFilesFolder.id, 'Project Files');
       } else {
         console.log('🔍 ACC Browser: Project Files folder not found, showing top-level folders');
         setContents(topFolders);
         setCurrentPath([]);
+        setCurrentFolderIds([]);
         setCurrentFolderId('');
       }
       
@@ -147,6 +152,7 @@ export default function ACCBrowserPage() {
       // Update breadcrumb navigation
       if (folderName) {
         setCurrentPath(prev => [...prev, folderName]);
+        setCurrentFolderIds(prev => [...prev, folderId]);
       }
       setCurrentFolderId(folderId);
       
@@ -154,6 +160,45 @@ export default function ACCBrowserPage() {
     } catch (err) {
       console.error('🔍 ACC Browser: Error loading folder contents:', err);
       setError('Failed to load folder contents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBreadcrumbClick = async (index: number) => {
+    if (!selectedProject) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Navigate to the clicked breadcrumb level
+      const targetFolderId = currentFolderIds[index];
+      const targetPath = currentPath.slice(0, index + 1);
+      const targetFolderIds = currentFolderIds.slice(0, index + 1);
+      
+      if (index === -1) {
+        // Root level - load project contents
+        await loadProjectContents(selectedProject);
+        setCurrentPath([]);
+        setCurrentFolderIds([]);
+        setCurrentFolderId('');
+      } else {
+        // Specific folder level
+        const response = await fetch(`/api/acc/projects/${selectedProject}/folders/${targetFolderId}/contents`);
+        if (!response.ok) throw new Error('Failed to load folder contents');
+        
+        const data = await response.json();
+        setContents(data.data || []);
+        setCurrentPath(targetPath);
+        setCurrentFolderIds(targetFolderIds);
+        setCurrentFolderId(targetFolderId);
+      }
+      
+      console.log('🔍 ACC Browser: Breadcrumb navigation to level:', index);
+    } catch (err) {
+      console.error('🔍 ACC Browser: Error in breadcrumb navigation:', err);
+      setError('Failed to navigate');
     } finally {
       setLoading(false);
     }
@@ -181,28 +226,52 @@ export default function ACCBrowserPage() {
         })
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to get viewer token');
-      }
-      
       const data = await response.json();
-      // Show appropriate message based on status
-      if (data.status === 'translating') {
-        setError('File is being translated. This may take a few minutes. Please try again later.');
+      console.log('🔍 ACC Browser: APS Viewer token response:', data);
+      
+      if (!response.ok) {
+        // Handle specific error cases
+        if (data.error === 'File format not supported for translation') {
+          setError(`File format not supported: ${file.attributes.displayName} cannot be viewed in the APS Viewer.`);
+        } else {
+          setError(`Failed to open viewer: ${data.error || 'Unknown error'}`);
+        }
         setViewerOpen(false);
         setSelectedFile(null);
-      } else {
-        // File is ready, set viewer data
-        setViewerData({
-          urn: data.urn,
-          base64Urn: data.base64Urn,
-          token: data.token,
-          status: data.status,
-          jobId: data.jobId
-        });
+        return;
       }
       
-      console.log('🔍 ACC Browser: APS Viewer token received:', data);
+      // Handle different manifest statuses
+      if (data.manifest_exists) {
+        if (data.manifest_status === 'success') {
+          // File is ready for viewing
+          setViewerData({
+            urn: data.urn,
+            base64Urn: data.urn, // Use the same URN for both
+            token: data.access_token,
+            status: 'ready',
+            jobId: data.translation_job?.urn
+          });
+          console.log('🔍 ACC Browser: File ready for viewing');
+        } else {
+          // File is being processed
+          setError(`File is being processed. Status: ${data.manifest_status}. Please try again in a few minutes.`);
+          setViewerOpen(false);
+          setSelectedFile(null);
+        }
+      } else {
+        // Translation job started
+        if (data.translation_job) {
+          setError('Translation job started. Please wait a few minutes and try again.');
+          setViewerOpen(false);
+          setSelectedFile(null);
+        } else {
+          // Unexpected response
+          setError('Unexpected response from server');
+          setViewerOpen(false);
+          setSelectedFile(null);
+        }
+      }
       
     } catch (err) {
       console.error('🔍 ACC Browser: Error getting APS viewer token:', err);
@@ -254,14 +323,21 @@ export default function ACCBrowserPage() {
 
           {/* Breadcrumb Navigation */}
           {currentPath.length > 0 && (
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span>Path:</span>
-              {currentPath.map((path, index) => (
-                <span key={index}>
-                  {index > 0 && <span className="mx-2">/</span>}
-                  <span className="font-medium">{path}</span>
-                </span>
-              ))}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-600">Path:</span>
+              <Breadcrumbs>
+                {currentPath.map((path, index) => (
+                  <React.Fragment key={index}>
+                    <Breadcrumbs.Item 
+                      onClick={() => handleBreadcrumbClick(index)}
+                      active={index === currentPath.length - 1}
+                    >
+                      {path}
+                    </Breadcrumbs.Item>
+                    {index < currentPath.length - 1 && <Breadcrumbs.Divider />}
+                  </React.Fragment>
+                ))}
+              </Breadcrumbs>
             </div>
           )}
 

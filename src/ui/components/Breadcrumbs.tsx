@@ -12,20 +12,25 @@ interface ItemProps extends React.HTMLAttributes<HTMLSpanElement> {
   children?: React.ReactNode;
   active?: boolean;
   className?: string;
+  onClick?: () => void;
 }
 
 const Item = React.forwardRef<HTMLSpanElement, ItemProps>(function Item(
-  { children, active = false, className, ...otherProps }: ItemProps,
+  { children, active = false, className, onClick, ...otherProps }: ItemProps,
   ref
 ) {
   return children ? (
     <span
       className={SubframeUtils.twClassNames(
-        "group/bbdc1640 line-clamp-1 cursor-pointer break-words text-body font-body text-subtext-color hover:text-default-font",
-        { "text-default-font": active },
+        "group/bbdc1640 line-clamp-1 cursor-pointer break-words text-body font-body text-subtext-color hover:text-default-font transition-colors duration-200",
+        { 
+          "text-default-font": active,
+          "hover:underline": !active && onClick 
+        },
         className
       )}
       ref={ref}
+      onClick={onClick}
       {...otherProps}
     >
       {children}

@@ -74,14 +74,15 @@ export default function APSTestPage() {
     }
     
     try {
-      const tokenResponse = await fetch('/api/aps/viewer-token');
+      // Korrekter Token-Endpoint für Viewer
+      const tokenResponse = await fetch('/api/auth/token');
       if (!tokenResponse.ok) throw new Error("Failed to get viewer token");
-      const { access_token } = await tokenResponse.json();
+      const { access_token, expires_in } = await tokenResponse.json();
 
       const options = {
         env: 'AutodeskProduction',
         getAccessToken: (onGetAccessToken: (token: string, expire: number) => void) => {
-          onGetAccessToken(access_token, 3599);
+          onGetAccessToken(access_token, expires_in);
         },
       };
 
