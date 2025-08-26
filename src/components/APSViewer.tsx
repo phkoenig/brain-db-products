@@ -18,15 +18,16 @@ declare global {
 
 export default function APSViewer({ urn, token, onClose, fileName, base64Urn }: APSViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
+  // State management
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-  const [isPanelVisible, setIsPanelVisible] = useState(false);
-  const [viewerInstance, setViewerInstance] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isViewerReady, setIsViewerReady] = useState(false);
-  const [isViewPanelVisible, setIsViewPanelVisible] = useState(false);
+  const [isPanelVisible, setIsPanelVisible] = useState(false); // Structure panel closed by default
+  const [isViewPanelVisible, setIsViewPanelVisible] = useState(true); // Views panel open by default
   const [availableViews, setAvailableViews] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'2D' | '3D'>('3D');
   const [currentDocument, setCurrentDocument] = useState<any>(null);
+  const [viewerInstance, setViewerInstance] = useState<any>(null);
 
   // Toggle function for the model browser panel
   const toggleModelBrowserPanel = () => {
@@ -436,12 +437,8 @@ export default function APSViewer({ urn, token, onClose, fileName, base64Urn }: 
                     .then(() => {
                       console.log('✅ APS Viewer: ModelStructure Extension loaded successfully');
                       
-                      // Activate the extension to show the panel
-                      viewer.getExtension('Autodesk.ModelStructure').activate();
-                      console.log('✅ APS Viewer: ModelStructure Extension activated');
-                      
-                      // Set panel as visible in our state
-                      setIsPanelVisible(true);
+                      // Don't activate the extension automatically - let user choose when to open it
+                      console.log('✅ APS Viewer: ModelStructure Extension ready (not activated)');
                       
                       // Mark viewer as ready after extension is loaded
                       setIsViewerReady(true);
@@ -476,146 +473,170 @@ export default function APSViewer({ urn, token, onClose, fileName, base64Urn }: 
   }, [urn, token, base64Urn]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center">
-      <div className="bg-white w-full h-full flex flex-col">
-        {/* Viewer Header */}
-        <div className="bg-gray-100 px-6 py-4 flex items-center justify-between border-b">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-semibold">APS Viewer</h2>
-            <span className="text-gray-600">- {fileName}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            {/* Toggle Model Browser Panel Button */}
-            <button
-              onClick={toggleModelBrowserPanel}
-              className={`px-3 py-2 rounded text-sm ${
-                isViewerReady 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-              }`}
-              title={isViewerReady ? "Toggle Revit Model Structure Panel" : "Viewer not ready yet"}
-              disabled={!isViewerReady}
-            >
-              {!isViewerReady ? 'Loading...' : (isPanelVisible ? 'Hide Structure' : 'Show Structure')}
-            </button>
-            {/* Toggle Button for Revit View Panel */}
-            <button
-              onClick={toggleViewPanel}
-              disabled={!isViewerReady}
-              className={`fixed top-20 right-4 z-30 px-4 py-2 rounded-lg shadow-lg transition-all ${
-                isViewerReady 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-              }`}
-              title={isViewerReady ? 'Show Views Panel' : 'Viewer not ready'}
-            >
-              {isViewerReady ? 'Show Views' : 'Loading...'}
-            </button>
-            <button
-              onClick={onClose}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            >
-              Close Viewer
-            </button>
-          </div>
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Viewer Header with horizontal buttons */}
+      <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-gray-200 shadow-sm">
+        <div className="flex items-center space-x-4">
+          <h2 className="text-xl font-semibold text-gray-900">APS Viewer</h2>
+          <span className="text-gray-600">- {fileName}</span>
         </div>
-        
-        {/* Viewer Content */}
-        <div className="flex-1 relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white flex items-center justify-center z-10">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading APS Viewer...</p>
-              </div>
-            </div>
-          )}
+        <div className="flex items-center space-x-3">
+          {/* Views Panel Button */}
+          <button
+            onClick={toggleViewPanel}
+            disabled={!isViewerReady}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              isViewerReady 
+                ? isViewPanelVisible
+                  ? 'bg-gray-900 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+            title={isViewerReady ? 'Toggle Views Panel' : 'Viewer not ready'}
+          >
+            {isViewerReady ? (isViewPanelVisible ? 'Hide Views' : 'Show Views') : 'Loading...'}
+          </button>
           
-          {error && (
-            <div className="absolute inset-0 bg-white flex items-center justify-center z-10">
-              <div className="text-center">
-                <div className="text-6xl mb-4">❌</div>
-                <h3 className="text-xl font-medium mb-2 text-red-600">Viewer Error</h3>
-                <p className="text-gray-600 mb-4">{error}</p>
+          {/* Model Structure Panel Button */}
+          <button
+            onClick={toggleModelBrowserPanel}
+            disabled={!isViewerReady}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              isViewerReady 
+                ? isPanelVisible
+                  ? 'bg-gray-900 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+            title={isViewerReady ? "Toggle Model Structure Panel" : "Viewer not ready yet"}
+          >
+            {!isViewerReady ? 'Loading...' : (isPanelVisible ? 'Hide Structure' : 'Show Structure')}
+          </button>
+          
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg font-medium bg-gray-900 text-white hover:bg-gray-800 transition-all shadow-md"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      {/* Viewer Container */}
+      <div className="flex-1 relative bg-white">
+        {/* Loading State */}
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading APS Viewer...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="text-red-600 text-6xl mb-4">⚠️</div>
+              <p className="text-red-600 text-lg mb-4">{error}</p>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Viewer Canvas */}
+        <div ref={viewerRef} className="w-full h-full bg-white"></div>
+
+        {/* Custom View Panel (Pläne und Ansichten) - Open by default */}
+        {isViewPanelVisible && availableViews.length > 0 && (
+          <div className="absolute left-0 top-0 w-80 h-full bg-white border-r border-gray-200 z-20 shadow-lg">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Pläne und Ansichten</h3>
                 <button
-                  onClick={onClose}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  onClick={() => setIsViewPanelVisible(false)}
+                  className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors"
                 >
-                  Close
+                  ✕
                 </button>
               </div>
+              
+              {/* 2D/3D Tabs */}
+              <div className="flex mb-4 border-b border-gray-200">
+                <button
+                  onClick={() => setActiveTab('2D')}
+                  className={`px-4 py-2 font-medium transition-colors ${
+                    activeTab === '2D' 
+                      ? 'text-gray-900 border-b-2 border-gray-900' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  2D Pläne
+                </button>
+                <button
+                  onClick={() => setActiveTab('3D')}
+                  className={`px-4 py-2 font-medium transition-colors ${
+                    activeTab === '3D' 
+                      ? 'text-gray-900 border-b-2 border-gray-900' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  3D Ansichten
+                </button>
+              </div>
+              
+              {/* View List */}
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {availableViews
+                  .filter(view => view.type === activeTab)
+                  .map((view, index) => (
+                    <button
+                      key={index}
+                      onClick={() => loadView(view)}
+                      className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all hover:shadow-sm"
+                    >
+                      <div className="font-medium text-gray-900">{view.name}</div>
+                      <div className="text-sm text-gray-500">{view.type}</div>
+                    </button>
+                  ))}
+              </div>
+              
+              {/* Only show "no views" message if there are actually no views of the current type */}
+              {availableViews.filter(view => view.type === activeTab).length === 0 && availableViews.length > 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Keine {activeTab === '2D' ? 'Pläne' : 'Ansichten'} verfügbar
+                </div>
+              )}
             </div>
-          )}
-          
-          {/* Custom View Panel (Pläne und Ansichten) */}
-          {isViewPanelVisible && availableViews.length > 0 && (
-            <div className="absolute left-0 top-0 w-80 h-full bg-white border-r border-gray-300 z-20 shadow-lg">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Pläne und Ansichten</h3>
-                  <button
-                    onClick={() => setIsViewPanelVisible(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    ✕
-                  </button>
-                </div>
-                
-                {/* 2D/3D Tabs */}
-                <div className="flex mb-4 border-b border-gray-200">
-                  <button
-                    onClick={() => setActiveTab('2D')}
-                    className={`px-4 py-2 font-medium ${
-                      activeTab === '2D' 
-                        ? 'text-blue-600 border-b-2 border-blue-600' 
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    2D Pläne
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('3D')}
-                    className={`px-4 py-2 font-medium ${
-                      activeTab === '3D' 
-                        ? 'text-blue-600 border-b-2 border-blue-600' 
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    3D Ansichten
-                  </button>
-                </div>
-                
-                {/* View List */}
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {availableViews
-                    .filter(view => view.type === activeTab)
-                    .map((view, index) => (
-                      <button
-                        key={index}
-                        onClick={() => loadView(view)}
-                        className="w-full text-left p-3 rounded border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                      >
-                        <div className="font-medium text-gray-900">{view.name}</div>
-                        <div className="text-sm text-gray-500">{view.type}</div>
-                      </button>
-                    ))}
-                </div>
-                
-                {availableViews.filter(view => view.type === activeTab).length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    Keine {activeTab === '2D' ? 'Pläne' : 'Ansichten'} verfügbar
-                  </div>
-                )}
+          </div>
+        )}
+
+        {/* Model Structure Panel - Only show when explicitly opened */}
+        {isPanelVisible && (
+          <div className="absolute right-0 top-0 w-80 h-full bg-white border-l border-gray-200 z-20 shadow-lg">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Model Structure</h3>
+                <button
+                  onClick={() => setIsPanelVisible(false)}
+                  className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="text-gray-600">
+                Model structure panel content will appear here when the ModelStructure extension is loaded.
               </div>
             </div>
-          )}
-          
-          <div 
-            ref={viewerRef} 
-            className="w-full h-full"
-            style={{ minHeight: '400px' }}
-          />
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

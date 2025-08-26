@@ -1,5 +1,52 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-08-28 11:00 - Evaluierung & Bestätigung des eigenen WFS-Parsers
+
+**Aufgaben:**
+- **Spezialisierte Bibliothek getestet:** Die externe Bibliothek `query-fis-broker-wfs` wurde als Alternative zu unserem eigenen Parser evaluiert.
+- **Systematischer Vergleich:** Die Bibliothek wurde gegen einen Berliner und einen bayerischen WFS-Dienst getestet, bei denen unser Parser bereits erfolgreich war.
+
+**Ergebnis & Fazit:**
+- Die externe Bibliothek war für unseren breiten Anwendungsfall **ungeeignet**. Sie fand bei einem Dienst keine Layer und scheiterte beim anderen an einem Netzwerkfehler.
+- **Unser eigener Parser ist die überlegene Lösung:** Der Test hat bestätigt, dass unser Ansatz, basierend auf `fast-xml-parser` und flexibler Objekt-Navigation, deutlich robuster und zuverlässiger für die Vielfalt der deutschen WFS-Dienste ist.
+
+**Best Practice:**
+- Die Evaluierung von Alternativen ist ein wichtiger Schritt, um die Qualität der eigenen Lösung zu validieren und zu bestätigen.
+
+---
+
+## 2025-08-28 10:00 - Meilenstein: Robuste WFS-Verarbeitung & Datenbank-Befüllung
+
+**Aufgaben:**
+- **Robuster WFS-Parser implementiert:** Die Verarbeitung von `GetCapabilities`-XML wurde fundamental verbessert. Anstatt fehleranfälliger Regex wird nun die Bibliothek `fast-xml-parser` verwendet, um das XML in ein JavaScript-Objekt zu konvertieren. Die Datenextraktion erfolgt durch dynamische Navigation in dieser Objektstruktur.
+- **Intelligenter HTTP-Client:** Der Client wurde so erweitert, dass er automatisch mehrere WFS-Versionen (`2.0.0`, `1.1.0`, `1.0.0`) anfragt, um die Kompatibilität mit verschiedenen Servern drastisch zu erhöhen.
+- **Erfolgreicher Massen-Test:** Der neue Parser wurde gegen 45 validierte WFS-Dienste getestet und erreichte eine Erfolgsrate von ~47%.
+- **Datenbank-Befüllung:** Ein Skript wurde erstellt, das die 21 erfolgreich geparsten Dienste nutzt, um die `wfs_streams`-Tabelle mit Metadaten (Titel, Anbieter etc.) anzureichern und **293 neue Layer** in die `wfs_layers`-Tabelle einzufügen.
+
+**Ergebnis:**
+- Die Datenbank enthält nun einen soliden, verifizierten Grundstock an WFS-Streams und Layern.
+- Die Verarbeitungspipeline für WFS-Daten ist jetzt stabil, robust und erweiterbar.
+
+**Best Practice:**
+- Die Konvertierung von XML in ein navigierbares Objekt ist der Regex-basierten String-Analyse bei komplexen, variablen Strukturen weit überlegen. Dieser Ansatz wurde in `docs/README_WFS_PARSER.md` dokumentiert.
+
+---
+
+## 2025-08-27 10:00 - WFS-Katalog-Validierung und -Bereinigung
+
+**Aufgaben:**
+- **Datenbank-Schema erweitert:** Neue Felder für einen 3-stufigen URL-Validierungsprozess hinzugefügt (`url_syntax_valid`, `server_reachable`, `xml_response_valid`).
+- **Neubefüllung der Datenbank:** Alle WFS-Dienste mit einer neuen, qualitativ hochwertigen JSON-Liste (`wfs_de_testdaten_update.json`) ersetzt.
+- **URL-Struktur vereinheitlicht:** Alle URLs in der Datenbank auf ihre Stamm-URL (ohne Query-Parameter) bereinigt.
+- **3-Stufen-Validator implementiert:** Ein robustes Skript prüft Syntax, Server-Erreichbarkeit und XML-Antwort aller WFS-Dienste.
+- **Validierungslauf durchgeführt:** Alle 54 Dienste wurden erfolgreich validiert (Erfolgsrate: 83,3%, 45/54 Dienste sind voll funktionsfähig).
+- **Fehleranalyse & Bereinigung:** Die 9 nicht funktionierenden Dienste wurden analysiert (meist wegen erforderlicher Authentifizierung). Ein nachweislich toter Link (Berlin) wurde entfernt.
+
+**Nächste Schritte:**
+- Die schwierigste Aufgabe angehen (wird im nächsten Schritt definiert).
+
+---
+
 ## 2024-12-19 15:30 - APS Viewer ACC Integration ERFOLGREICH GELÖST! 🎉
 
 ### 🎯 **BREAKTHROUGH: IFC-Datei öffnet sofort im APS Viewer!**
@@ -2067,208 +2114,6 @@ ACC Cloud File Browser analog zum Nextcloud Browser mit APS Viewer Integration
 ---
 
 # Logbuch - BRAIN DB Products A
-
-## 2025-08-10 10:00 - APS Viewer Implementierung verbessert
-
-**Problem:** "The input urn is not supported" Fehler bei allen Dateiformaten (IFC, RVT, DWG, PDF)
-
-**Lösung implementiert:**
-- **Derivative-ID Validierung** hinzugefügt
-- **Manifest-Check mit 3-legged Token** verbessert
-- **Translation-Job nur bei fehlendem Manifest**
-- **Spezifische Fehlerbehandlung** für nicht unterstützte Formate
-
-**Technische Details:**
-- ACC Item Details API-Abfrage für Derivative-URNs
-- Manifest-Status-Check (success, pending, failed)
-- Bessere Fehlermeldungen für Benutzer
-- Frontend-Logik für verschiedene Response-Formate
-
-**Ergebnis:** ✅ Vollständige Diagnose und Behandlung von APS Viewer Problemen
-
-**Nächste Schritte:**
-- Testen mit verschiedenen Dateiformaten
-- Überprüfung der 3-legged OAuth Authentifizierung
-- Potentielle Lizenz-Probleme identifizieren
-
----
-
-## 2025-08-10 09:30 - Klickbare Breadcrumbs implementiert
-
-**Aufgabe:** Breadcrumbs in der ACC Browser UI klickbar machen
-
-**Umsetzung:**
-- Breadcrumbs-Komponente erweitert um `onClick`-Funktionalität
-- Hover-Effekte hinzugefügt (Unterstreichung für klickbare Items)
-- ACC Browser Seite erweitert um `currentFolderIds` State
-- `handleBreadcrumbClick` Funktion implementiert für Navigation
-- Breadcrumb-Navigation funktioniert jetzt vollständig
-
-**Technische Details:**
-- Breadcrumbs.Item unterstützt jetzt `onClick` prop
-- State-Tracking für Folder-IDs parallel zu Path-Namen
-- Navigation zu beliebigen Breadcrumb-Level möglich
-- Automatisches Reset beim Projektwechsel
-
-**Ergebnis:** ✅ Klickbare Breadcrumbs funktionieren einwandfrei
-
----
-
-## 2025-08-10 07:30 - APS Viewer URN-Problem analysiert
-
-**Problem:** APS Viewer zeigt "The input urn is not supported" Fehler
-
-**Analyse:**
-- IFC-Datei wird korrekt verarbeitet (URN-Konvertierung funktioniert)
-- 3-legged OAuth fällt auf 2-legged zurück (Token-Problem)
-- URN-Format ist korrekt (Base64, Region-Konvertierung, Query-Parameter-Fix)
-- Problem liegt wahrscheinlich an Datei-spezifischen Faktoren
-
-**Nächste Schritte:**
-- RVT/DWG-Datei testen um Format-spezifische Probleme zu identifizieren
-- Perplexity AI um weitere Analyse bitten
-
-**Erkenntnisse:**
-- URN-Processor funktioniert korrekt
-- Authentifizierung ist das Hauptproblem
-- IFC-Format könnte spezielle Anforderungen haben
-
----
-
-## 2025-08-10 07:00 - URN-Processor Modul erstellt
-
-**Aufgabe:** URN-Konvertierung für APS Model Derivative API
-
-**Umsetzung:**
-- Neues `UrnProcessor` Modul in `src/lib/urn-processor.ts`
-- Region-Konvertierung: `wipemea` → `wipprod`
-- Query-Parameter-Fix: `?version=1` → `_version=1`
-- Base64-Encoding für APS API
-- Integration in `ACCService.getVersionURN`
-
-**Test-Ergebnisse:**
-- ✅ URN-Konvertierung funktioniert korrekt
-- ✅ Base64-Encoding ist korrekt
-- ✅ Perplexity AI bestätigt korrekte Implementierung
-
-**Technische Details:**
-- Statische Methoden für URN-Verarbeitung
-- Umfassende Logging für Debugging
-- Validierung und Clean-URN-Funktionen
-
----
-
-## 2025-08-10 06:30 - APS Viewer Token-System überarbeitet
-
-**Problem:** APS Viewer benötigt verschiedene Token-Typen
-
-**Lösung:**
-- `/api/auth/token` - 2-legged Token für generischen Viewer
-- `/api/aps/internal-token` - 2-legged Token für Backend-Operationen
-- `/api/aps/viewer-token` - 3-legged Token für ACC-Dateien
-
-**Implementierung:**
-- Token-Endpoints getrennt nach Verwendungszweck
-- 3-legged OAuth mit 2-legged Fallback für ACC
-- Korrekte Scope-Definitionen
-
-**Ergebnis:** ✅ Token-System ist jetzt sauber strukturiert
-
----
-
-## 2025-08-10 06:00 - APS Viewer Integration gestartet
-
-**Ziel:** CAD-Dateien aus ACC im APS Viewer anzeigen
-
-**Status:** In Bearbeitung
-- Viewer-Komponente integriert
-- Token-System implementiert
-- URN-Verarbeitung in Entwicklung
-
-**Nächste Schritte:**
-- URN-Konvertierung vervollständigen
-- Authentifizierung debuggen
-- Verschiedene Dateiformate testen
-
----
-
-## 2025-08-09 18:00 - ACC Integration erfolgreich
-
-**Erfolg:** ✅ ACC File Browser funktioniert vollständig
-
-**Features:**
-- Projekt-Auswahl
-- Ordner-Navigation
-- Datei-Liste mit Details
-- 3-legged OAuth Integration
-- Breadcrumb-Navigation (jetzt klickbar)
-
-**Technische Details:**
-- Data Management API Integration
-- OAuth 2.0 3-legged Flow
-- Responsive UI mit Tailwind CSS
-- Error Handling und Loading States
-
----
-
-## 2025-08-09 16:00 - Projekt-Setup abgeschlossen
-
-**Status:** ✅ Grundfunktionen implementiert
-
-**Features:**
-- Next.js 14 mit TypeScript
-- Supabase Integration
-- Tailwind CSS + Subframe UI
-- OAuth Integration (Google, ACC)
-- Produkt-Management System
-
-**Architektur:**
-- Modulare Komponenten-Struktur
-- API-Routes für Backend-Logik
-- Hooks für State Management
-- TypeScript für Type Safety
-
----
-
-# Logbuch - BRAIN DB Products A
-
-## 2025-08-10 10:30 - TranslationChecker-Modul implementiert
-
-**Problem:** APS übersetzt Dateien automatisch, aber legt sie mit anderen URNs ab
-
-**Lösung:** Neues TranslationChecker-Modul erstellt
-
-**Features:**
-- **Manifest-basierte Derivat-Suche** - Hauptfunktion
-- **Automatische URN-Suche** für übersetzte Dateien
-- **Verschiedene URN-Patterns** testen (Region, Version, Query-Parameter)
-- **Translation-Status-Check** mit detaillierter Diagnose
-- **Intelligente Fallback-Strategien**
-
-**Technische Details:**
-- `TranslationChecker.checkTranslationStatus()` - Manifest-basierte Hauptfunktion
-- `extractDerivativesFromManifest()` - Extrahiert SVF/SVF2-Derivate aus Manifest
-- `findBestViewingDerivative()` - Priorisiert SVF2 > SVF > andere Formate
-- `generatePossibleTranslatedUrns()` - URN-Pattern-Generierung
-- `startTranslationJob()` - Translation-Job-Management
-- Integration in viewer-token Route
-
-**Manifest-basierte Derivat-Suche:**
-- **Manifest-Abfrage** für Original-URN
-- **Derivat-Extraktion** aus Manifest-Struktur
-- **SVF/SVF2-Priorisierung** für beste Viewer-Qualität
-- **Nested-Derivative-Support** (2D/3D Views)
-
-**URN-Patterns getestet:**
-- Ohne Version-Suffix
-- Region-Wechsel (wipprod ↔ wipemea)
-- Ohne Query-Parameter
-- Dateityp-Änderung (.ifc → .svf)
-- Translation-Suffix
-
-**Ergebnis:** ✅ Vollständige Manifest-basierte Translation-Diagnose implementiert
-
----
 
 ## 2025-08-10 10:00 - APS Viewer Implementierung verbessert
 

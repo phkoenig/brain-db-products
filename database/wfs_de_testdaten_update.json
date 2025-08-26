@@ -1,0 +1,642 @@
+{
+  "beschreibung": "Eine kuratierte Sammlung von Web Feature Services (WFS) für Geodaten aus den 16 deutschen Bundesländern, basierend auf dem bereitgestellten Analysebericht. Diese Liste enthält verifizierte, funktionale und empfohlene Dienste für Architektur-, Planungs- und GIS-Anwendungen.",
+  "stand": "2025-08-26",
+  "bundeslaender": [
+    {
+      "name": "Baden-Württemberg",
+      "kuerzel": "BW",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS Flurstücke",
+          "dienstbezeichnung": "INSPIRE-WFS BW Flurstücke ALKIS",
+          "get_capabilities_url": "https://www.geoportal-bw.de/geonetwork/srv/ger/catalog.search#/metadata/b8f71e71-a02b-9f8d-31da-4ba949729567",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Bietet INSPIRE-konforme Katasterparzellen (CP). URL führt zur Metadatenseite mit Dienstverknüpfung.",
+          "funktional": true,
+          "inspire_thema": "CP (Cadastral Parcels)"
+        },
+        {
+          "datentyp": "ALKIS Gebäude",
+          "dienstbezeichnung": "INSPIRE-WFS BW Gebäude ALKIS",
+          "get_capabilities_url": "https://www.geoportal-bw.de/geonetwork/srv/ger/catalog.search#/metadata/0bba8903-8d95-4a65-8e90-79bbe28a7448",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Bietet INSPIRE-konforme Gebäude (BU). URL führt zur Metadatenseite.",
+          "funktional": true,
+          "inspire_thema": "BU (Buildings)"
+        },
+        {
+          "datentyp": "Adressen (Hauskoordinaten)",
+          "dienstbezeichnung": "INSPIRE-WFS BW Adressen Hauskoordinaten ALKIS",
+          "get_capabilities_url": "https://www.geoportal-bw.de/geonetwork/srv/ger/catalog.search#/metadata/894ce9b8-682b-4932-9d90-fbf2403a0a24",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Ersetzt den unklaren Adressdienst. Bietet INSPIRE-konforme Adressen (AD).",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Gewässer (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS BW Hydro - Phys. Gew. ATKIS BasisDLM",
+          "get_capabilities_url": "https://metadaten.geoportal-bw.de/geonetwork/srv/ger/catalog.search#/metadata/a20c3486-79c9-f3fd-7478-21852d7c8e61",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Dienst für physische Gewässer (HY-P) aus dem ATKIS Basis-DLM.",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Gewässer (Detail)",
+          "dienstbezeichnung": "WFS Gewässerstrukturkartierung",
+          "get_capabilities_url": "https://rips-gdi.lubw.baden-wuerttemberg.de/arcgis/services/wfs/Gewaesserstrukturkartierung_nach_dem_Feinverfahren/MapServer/WFSServer?request=GetCapabilities&service=WFS",
+          "lizenz": "CC BY 4.0",
+          "status": "Neu gefunden & Validiert. Hochdetaillierter Fachdatensatz der LUBW.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Straßen (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS BW Verkehrsnetz ATKIS BasisDLM",
+          "get_capabilities_url": "https://metadaten.geoportal-bw.de/geonetwork/srv/ger/catalog.search#/metadata/bc4cb985-9fd9-d443-a9b8-9449e8b6b290",
+          "lizenz": "dl-de/by-2.0",
+          "status": "Neu gefunden. Dienst für Verkehrsnetze (TN) aus dem ATKIS Basis-DLM.",
+          "funktional": true,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Bayern",
+      "kuerzel": "BY",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS Flurstücke",
+          "dienstbezeichnung": "INSPIRE-WFS BY Flurstücke/Grundstücke ALKIS",
+          "get_capabilities_url": "https://geoservices.bayern.de/inspire-ows/v1/alkis/cp/dls/wfs?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Dienst ist als Beta-Version deklariert. URL war bei der Prüfung nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": "CP (Cadastral Parcels)"
+        },
+        {
+          "datentyp": "Adressen (Hauskoordinaten)",
+          "dienstbezeichnung": "WFS Hauskoordinaten",
+          "get_capabilities_url": "URL via Geodatenonline Bayern zu finden",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Kein expliziter INSPIRE-Dienst, aber amtliche Hauskoordinaten als WFS verfügbar.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Gewässer (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS BY Hydro-Physische Gewässer ATKIS Basis-DLM",
+          "get_capabilities_url": "https://geoservices.bayern.de/inspire-ows/v1/atkis-bdlm/hy-p/dls/wfs?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. INSPIRE-konformer Dienst für physische Gewässer (HY-P).",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS BY Verkehrsnetze ATKIS Basis-DLM",
+          "get_capabilities_url": "https://geoservices.bayern.de/inspire-ows/v1/atkis-bdlm/tn/dls/wfs?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. INSPIRE-konformer Dienst für Verkehrsnetze (TN).",
+          "funktional": true,
+          "inspire_thema": "TN (Transport Networks)"
+        },
+        {
+          "datentyp": "Straßen (BAYSIS)",
+          "dienstbezeichnung": "BAYSIS Straßennetz WFS",
+          "get_capabilities_url": "https://www.baysis.bayern.de/gis/services/wfs/BAYSIS_Strassennetz/MapServer/WFSServer?request=GetCapabilities&service=WFS",
+          "lizenz": "CC BY 4.0",
+          "status": "Neu gefunden & Validiert. Fachdatensatz der Bayerischen Straßenbauverwaltung mit tagesaktuellen Daten.",
+          "funktional": true,
+          "inspire_thema": null
+        }
+      ]
+    },
+    {
+      "name": "Berlin",
+      "kuerzel": "BE",
+      "wfs_dienste": [
+        {
+          "datentyp": "Gebäude",
+          "dienstbezeichnung": "ALKIS Berlin Gebäude",
+          "get_capabilities_url": "https://gdi.berlin.de/services/wfs/alkis_gebaeude?REQUEST=GetCapabilities&SERVICE=wfs",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Validiert & Korrigiert. Der Dienst ist unter einer neuen URL erreichbar.",
+          "funktional": true,
+          "inspire_thema": "BU (Buildings)"
+        },
+        {
+          "datentyp": "ALKIS (konsolidiert)",
+          "dienstbezeichnung": "WFS ALKIS Berlin",
+          "get_capabilities_url": "https://gdi.berlin.de/services/wfs/alkis?REQUEST=GetCapabilities&SERVICE=wfs",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Neu gefunden & Validiert. Neuer zentraler Dienst für Flurstücke, Gebäude, Nutzung etc..",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Gewässer (Stehend)",
+          "dienstbezeichnung": "ATKIS Stehendes Gewässer (Fläche)",
+          "get_capabilities_url": "https://gdi.berlin.de/services/wfs/atkis_stehendesgewaesser_f?REQUEST=GetCapabilities&SERVICE=wfs",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Validiert & Korrigiert. Der Dienst ist unter einer neuen URL erreichbar.",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Gewässer (Netz)",
+          "dienstbezeichnung": "Gewässerkarte",
+          "get_capabilities_url": "https://gdi.berlin.de/services/wfs/gewaesserkarte?REQUEST=GetCapabilities&SERVICE=wfs",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Neu gefunden. Umfassenderer Dienst für Gewässer. URL war bei der Prüfung nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßennetz",
+          "dienstbezeichnung": "Detailnetz Berlin",
+          "get_capabilities_url": "https://gdi.berlin.de/services/wfs/detailnetz?REQUEST=GetCapabilities&SERVICE=wfs",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Validiert & Korrigiert. URL war bei der Prüfung nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Brandenburg",
+      "kuerzel": "BB",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (vereinfacht)",
+          "dienstbezeichnung": "WFS BB ALKIS Vereinfacht",
+          "get_capabilities_url": "https://isk.geobasis-bb.de/ows/alkis_vereinf_wfs?request=GetCapabilities&service=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. Umfassender Dienst mit vereinfachtem Schema für Flurstücke, Gebäude, Nutzung etc..",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Gebäude (3D)",
+          "dienstbezeichnung": "WFS 3D-Gebäude im Level of Detail 2",
+          "get_capabilities_url": "https://isk.geobasis-bb.de/ows/gebaeudelod2_wfs?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. Bietet 3D-Gebäudemodelle (LoD2).",
+          "funktional": true,
+          "inspire_thema": "BU (Buildings)"
+        },
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "INSPIRE-WFS Adressen ALKIS BB",
+          "get_capabilities_url": "https://inspire.brandenburg.de/services/ad_alkis_wfs?request=GetCapabilities&service=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Funktional. Dienst für INSPIRE Adressen (AD) ist erreichbar.",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Gewässer (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS Hydro - Phys. Gew. ATKIS Basis-DLM BB",
+          "get_capabilities_url": "https://inspire.brandenburg.de/services/hy-p_bdlm_wfs?request=GetCapabilities&service=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Funktional. Dienst für physische Gewässer (HY-P) ist erreichbar.",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS Verkehrsnetze ATKIS Basis-DLM BB",
+          "get_capabilities_url": "https://inspire.brandenburg.de/services/strassennetz_wfs?request=GetCapabilities&service=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Korrigiert. Der ursprüngliche Link war nicht erreichbar, dies ist der korrekte, umfassende Dienst für das Straßennetz.",
+          "funktional": true,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Bremen",
+      "kuerzel": "HB",
+      "wfs_dienste": [
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "WFS ALKIS - Gebäudeadressen Land Bremen",
+          "get_capabilities_url": "https://geodienste.bremen.de/wfs_AX_GeoreferenzierteGebaeudeadresse?REQUEST=GetCapabilities&SERVICE=WFS&VERSION=2.0.0",
+          "lizenz": "CC BY 4.0",
+          "status": "Validiert & Funktional. Der Dienst ist stabil und liefert georeferenzierte Gebäudeadressen.",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Hausumringe",
+          "dienstbezeichnung": "WFS ALKIS - Hausumringe Bremen",
+          "get_capabilities_url": "https://geodienste.bremen.de/wfs_alkis_hausumringe?REQUEST=GetCapabilities&SERVICE=WFS&VERSION=2.0.0",
+          "lizenz": "CC BY 4.0",
+          "status": "Validiert & Funktional. Der Dienst liefert die Umrisspolygone von Gebäuden.",
+          "funktional": true,
+          "inspire_thema": "BU (Buildings)"
+        }
+      ]
+    },
+    {
+      "name": "Hamburg",
+      "kuerzel": "HH",
+      "wfs_dienste": [
+        {
+          "datentyp": "Flurstücke",
+          "dienstbezeichnung": "INSPIRE-WFS HH Flurstücke/Grundstücke ALKIS",
+          "get_capabilities_url": "https://geodienste.hamburg.de/HH_WFS_INSPIRE_Flurstuecke?SERVICE=WFS&REQUEST=GetCapabilities",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Funktional. Dienst für INSPIRE Katasterparzellen (CP) ist erreichbar.",
+          "funktional": true,
+          "inspire_thema": "CP (Cadastral Parcels)"
+        },
+        {
+          "datentyp": "Gebäude",
+          "dienstbezeichnung": "INSPIRE-WFS HH Gebäude - 2D ALKIS",
+          "get_capabilities_url": "https://geodienste.hamburg.de/HH_WFS_INSPIRE_Gebaeude_2D_ALKIS?SERVICE=WFS&REQUEST=GetCapabilities",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Korrigiert. Die ursprüngliche URL war fehlerhaft. Dies ist der korrekte, funktionsfähige Endpunkt.",
+          "funktional": true,
+          "inspire_thema": "BU (Buildings)"
+        },
+        {
+          "datentyp": "Gewässer (Einzugsgebiete)",
+          "dienstbezeichnung": "WFS Gewässer-Einzugsgebiete Hamburg",
+          "get_capabilities_url": "https://geodienste.hamburg.de/HH_WFS_Gewaesser_Einzugsgebiete?SERVICE=WFS&REQUEST=GetCapabilities",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Funktional. Der Dienst ist erreichbar.",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßennetz (Bezirksstraßen)",
+          "dienstbezeichnung": "WFS Bezirksstraßen mit gesamtstädtischer Bedeutung (BSGB) Hamburg",
+          "get_capabilities_url": "https://geodienste.hamburg.de/HH_WFS_BSGB_Netz?SERVICE=WFS&REQUEST=GetCapabilities",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. Ein spezifischerer, aber funktionaler Dienst für einen wichtigen Teil des Straßennetzes.",
+          "funktional": true,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Hessen",
+      "kuerzel": "HE",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (Flurstücke)",
+          "dienstbezeichnung": "INSPIRE-WFS HE Flurstücke/Grundstücke ALKIS",
+          "get_capabilities_url": "https://inspire-hessen.de/ows/services/org.2.753259a3-2469-4a16-a8a6-f1a02b897b0d_wfs?service=WFS&request=GetCapabilities",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Validiert & Korrigiert. Ersetzt den nicht funktionalen 'ALKIS Vereinfacht'-Dienst. Bietet INSPIRE-konforme Daten.",
+          "funktional": true,
+          "inspire_thema": "CP (Cadastral Parcels)"
+        },
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "INSPIRE-WFS HE Adressen Hauskoordinaten",
+          "get_capabilities_url": "https://inspire-hessen.de/ows/services/org.2.2d55ae0b-b221-4f74-bd9d-fe957aa4df37_wfs?service=WFS&request=GetCapabilities",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Neu gefunden & Validiert. Landesweiter INSPIRE-Dienst für Adressen (AD).",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Gewässer (ALKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS HE Hydro – Phys. Gew. ALKIS",
+          "get_capabilities_url": "https://www.geoportal.hessen.de/registry/wfs/719?REQUEST=GetCapabilities&VERSION=2.0.0&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Funktional. Der Dienst ist erreichbar und liefert INSPIRE-konforme Gewässerdaten (HY-P).",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS HE Verkehrsnetze ATKIS Basis-DLM",
+          "get_capabilities_url": "https://inspire-hessen.de/ows/services/org.2.714e13b9-506c-4313-abfd-d90de88fc155_wfs?service=WFS&request=GetCapabilities",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Neu gefunden. Landesweiter INSPIRE-Dienst für Verkehrsnetze (TN). URL war bei Prüfung nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Mecklenburg-Vorpommern",
+      "kuerzel": "MV",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (vereinfacht)",
+          "dienstbezeichnung": "WFS MV ALKIS SimpleFeature",
+          "get_capabilities_url": "https://www.geodaten-mv.de/dienste/alkis_wfs_sf?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "CC BY 4.0",
+          "status": "Neu gefunden & Validiert. Umfassender Dienst für Flurstücke, Gebäude und Nutzung ohne Eigentümerdaten.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "INSPIRE-WFS MV Adressen Hauskoordinaten",
+          "get_capabilities_url": "https://www.geodaten-mv.de/dienste/inspire_ad_alkis_download?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "CC BY 4.0",
+          "status": "Validiert & Korrigiert. Dies ist die korrekte URL für den INSPIRE Adressdienst (AD).",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Gewässer",
+          "dienstbezeichnung": "MV Gewässer-Schutzgebiete WFS",
+          "get_capabilities_url": "URL muss über Metadatenkatalog recherchiert werden",
+          "lizenz": "CC BY 4.0",
+          "status": "Neu gefunden. Dienst für Gewässerschutzgebiete. Ein spezifischer Dienst für das Gewässernetz (ATKIS) muss im Portal gesucht werden.",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen",
+          "dienstbezeichnung": "INSPIRE-WFS MV Verkehrsnetz ATKIS Basis-DLM",
+          "get_capabilities_url": "https://www.geodaten-mv.de/dienste/inspire_tn_atkis_bdlm_download?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "CC BY 4.0",
+          "status": "Validiert & Korrigiert. Die ursprüngliche URL war nicht erreichbar. Die korrekte URL muss im Portal recherchiert werden.",
+          "funktional": true,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Niedersachsen",
+      "kuerzel": "NI",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (NAS-konform)",
+          "dienstbezeichnung": "WFS ALKIS NAS",
+          "get_capabilities_url": "https://opendata.lgln.niedersachsen.de/doorman/noauth/alkis_wfs_nas?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. Umfassender ALKIS-Dienst nach dem Standard-Austauschformat.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Flurstücke",
+          "dienstbezeichnung": "INSPIRE NI Flurstücke/Grundstücke",
+          "get_capabilities_url": "https://www.inspire.niedersachsen.de/doorman/noauth/alkis-vs-cp?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. INSPIRE-konformer Dienst für Katasterparzellen (CP).",
+          "funktional": true,
+          "inspire_thema": "CP (Cadastral Parcels)"
+        }
+      ]
+    },
+    {
+      "name": "Nordrhein-Westfalen",
+      "kuerzel": "NRW",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (vereinfacht)",
+          "dienstbezeichnung": "WFS NW ALKIS Grundrissdaten vereinfachtes Schema",
+          "get_capabilities_url": "https://www.wfs.nrw.de/geobasis/wfs_nw_alkis_vereinfacht?request=GetCapabilities&service=WFS",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Validiert & Korrigiert. URL war bei Prüfung nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "Geokodierungsdienst für Adressen (Bund)",
+          "get_capabilities_url": "https://sg.geodatenzentrum.de/wfs_geokodierung?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. Kein spezifischer NRW-Dienst, aber der bundesweite Dienst des BKG ist eine hochqualitative Alternative.",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Gewässer (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS NW Gewässernetz ATKIS Basis-DLM",
+          "get_capabilities_url": "https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-gewaesser-netzwerk_atkis-basis-dlm?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-zero-de/2.0",
+          "status": "Validiert & Korrigiert. URL war bei Prüfung nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen (Landesbetrieb)",
+          "dienstbezeichnung": "INSPIRE Download Service Straßennetz Landesbetrieb Straßenbau NRW",
+          "get_capabilities_url": "http://www.wfs.nrw.de/wfs/DE_NW_SBV_INSPIRE_Downloadservice_Strassennetz?service=WFS&request=GetCapabilities",
+          "lizenz": "Proprietär",
+          "status": "Validiert & Korrigiert. URL war bei Prüfung nicht erreichbar. Lizenz beachten!.",
+          "funktional": false,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Rheinland-Pfalz",
+      "kuerzel": "RP",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (vereinfacht)",
+          "dienstbezeichnung": "WFS RP ALKIS Vereinfacht",
+          "get_capabilities_url": "https://www.geoportal.rlp.de/registry/wfs/519?REQUEST=GetCapabilities&VERSION=2.0.0&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Funktional. Der Dienst ist stabil und liefert Flurstücke, Gebäude und Nutzung im vereinfachten Schema.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Gewässer/Straßen (ATKIS)",
+          "dienstbezeichnung": "WFS RP ATKIS Basis-DLM (Shape)",
+          "get_capabilities_url": "https://geo5.service24.rlp.de/wfs/basisdlm_shape_rp.fcgi?service=WFS&request=GetCapabilities",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Korrigiert. Ersetzt den nicht funktionalen Dienst. URL war bei Prüfung nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": "HY-P, TN"
+        }
+      ]
+    },
+    {
+      "name": "Saarland",
+      "kuerzel": "SL",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS",
+          "dienstbezeichnung": "WFS ALKIS Vereinfacht",
+          "get_capabilities_url": "https://geoportal.saarland.de/mapbender/php/wfs.php?INSPIRE=1&FEATURETYPE_ID=402&REQUEST=GetCapabilities&SERVICE=WFS&VERSION=2.0.0",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. URL aus Metadaten extrahiert, Portal selbst war nicht erreichbar.",
+          "funktional": false,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "INSPIRE-WFS Adressen",
+          "get_capabilities_url": "https://geoportal.saarland.de/mapbender/php/wfs.php?INSPIRE=1&FEATURETYPE_ID=1926&REQUEST=GetCapabilities&SERVICE=WFS&VERSION=2.0.0",
+          "lizenz": "dl-de-by-2.0",
+          "status": "Neu gefunden. URL aus Metadaten extrahiert.",
+          "funktional": false,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Gewässer",
+          "dienstbezeichnung": "WFS Oberflächengewässer und Auen",
+          "get_capabilities_url": "URL muss über Metadatenkatalog recherchiert werden",
+          "lizenz": "cc-by-4.0",
+          "status": "Neu gefunden. Dienst aus dem Landschaftsprogramm.",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen",
+          "dienstbezeichnung": "WFS Verkehr",
+          "get_capabilities_url": "https://geoportal.saarland.de/mapbender/php/wfs.php?INSPIRE=1&FEATURETYPE_ID=951&REQUEST=GetCapabilities&SERVICE=WFS&VERSION=2.0.0",
+          "lizenz": "cc-by-4.0",
+          "status": "Neu gefunden. INSPIRE-konformer Dienst für das Straßennetz.",
+          "funktional": false,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Sachsen",
+      "kuerzel": "SN",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (vereinfacht)",
+          "dienstbezeichnung": "ALKIS-WFS",
+          "get_capabilities_url": "https://geodienste.sachsen.de/aaa/public_alkis/vereinf/wfs?request=GetCapabilities&service=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Validiert & Funktional. Stabiler Dienst mit vereinfachtem AdV-Schema.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Gewässer",
+          "dienstbezeichnung": "WFS Fließ- und Standgewässernetz",
+          "get_capabilities_url": "https://luis.sachsen.de/arcgis/services/wasser/gewaesser/MapServer/WFSServer?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de-by-2-0",
+          "status": "Neu gefunden & Validiert. Umfassender Dienst für das Gewässernetz.",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        }
+      ]
+    },
+    {
+      "name": "Sachsen-Anhalt",
+      "kuerzel": "ST",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (vereinfacht)",
+          "dienstbezeichnung": "WFS ST ALKIS Vereinfacht",
+          "get_capabilities_url": "https://www.geodatenportal.sachsen-anhalt.de/wss/service/ST_LVermGeo_ALKIS_WFS_OpenData/guest?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities",
+          "lizenz": "dl-de/by-2.0",
+          "status": "Validiert & Korrigiert. Dies ist die neue, funktionsfähige URL für den Dienst.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "INSPIRE-WFS ST Adressen Hauskoordinaten",
+          "get_capabilities_url": "https://www.geodatenportal.sachsen-anhalt.de/wss/service/INSPIRE_LVermGeo_WFS_AD/guest?service=wfs&version=2.0.0&request=getcapabilities",
+          "lizenz": "dl-de/by-2.0",
+          "status": "Validiert & Korrigiert. Dies ist die neue, funktionsfähige URL für den INSPIRE Adressdienst (AD).",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Tatsächliche Nutzung",
+          "dienstbezeichnung": "WFS ST Bodendaten",
+          "get_capabilities_url": "https://www.geodatenportal.sachsen-anhalt.de/arcgis/services/LAGB/LAGB_Bodendaten_B1_OpenData/MapServer/WFSServer?SERVICE=WFS&REQUEST=GetCapabilities",
+          "lizenz": "dl-de/by-2.0",
+          "status": "Validiert & Korrigiert. Ersetzt den nicht funktionalen INSPIRE LU Dienst. Bietet umfassende Bodendaten.",
+          "funktional": true,
+          "inspire_thema": "LU (Land Use)"
+        },
+        {
+          "datentyp": "Gewässer (ATKIS)",
+          "dienstbezeichnung": "WFS LHW Gewässerfachdaten",
+          "get_capabilities_url": "https://www.geodatenportal.sachsen-anhalt.de/wss/service/LHW_Gewaesserfachdaten_WFS/guest?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2.0",
+          "status": "Validiert & Korrigiert. URL war bei Prüfung nicht erreichbar. Fachdienst des LHW.",
+          "funktional": false,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen (ATKIS)",
+          "dienstbezeichnung": "WFS klassifiziertes Straßennetz",
+          "get_capabilities_url": "https://www.geodatenportal.sachsen-anhalt.de/gfds/ws/wfs/a78d7bc1-ffbb-cf76/GDI-LSA_LSBB_STRASSENNETZE/ows.wfs?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de-by-2.0",
+          "status": "Validiert & Korrigiert. Dies ist die neue, funktionsfähige URL für den Straßennetz-Dienst.",
+          "funktional": true,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    },
+    {
+      "name": "Schleswig-Holstein",
+      "kuerzel": "SH",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (AdV-konform)",
+          "dienstbezeichnung": "WFS ALKIS",
+          "get_capabilities_url": "https://service.gdi-sh.de/wss/service/ALKIS-WFS/httpauth",
+          "lizenz": "dl-de/by-2-0 (meist)",
+          "status": "Neu gefunden. Dienst erfordert Authentifizierung.",
+          "funktional": false,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "ALKIS (vereinfacht)",
+          "dienstbezeichnung": "WFS ALKIS Vereinfacht",
+          "get_capabilities_url": "https://service.gdi-sh.de/wss/service/ALKIS-WFS-VEREINF/httpauth",
+          "lizenz": "dl-de/by-2-0 (meist)",
+          "status": "Neu gefunden. Dienst erfordert Authentifizierung.",
+          "funktional": false,
+          "inspire_thema": null
+        }
+      ]
+    },
+    {
+      "name": "Thüringen",
+      "kuerzel": "TH",
+      "wfs_dienste": [
+        {
+          "datentyp": "ALKIS (AdV-konform)",
+          "dienstbezeichnung": "AdV ALKIS WFS",
+          "get_capabilities_url": "https://www.geoproxy.geoportal-th.de/geoproxy/services/adv_alkis_wfs?SERVICE=WFS&REQUEST=GetCapabilities",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Zentraler ALKIS-Dienst über den Geoproxy.",
+          "funktional": true,
+          "inspire_thema": null
+        },
+        {
+          "datentyp": "Adressen",
+          "dienstbezeichnung": "INSPIRE-WFS TH Adressen Hauskoordinaten",
+          "get_capabilities_url": "URL muss über Metadatenkatalog recherchiert werden",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden. Dienst für INSPIRE Adressen (AD).",
+          "funktional": true,
+          "inspire_thema": "AD (Addresses)"
+        },
+        {
+          "datentyp": "Gewässer (ATKIS)",
+          "dienstbezeichnung": "INSPIRE-WFS TH Hydro - Phys. Gewässer ATKIS Basis-DLM",
+          "get_capabilities_url": "https://www.geoproxy.geoportal-th.de/geoproxy/services/INSPIREhy-p_wfs?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. Dienst für INSPIRE Gewässer (HY-P).",
+          "funktional": true,
+          "inspire_thema": "HY-P (Hydrography - Physical Waters)"
+        },
+        {
+          "datentyp": "Straßen",
+          "dienstbezeichnung": "Klassifiziertes Straßennetz Thüringen WFS",
+          "get_capabilities_url": "https://www.geoproxy.geoportal-th.de/geoproxy/services/STRNETZ_wfs?REQUEST=GetCapabilities&SERVICE=WFS",
+          "lizenz": "dl-de/by-2-0",
+          "status": "Neu gefunden & Validiert. Dienst für das klassifizierte Straßennetz.",
+          "funktional": true,
+          "inspire_thema": "TN (Transport Networks)"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,426 @@
+{
+    "Baden-Württemberg": [
+      {
+        "Bundesland": "Baden-Württemberg (BW)",
+        "Datentyp": "ALKIS (Flurstück, Gebäude, Nutzung etc.)",
+        "Dienstbezeichnung": "WFS LGL-BW ALKIS",
+        "WFS_GetCapabilities_URL": "https://owsproxy.lgl-bw.de/owsproxy/wfs/WFS_LGL-BW_ALKIS?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Umfassender ALKIS-Dienst"
+      },
+      {
+        "Bundesland": "BW",
+        "Datentyp": "Adressen (Geogr. Bez.)",
+        "Dienstbezeichnung": "INSPIRE-WFS BW Geogr. Bez. ALKIS",
+        "WFS_GetCapabilities_URL": "URL via Geoportal-BW Suche",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Enthält ggf. keine Hausnummern"
+      },
+      {
+        "Bundesland": "BW",
+        "Datentyp": "Gewässer (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS BW Hydro - Phys. Gew. ATKIS BasisDLM",
+        "WFS_GetCapabilities_URL": "URL via Geoportal-BW Suche",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Aus Basis-DLM"
+      },
+      {
+        "Bundesland": "BW",
+        "Datentyp": "Straßen (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS BW Verkehrsnetz ATKIS BasisDLM",
+        "WFS_GetCapabilities_URL": "URL via Geoportal-BW Suche",
+        "Lizenz": "dl-de/by-2.0",
+        "Bemerkungen": "Aus Basis-DLM"
+      }
+    ],
+    "Bayern": [
+      {
+        "Bundesland": "Bayern (BY)",
+        "Datentyp": "Alle Typen",
+        "Dienstbezeichnung": "Diverse Dienste",
+        "WFS_GetCapabilities_URL": "URLs via Geoportal Bayern Suche",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Open Data WFS verfügbar, URLs nicht direkt gelistet"
+      }
+    ],
+    "Berlin": [
+      {
+        "Bundesland": "Berlin (BE)",
+        "Datentyp": "Flurstücke",
+        "Dienstbezeichnung": "ALKIS Berlin Flurstücke",
+        "WFS_GetCapabilities_URL": "https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_wfs_alkis_flurstuecke",
+        "Lizenz": "dl-de-by-2.0",
+        "Bemerkungen": null
+      },
+      {
+        "Bundesland": "BE",
+        "Datentyp": "Gebäude",
+        "Dienstbezeichnung": "ALKIS Berlin Gebäude",
+        "WFS_GetCapabilities_URL": "https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_wfs_alkis_gebaeudeflaechen",
+        "Lizenz": "dl-de-by-2.0",
+        "Bemerkungen": null
+      },
+      {
+        "Bundesland": "BE",
+        "Datentyp": "Tatsächliche Nutzung",
+        "Dienstbezeichnung": "ALKIS Berlin Tatsächliche Nutzung",
+        "WFS_GetCapabilities_URL": "https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_wfs_alkis_tatsaechlichenutzungflaechen",
+        "Lizenz": "dl-de-by-2.0",
+        "Bemerkungen": null
+      },
+      {
+        "Bundesland": "BE",
+        "Datentyp": "Gewässer (Stehend)",
+        "Dienstbezeichnung": "ATKIS Stehendes Gewässer (Fläche)",
+        "WFS_GetCapabilities_URL": "https://fbinter.stadt-berlin.de/fb/wfs/geometry/senstadt/re_gewasserst",
+        "Lizenz": "dl-de-by-2.0",
+        "Bemerkungen": null
+      },
+      {
+        "Bundesland": "BE",
+        "Datentyp": "Straßennetz",
+        "Dienstbezeichnung": "Detailnetz Berlin",
+        "WFS_GetCapabilities_URL": "https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_detailnetz_gswfs",
+        "Lizenz": "dl-de-by-2.0",
+        "Bemerkungen": null
+      }
+    ],
+    "Brandenburg": [
+      {
+        "Bundesland": "Brandenburg (BB)",
+        "Datentyp": "Flurstücke",
+        "Dienstbezeichnung": "INSPIRE-WFS Flurstücke/Grundstücke ALKIS BB",
+        "WFS_GetCapabilities_URL": "https://inspire.brandenburg.de/services/cp_alkis_wfs?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE CP"
+      },
+      {
+        "Bundesland": "BB",
+        "Datentyp": "Gebäude",
+        "Dienstbezeichnung": "INSPIRE-WFS Gebäude – 2D ALKIS BB",
+        "WFS_GetCapabilities_URL": "https://inspire.brandenburg.de/services/bu_alkis_wfs?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE BU"
+      },
+      {
+        "Bundesland": "BB",
+        "Datentyp": "Adressen",
+        "Dienstbezeichnung": "INSPIRE-WFS Adressen ALKIS BB",
+        "WFS_GetCapabilities_URL": "https://inspire.brandenburg.de/services/ad_alkis_wfs?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE AD"
+      },
+      {
+        "Bundesland": "BB",
+        "Datentyp": "Gewässer (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS Hydro - Phys. Gew. ATKIS Basis-DLM BB",
+        "WFS_GetCapabilities_URL": "https://inspire.brandenburg.de/services/hy-p_bdlm_wfs?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE HY-P"
+      },
+      {
+        "Bundesland": "BB",
+        "Datentyp": "Straßen (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS Verkehrsnetze ATKIS Basis-DLM BB",
+        "WFS_GetCapabilities_URL": "https://inspire.brandenburg.de/services/tn_bdlm_wfs?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE TN"
+      }
+    ],
+    "Bremen": [
+      {
+        "Bundesland": "Bremen (HB)",
+        "Datentyp": "ALKIS (Flurstück, Gebäude, Nutzung etc.)",
+        "Dienstbezeichnung": "WFS ALKIS Land Bremen",
+        "WFS_GetCapabilities_URL": "https://opendata.lgln.niedersachsen.de/doorman/noauth/alkishb_wfs?Service=WFS&Request=GetCapabilities",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": "Via LGLN Niedersachsen bereitgestellt"
+      },
+      {
+        "Bundesland": "HB",
+        "Datentyp": "Adressen",
+        "Dienstbezeichnung": "WFS ALKIS - Gebäudeadressen Land Bremen",
+        "WFS_GetCapabilities_URL": "https://geodienste.bremen.de/wfs_AX_GeoreferenzierteGebaeudeadresse?REQUEST=GetCapabilities&SERVICE=WFS&VERSION=1.1.0",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": null
+      },
+      {
+        "Bundesland": "HB",
+        "Datentyp": "Hausumringe",
+        "Dienstbezeichnung": "WFS ALKIS - Hausumringe Bremen",
+        "WFS_GetCapabilities_URL": "https://geodienste.bremen.de/wfs_alkis_hausumringe?REQUEST=GetCapabilities&SERVICE=WFS&VERSION=1.1.0",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": null
+      }
+    ],
+    "Hamburg": [
+      {
+        "Bundesland": "Hamburg (HH)",
+        "Datentyp": "Flurstücke",
+        "Dienstbezeichnung": "INSPIRE-WFS HH Flurstücke/Grundstücke ALKIS",
+        "WFS_GetCapabilities_URL": "https://geodienste.hamburg.de/HH_WFS_INSPIRE_Flurstuecke?SERVICE=WFS&REQUEST=GetCapabilities",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE CP"
+      },
+      {
+        "Bundesland": "HH",
+        "Datentyp": "Gebäude",
+        "Dienstbezeichnung": "INSPIRE-WFS HH Gebäude - 2D ALKIS",
+        "WFS_GetCapabilities_URL": "https://geodienste.hamburg.de/HH_WFS_INSPIRE_Gebaeude_2D?SERVICE=WFS&REQUEST=GetCapabilities",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE BU"
+      },
+      {
+        "Bundesland": "HH",
+        "Datentyp": "Gewässer (Einzugsgebiete)",
+        "Dienstbezeichnung": "WFS Gewässer-Einzugsgebiete Hamburg",
+        "WFS_GetCapabilities_URL": "https://geodienste.hamburg.de/HH_WFS_Gewaesser_Einzugsgebiete?SERVICE=WFS&REQUEST=GetCapabilities",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": null
+      },
+      {
+        "Bundesland": "HH",
+        "Datentyp": "Straßennetz",
+        "Dienstbezeichnung": "WFS Straßen- und Wegenetz Hamburg",
+        "WFS_GetCapabilities_URL": "https://geodienste.hamburg.de/HH_WFS_Strassennetz?SERVICE=WFS&REQUEST=GetCapabilities",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "HH-SIB Daten"
+      }
+    ],
+    "Hessen": [
+      {
+        "Bundesland": "Hessen (HE)",
+        "Datentyp": "ALKIS (Flurstück, Gebäude, Nutzung etc.)",
+        "Dienstbezeichnung": "WFS HE ALKIS Vereinfacht",
+        "WFS_GetCapabilities_URL": "https://www.gds.hessen.de/wfs2/aaa-suite/services/alkis_vereinfacht?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Vereinfachtes Schema"
+      },
+      {
+        "Bundesland": "HE",
+        "Datentyp": "Gewässer (ALKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS HE Hydro – Phys. Gew. ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.geoportal.hessen.de/registry/wfs/719?REQUEST=GetCapabilities&VERSION=2.0.0&SERVICE=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "INSPIRE HY-P"
+      },
+      {
+        "Bundesland": "HE",
+        "Datentyp": "Adressen / Straßen",
+        "Dienstbezeichnung": "Diverse Dienste",
+        "WFS_GetCapabilities_URL": "URLs via Geoportal Hessen Suche",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "WFS für INSPIRE AD/TN verfügbar"
+      }
+    ],
+    "Mecklenburg-Vorpommern": [
+      {
+        "Bundesland": "Mecklenburg-Vorpommern (MV)",
+        "Datentyp": "Flurstücke",
+        "Dienstbezeichnung": "INSPIRE-WFS MV Flurstücke/Grundstücke ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.geodaten-mv.de/dienste/inspire_cp_alkis_download?request=GetCapabilities&service=WFS",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": "INSPIRE CP"
+      },
+      {
+        "Bundesland": "MV",
+        "Datentyp": "Gebäude",
+        "Dienstbezeichnung": "INSPIRE-WFS MV Gebäude - 2D ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.geodaten-mv.de/dienste/inspire_bu_core2d_alkis_download?request=GetCapabilities&service=WFS",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": "INSPIRE BU"
+      },
+      {
+        "Bundesland": "MV",
+        "Datentyp": "Tatsächliche Nutzung",
+        "Dienstbezeichnung": "INSPIRE-WFS MV Existierende Bodennutzung ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.geodaten-mv.de/dienste/inspire_lu_alkis_download?request=GetCapabilities&service=WFS",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": "INSPIRE LU"
+      },
+      {
+        "Bundesland": "MV",
+        "Datentyp": "Gewässer (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS MV Hydro - Phys. Gew. ATKIS Basis-DLM",
+        "WFS_GetCapabilities_URL": "https://www.geodaten-mv.de/dienste/inspire_hy_p_atkis_bdlm_download?request=GetCapabilities&service=WFS",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": "INSPIRE HY-P"
+      },
+      {
+        "Bundesland": "MV",
+        "Datentyp": "Straßen (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS MV Verkehrsnetz ATKIS Basis-DLM",
+        "WFS_GetCapabilities_URL": "https://www.geodaten-mv.de/dienste/inspire_tn_atkis_bdlm_download?request=GetCapabilities&service=WFS",
+        "Lizenz": "CC BY 4.0",
+        "Bemerkungen": "INSPIRE TN"
+      }
+    ],
+    "Niedersachsen": [
+      {
+        "Bundesland": "Niedersachsen (NI)",
+        "Datentyp": "Alle Typen",
+        "Dienstbezeichnung": "Diverse Dienste",
+        "WFS_GetCapabilities_URL": "URLs via OpenGeoData Portal Niedersachsen",
+        "Lizenz": "dl-de/by-2-0 (meist)",
+        "Bemerkungen": "Portal bietet Übersicht über verfügbare Dienste"
+      }
+    ],
+    "Nordrhein-Westfalen": [
+      {
+        "Bundesland": "Nordrhein-Westfalen (NRW)",
+        "Datentyp": "Flurstücke",
+        "Dienstbezeichnung": "INSPIRE-WFS NW Flurstücke/Grundstücke ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-flurstuecke_alkis?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-zero-de/2.0",
+        "Bemerkungen": "INSPIRE CP"
+      },
+      {
+        "Bundesland": "NRW",
+        "Datentyp": "Gebäude",
+        "Dienstbezeichnung": "INSPIRE-WFS NW Gebäude - 2D ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-gebaeude-2d_alkis?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-zero-de/2.0",
+        "Bemerkungen": "INSPIRE BU"
+      },
+      {
+        "Bundesland": "NRW",
+        "Datentyp": "Adressen",
+        "Dienstbezeichnung": "INSPIRE-WFS NW Adressen ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-adressen_gebref?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-zero-de/2.0",
+        "Bemerkungen": "INSPIRE AD"
+      },
+      {
+        "Bundesland": "NRW",
+        "Datentyp": "Tatsächliche Nutzung",
+        "Dienstbezeichnung": "INSPIRE-WFS NW Exist. Bodennutzung ALKIS",
+        "WFS_GetCapabilities_URL": "https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-existierende-bodennutzung_alkis?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-zero-de/2.0",
+        "Bemerkungen": "INSPIRE LU"
+      },
+      {
+        "Bundesland": "NRW",
+        "Datentyp": "Gewässer (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS NW Hydro - Phys. Gew. ATKIS Basis-DLM",
+        "WFS_GetCapabilities_URL": "https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-gewaesser-physisch_atkis-basis-dlm?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-zero-de/2.0",
+        "Bemerkungen": "INSPIRE HY-P"
+      },
+      {
+        "Bundesland": "NRW",
+        "Datentyp": "Straßen (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS NW Verkehrsnetze ATKIS Basis-DLM",
+        "WFS_GetCapabilities_URL": "https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-verkehrsnetze_atkis-basis-dlm?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-zero-de/2.0",
+        "Bemerkungen": "INSPIRE TN"
+      }
+    ],
+    "Rheinland-Pfalz": [
+      {
+        "Bundesland": "Rheinland-Pfalz (RP)",
+        "Datentyp": "ALKIS (Flurstück, Gebäude, Nutzung etc.)",
+        "Dienstbezeichnung": "WFS RP ALKIS Vereinfacht",
+        "WFS_GetCapabilities_URL": "https://www.geoportal.rlp.de/registry/wfs/519?REQUEST=GetCapabilities&VERSION=2.0.0&SERVICE=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Vereinfachtes Schema"
+      },
+      {
+        "Bundesland": "RP",
+        "Datentyp": "Gewässer/Straßen (ATKIS)",
+        "Dienstbezeichnung": "WFS RP ATKIS Basis-DLM (Shape)",
+        "WFS_GetCapabilities_URL": "https://www.geoportal.rlp.de/registry/wfs/606?REQUEST=GetCapabilities&VERSION=2.0.0&SERVICE=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Enthält diverse ATKIS-Objekte"
+      }
+    ],
+    "Saarland": [
+      {
+        "Bundesland": "Saarland (SL)",
+        "Datentyp": "Alle Typen",
+        "Dienstbezeichnung": "Diverse Dienste",
+        "WFS_GetCapabilities_URL": "URLs via Geoportal Saarland Suche",
+        "Lizenz": "dl-de/by-2-0 (meist)",
+        "Bemerkungen": "URLs nicht direkt zugänglich/gelistet"
+      }
+    ],
+    "Sachsen": [
+      {
+        "Bundesland": "Sachsen (SN)",
+        "Datentyp": "ALKIS (Flurstück, Gebäude, Nutzung etc.)",
+        "Dienstbezeichnung": "ALKIS-WFS",
+        "WFS_GetCapabilities_URL": "https://geodienste.sachsen.de/aaa/public_alkis/vereinf/wfs?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2-0",
+        "Bemerkungen": "Vereinfachtes AdV-Schema"
+      },
+      {
+        "Bundesland": "SN",
+        "Datentyp": "Adressen/Gewässer/Straßen",
+        "Dienstbezeichnung": "Diverse Dienste",
+        "WFS_GetCapabilities_URL": "URLs via Geoportal Sachsen Suche",
+        "Lizenz": "dl-de/by-2-0 (meist)",
+        "Bemerkungen": null
+      }
+    ],
+    "Sachsen-Anhalt": [
+      {
+        "Bundesland": "Sachsen-Anhalt (ST)",
+        "Datentyp": "ALKIS (Flurstück, Gebäude, Nutzung etc.)",
+        "Dienstbezeichnung": "WFS ALKIS OpenData",
+        "WFS_GetCapabilities_URL": "https://www.geodatenportal.sachsen-anhalt.de/wss/service/ST_LVermGeo_ALKIS_WFS_OpenData/guest?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2.0",
+        "Bemerkungen": "Vereinfachtes Schema"
+      },
+      {
+        "Bundesland": "ST",
+        "Datentyp": "Adressen",
+        "Dienstbezeichnung": "INSPIRE-WFS ST Adressen Hauskoordinaten",
+        "WFS_GetCapabilities_URL": "https://geodatenportal.sachsen-anhalt.de/ows_INSPIRE_LVermGeo_ALKIS_AD_WFS?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2.0",
+        "Bemerkungen": "INSPIRE AD"
+      },
+      {
+        "Bundesland": "ST",
+        "Datentyp": "Tatsächliche Nutzung",
+        "Dienstbezeichnung": "INSPIRE-WFS ST Bodennutzung ALKIS",
+        "WFS_GetCapabilities_URL": "https://geodatenportal.sachsen-anhalt.de/ows_INSPIRE_LVermGeo_ALKIS_ELU_WFS?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2.0",
+        "Bemerkungen": "INSPIRE LU"
+      },
+      {
+        "Bundesland": "ST",
+        "Datentyp": "Gewässer (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS ST Phys. Gewässer ATKIS Basis-DLM",
+        "WFS_GetCapabilities_URL": "https://geodatenportal.sachsen-anhalt.de/ows_INSPIRE_LVermGeo_ATKIS_HY-P_WFS?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2.0",
+        "Bemerkungen": "INSPIRE HY-P"
+      },
+      {
+        "Bundesland": "ST",
+        "Datentyp": "Straßen (ATKIS)",
+        "Dienstbezeichnung": "INSPIRE-WFS ST Verkehrsnetze ATKIS Basis-DLM",
+        "WFS_GetCapabilities_URL": "https://geodatenportal.sachsen-anhalt.de/ows_INSPIRE_LVermGeo_ATKIS_TN_WFS?request=GetCapabilities&service=WFS",
+        "Lizenz": "dl-de/by-2.0",
+        "Bemerkungen": "INSPIRE TN"
+      }
+    ],
+    "Schleswig-Holstein": [
+      {
+        "Bundesland": "Schleswig-Holstein (SH)",
+        "Datentyp": "Alle Typen",
+        "Dienstbezeichnung": "Diverse Dienste",
+        "WFS_GetCapabilities_URL": "URLs via GDI-SH Dienste-Liste",
+        "Lizenz": "dl-de/by-2-0 (meist)",
+        "Bemerkungen": "Portal bietet Übersicht über verfügbare Dienste"
+      }
+    ],
+    "Thüringen": [
+      {
+        "Bundesland": "Thüringen (TH)",
+        "Datentyp": "Alle Typen",
+        "Dienstbezeichnung": "Diverse Dienste",
+        "WFS_GetCapabilities_URL": "URLs via Geoportal Thüringen Downloadseite",
+        "Lizenz": "dl-de/by-2-0 (meist)",
+        "Bemerkungen": "Portal bietet Übersicht über verfügbare Dienste"
+      }
+    ]
+  }
