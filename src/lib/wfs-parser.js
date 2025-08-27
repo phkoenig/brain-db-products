@@ -24,6 +24,9 @@ class WFSCapabilitiesParser {
      */
     parse(xml) {
         try {
+            // Schritt 1: Frühzeitige Prüfung auf INSPIRE-Konformität anhand des Roh-XML
+            const isInspire = this._checkForInspireCompliance(xml);
+
             const parsedObj = this.parser.parse(xml);
             const serviceIdentification = this._extractServiceIdentification(parsedObj);
             const serviceProvider = this._extractServiceProvider(parsedObj);
@@ -35,7 +38,8 @@ class WFSCapabilitiesParser {
                 service: {
                     ...serviceIdentification,
                     ...serviceProvider,
-                    ...operationsMetadata
+                    ...operationsMetadata,
+                    isInspire: isInspire // Das Ergebnis der Prüfung hinzufügen
                 },
                 layers: layers,
                 layerCount: layers.length,
@@ -49,6 +53,19 @@ class WFSCapabilitiesParser {
     }
 
     /**
+     * Prüft das rohe XML auf Schlüsselindikatoren für INSPIRE-Konformität.
+     * Dies ist oft zuverlässiger als das geparste Objekt, da es Namespaces direkt prüft.
+     * @private
+     */
+    _checkForInspireCompliance(xmlString) {
+        if (!xmlString || typeof xmlString !== 'string') {
+            return false;
+        }
+        // INSPIRE-Dienste referenzieren fast immer die Schemas der Europäischen Kommission.
+        return xmlString.includes('inspire.ec.europa.eu');
+    }
+
+    /**
      * Extrahiert die ServiceIdentification-Informationen (Titel, Abstract, Version).
      * @private
      */
@@ -56,10 +73,20 @@ class WFSCapabilitiesParser {
         const serviceIdPath = this._findPath(parsedObj, 'ServiceIdentification');
         if (!serviceIdPath) return {};
 
+        // Umgang mit multiplen Versionsnummern (z.B. "1.1.0, 2.0.0")
+        let versions = serviceIdPath.ServiceTypeVersion || '';
+        if (versions && typeof versions === 'string' && versions.includes(',')) {
+            versions = versions.split(',').map(v => v.trim()); // Alle Versionen als Array zurückgeben
+        } else if (versions) {
+            versions = [versions]; // Einzelne Version in ein Array packen
+        } else {
+            versions = []; // Leeres Array, wenn nichts gefunden wird
+        }
+
         return {
             title: serviceIdPath.Title || '',
             abstract: serviceIdPath.Abstract || '',
-            version: serviceIdPath.ServiceTypeVersion || '',
+            versions: versions, // Umbenannt von version zu versions
         };
     }
 
@@ -71,10 +98,20 @@ class WFSCapabilitiesParser {
         const operationsPath = this._findPath(parsedObj, 'OperationsMetadata');
         if (!operationsPath) return { outputFormats: [] };
 
-        const getFeatureOp = operationsPath.Operation?.find(op => op['@_name'] === 'GetFeature');
-        if (!getFeatureOp) return { outputFormats: [] };
+        // Absicherung für den Fall, dass 'Operation' kein Array ist
+        const operations = Array.isArray(operationsPath.Operation) 
+            ? operationsPath.Operation 
+            : [operationsPath.Operation].filter(Boolean);
 
-        const outputFormatParam = getFeatureOp.Parameter?.find(p => p['@_name'] === 'outputFormat');
+        const getFeatureOp = operations.find(op => op && op['@_name'] === 'GetFeature');
+        if (!getFeatureOp) return { outputFormats: [] };
+        
+        // Absicherung für den Fall, dass 'Parameter' nicht existiert oder kein Array ist
+        const parameters = getFeatureOp.Parameter ? (Array.isArray(getFeatureOp.Parameter) 
+            ? getFeatureOp.Parameter 
+            : [getFeatureOp.Parameter]) : [];
+
+        const outputFormatParam = parameters.find(p => p && p['@_name'] === 'outputFormat');
         if (!outputFormatParam) return { outputFormats: [] };
 
         const formats = outputFormatParam.AllowedValues?.Value || outputFormatParam.Value || [];

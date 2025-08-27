@@ -136,9 +136,10 @@ if (require.main === module) {
   const batchValidator = new WFSURLBatchValidator();
   batchValidator.validateAllWFSURLs()
     .catch(console.error)
-    .finally(() => {
-        console.log("\nSkript beendet.");
-        process.exit(0); // Expliziter Exit-Befehl
+    .finally(async () => {
+      console.log("\nSkript beendet.");
+      await supabase.end(); // Explizites Beenden der Supabase-Verbindung
+      process.exit(0); 
     });
 }
 

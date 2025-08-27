@@ -98,20 +98,22 @@ class DatabasePopulator {
             return;
         }
 
-        // 1. Stream-Tabelle aktualisieren
-        const streamUpdateData = {
+        // Schritt 3: wfs_streams Tabelle mit den neuen Metadaten aktualisieren
+        const serviceUpdateData = {
             service_title: parsedData.service.title,
             service_abstract: parsedData.service.abstract,
-            wfs_version: parsedData.service.version,
+            wfs_version: parsedData.service.versions, // NEU: 'versions' (Array) statt 'version'
             provider_name: parsedData.service.providerName,
             provider_site: parsedData.service.providerSite,
+            standard_outputformate: parsedData.service.outputFormats,
             layer_anzahl: parsedData.layerCount,
+            inspire_konform: parsedData.service.isInspire, // NEU: Wert aus Parser übernehmen
             updated_at: new Date().toISOString()
         };
 
         const { error: updateError } = await this.supabase
             .from('wfs_streams')
-            .update(streamUpdateData)
+            .update(serviceUpdateData)
             .eq('id', stream.id);
 
         if (updateError) {
@@ -178,6 +180,6 @@ if (require.main === module) {
         .catch(console.error)
         .finally(() => {
             console.log("\nSkript beendet.");
-            process.exit(0);
+            process.exit(0); // Korrekter Befehl zum sauberen Beenden
         });
 }

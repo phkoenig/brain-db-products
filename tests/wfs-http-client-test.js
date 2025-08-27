@@ -46,7 +46,7 @@ const TEST_WFS_URLS = {
  */
 class WFSHTTPClient {
   constructor(options = {}) {
-    this.timeout = options.timeout || 20000; // 20 Sekunden Timeout
+    this.timeout = options.timeout || 60000; // Timeout auf 60 Sekunden erhöht
     this.maxRedirects = 3;
     this.userAgent = 'WFS-Catalog-Bot/1.0';
   }
@@ -55,60 +55,75 @@ class WFSHTTPClient {
    * Führt einen HTTP-Request aus
    */
   async makeRequest(url) {
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          // Wir signalisieren, dass wir komprimierte Antworten akzeptieren
-          'Accept-Encoding': 'gzip, deflate, br',
-        },
-        // Wichtig: Wir fordern die Antwort als Buffer an, um sie dekomprimieren zu können
-        responseType: 'arraybuffer', 
-        timeout: this.timeout
-      });
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await axios.get(url, {
+          headers: {
+            'Accept-Encoding': 'gzip, deflate, br',
+          },
+          responseType: 'stream', // Wichtig: Antwort als Stream verarbeiten
+          timeout: this.timeout
+        });
 
-      let responseDataBuffer = response.data;
+        const stream = response.data;
+        let chunks = [];
+        let totalSize = 0;
+        const sizeLimit = 15 * 1024 * 1024; // 15 MB Reißleine
 
-      // Prüfe den Content-Encoding Header und dekomprimiere bei Bedarf
-      const encoding = response.headers['content-encoding'];
+        stream.on('data', chunk => {
+          totalSize += chunk.length;
+          if (totalSize > sizeLimit) {
+            stream.destroy(); // Download aktiv abbrechen
+            resolve({ 
+              statusCode: -3, // Eigener Status-Code für "zu groß"
+              error: `Download abgebrochen: Antwort war größer als ${sizeLimit / 1024 / 1024} MB`,
+              headers: response.headers 
+            });
+            return;
+          }
+          chunks.push(chunk);
+        });
 
-      if (encoding === 'gzip') {
-        responseDataBuffer = zlib.gunzipSync(responseDataBuffer);
-      } else if (encoding === 'deflate') {
-        responseDataBuffer = zlib.inflateSync(responseDataBuffer);
-      } 
-      // br (Brotli) wird hier nicht explizit behandelt, aber axios sollte es ggf. schon tun.
+        stream.on('end', () => {
+          let responseDataBuffer = Buffer.concat(chunks);
+          const encoding = response.headers['content-encoding'];
 
-      // Konvertiere den finalen Buffer zu einem String
-      const responseText = responseDataBuffer.toString();
+          try {
+            if (encoding === 'gzip') {
+              responseDataBuffer = zlib.gunzipSync(responseDataBuffer);
+            } else if (encoding === 'deflate') {
+              responseDataBuffer = zlib.inflateSync(responseDataBuffer);
+            }
+            const responseText = responseDataBuffer.toString();
+            resolve({
+              statusCode: response.status,
+              data: responseText,
+              headers: response.headers
+            });
+          } catch (e) {
+             resolve({ statusCode: -4, error: `Dekomprimierung fehlgeschlagen: ${e.message}`, headers: response.headers });
+          }
+        });
 
-      return {
-        statusCode: response.status,
-        data: responseText,
-        headers: response.headers // Header explizit durchreichen
-      };
-    } catch (error) {
-      if (error.response) {
-        // Auch im Fehlerfall versuchen wir, die Header durchzureichen
-        return {
-          statusCode: error.response.status,
-          data: error.response.data ? error.response.data.toString() : null,
-          error: `HTTP Error ${error.response.status}`,
-          headers: error.response.headers || {}
-        };
-      } else if (error.request) {
-        return {
-          statusCode: -1, // Kein Statuscode, da keine Antwort erhalten wurde
-          error: 'Network Error: No response received.',
-          headers: {} // Keine Header im Fehlerfall
-        };
-      } else {
-        return {
-          statusCode: -2, // Anderer Fehler
-          error: `Request Error: ${error.message}`,
-          headers: {} // Keine Header im Fehlerfall
-        };
+        stream.on('error', err => {
+          resolve({ statusCode: -1, error: `Netzwerk Stream Fehler: ${err.message}`, headers: response.headers || {} });
+        });
+
+      } catch (error) {
+        if (error.response) {
+          resolve({
+            statusCode: error.response.status,
+            data: error.response.data ? error.response.data.toString() : null,
+            error: `HTTP Error ${error.response.status}`,
+            headers: error.response.headers || {}
+          });
+        } else if (error.request) {
+          resolve({ statusCode: -1, error: 'Netzwerk Error: Keine Antwort erhalten.', headers: {} });
+        } else {
+          resolve({ statusCode: -2, error: `Anfrage-Fehler: ${error.message}`, headers: {} });
+        }
       }
-    }
+    });
   }
 
   /**
@@ -200,35 +215,43 @@ class WFSHTTPClient {
   }
 
   /**
-   * Führt eine GetFeature-Anfrage für einen bestimmten Layer aus.
-   * @param {string} baseUrl - Die Basis-URL des WFS-Dienstes.
-   * @param {string} typeName - Der exakte Name des Layers (FeatureType).
-   * @param {object} options - Zusätzliche Optionen.
-   * @param {number} [options.count=10] - Die maximale Anzahl der abzurufenden Features.
-   * @param {string} [options.outputFormat='application/json'] - Das gewünschte Ausgabeformat.
-   * @param {string} [options.version='2.0.0'] - Die zu verwendende WFS-Version.
+   * Holt die Features (Geodaten) für einen bestimmten Layer von einem WFS-Stream.
+   * @param {object} params - Die Parameter für die Anfrage.
    * @returns {Promise<object>} Ein Objekt mit den abgerufenen Feature-Daten.
    */
-  async getFeatures(baseUrl, typeName, options = {}) {
-    const { count = 10, outputFormat = 'application/json', version = '2.0.0' } = options;
-    const url = new URL(baseUrl);
-    const params = url.searchParams;
+  async getFeatures({ streamUrl, layerName, wfsVersion = '2.0.0', outputFormat = null, outputFormats = [], count = 10 }) {
+    // SICHERSTELLEN, dass wfsVersion ein String ist, kein Array
+    const versionString = Array.isArray(wfsVersion) ? wfsVersion[0] : wfsVersion;
 
-    params.set('service', 'WFS');
-    params.set('request', 'GetFeature');
-    params.set('version', version);
-    
-    // KORREKTUR: WFS 2.0.0 verwendet 'typeNames' (Plural), ältere Versionen 'typeName' (Singular)
-    if (version.startsWith('2')) {
-        params.set('typeNames', typeName);
-    } else {
-        params.set('typeName', typeName);
+    const typeNameParam = versionString && versionString.startsWith('2.') ? 'typeNames' : 'typeName';
+    const countParamName = versionString && versionString.startsWith('2.') ? 'count' : 'maxFeatures'; // NEU: Intelligenter Parameter-Name
+    const baseUrl = streamUrl.includes('?') ? streamUrl.split('?')[0] : streamUrl;
+
+    // Intelligente Auswahl des Output-Formats mit Priorisierung
+    let preferredFormat = '';
+    if (outputFormat) { // Priorität 1: Ein explizit übergebenes Format wird immer bevorzugt
+        preferredFormat = outputFormat;
+    } else if (outputFormats && outputFormats.length > 0) { // Priorität 2: Intelligente Auswahl aus der Liste
+        const jsonFormat = outputFormats.find(f => f.toLowerCase().includes('json'));
+        if (jsonFormat) {
+            preferredFormat = jsonFormat;
+        } else {
+            preferredFormat = outputFormats[0]; // Nimm das erste verfügbare, wenn kein JSON da ist
+        }
+    } else { // Priorität 3: Allgemeiner Fallback
+        preferredFormat = 'application/json';
     }
 
-    params.set('count', count);
-    params.set('outputFormat', outputFormat);
+    const params = new URLSearchParams({
+      service: 'WFS',
+      request: 'GetFeature',
+      version: versionString,
+      [typeNameParam]: layerName,
+      [countParamName]: count.toString(), // NEU: Korrekten Parameter verwenden
+      outputFormat: preferredFormat
+    });
 
-    const fullUrl = `${url.origin}${url.pathname}?${params.toString()}`;
+    const fullUrl = `${baseUrl}?${params.toString()}`;
     console.log(`   🔍 Requesting Features: ${fullUrl}`);
 
     try {
@@ -238,7 +261,7 @@ class WFSHTTPClient {
       }
 
       // Wenn JSON angefordert wurde, versuche es zu parsen
-      if (outputFormat.toLowerCase().includes('json')) {
+      if (preferredFormat.toLowerCase().includes('json')) {
         try {
           const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
           return { success: true, data };
@@ -252,7 +275,7 @@ class WFSHTTPClient {
       }
 
     } catch (error) {
-      console.error(`   - Fehler bei GetFeature für ${typeName}:`, error.message);
+      console.error(`   - Fehler bei GetFeature für ${layerName}:`, error.message);
       return { success: false, error: error.message };
     }
   }

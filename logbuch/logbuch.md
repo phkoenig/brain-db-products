@@ -1,5 +1,18 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-08-28 14:00 - Meilenstein: WFS-Testskript gehärtet & Fehler-Analyse
+**Aufgaben:**
+- **Systematisches Debugging:** Ein schwerwiegender Fehler, der das `GetFeature`-Testskript zum vorzeitigen, stillen Absturz brachte, wurde systematisch eingekreist.
+- **Fehler-Isolation:** Durch eine "Teile und Herrsche"-Strategie (bereichsbasierte Tests) und das schrittweise Eliminieren von potenziellen Fehlerquellen (File-Logging, Prozess-Beendigung) konnte ein einzelner problematischer Layer als wahrscheinlicher Auslöser identifiziert werden.
+- **Skript-Robustheit erhöht:** Das Testskript wurde mehrfach umgebaut und gehärtet. Es verfügt nun über globale Fehler-Fänger, eine saubere Beendigung der Datenbankverbindung und flexible Test-Parameter, um spezifische Layer-Bereiche gezielt untersuchen zu können.
+
+**Ergebnis:**
+- Wir haben jetzt ein stabiles und robustes Test-Framework, mit dem wir die Ursache für die verbleibenden Abruf-Fehler präzise analysieren können.
+- Die ursprüngliche Erfolgsquote von ~47% wurde durch einen Bugfix bei der JSON-Analyse bereits als falsch identifiziert; die tatsächliche Quote ist deutlich höher.
+
+**Best Practice:**
+- Bei stillen Abstürzen in asynchronen Skripten ist die schrittweise Isolation der Problemquelle durch Eliminierung von Variablen (z.B. Logging-Mechanismen) und die Eingrenzung des Testbereichs ("Divide and Conquer") eine effektive Debugging-Strategie.
+
 ## 2025-08-28 12:00 - Meilenstein: WFS GetFeature erfolgreich & Client gehärtet
 
 **Aufgaben:**
