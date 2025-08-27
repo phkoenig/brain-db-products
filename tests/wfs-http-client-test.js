@@ -6,9 +6,11 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const https = require('https');
+const https = require('https-proxy-agent');
 const http = require('http');
 const { URL } = require('url');
+const axios = require('axios');
+const zlib = require('zlib');
 
 // Supabase Client Setup
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://jpmhwyjiuodsvjowddsm.supabase.co';
@@ -43,8 +45,8 @@ const TEST_WFS_URLS = {
  * WFS HTTP Client Klasse
  */
 class WFSHTTPClient {
-  constructor() {
-    this.timeout = 10000; // 10 Sekunden Timeout
+  constructor(options = {}) {
+    this.timeout = options.timeout || 20000; // 20 Sekunden Timeout
     this.maxRedirects = 3;
     this.userAgent = 'WFS-Catalog-Bot/1.0';
   }
@@ -52,70 +54,61 @@ class WFSHTTPClient {
   /**
    * Führt einen HTTP-Request aus
    */
-  async makeRequest(url, options = {}) {
-    return new Promise((resolve, reject) => {
-      try {
-        const parsedUrl = new URL(url);
-        const isHttps = parsedUrl.protocol === 'https:';
-        const client = isHttps ? https : http;
-        
-        const requestOptions = {
-          hostname: parsedUrl.hostname,
-          port: parsedUrl.port || (isHttps ? 443 : 80),
-          path: parsedUrl.pathname + parsedUrl.search,
-          method: 'GET',
-          timeout: options.timeout || this.timeout,
-          headers: {
-            'User-Agent': this.userAgent,
-            'Accept': 'application/xml, text/xml, */*',
-            'Accept-Encoding': 'gzip, deflate',
-            ...options.headers
-          }
+  async makeRequest(url) {
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          // Wir signalisieren, dass wir komprimierte Antworten akzeptieren
+          'Accept-Encoding': 'gzip, deflate, br',
+        },
+        // Wichtig: Wir fordern die Antwort als Buffer an, um sie dekomprimieren zu können
+        responseType: 'arraybuffer', 
+        timeout: this.timeout
+      });
+
+      let responseDataBuffer = response.data;
+
+      // Prüfe den Content-Encoding Header und dekomprimiere bei Bedarf
+      const encoding = response.headers['content-encoding'];
+
+      if (encoding === 'gzip') {
+        responseDataBuffer = zlib.gunzipSync(responseDataBuffer);
+      } else if (encoding === 'deflate') {
+        responseDataBuffer = zlib.inflateSync(responseDataBuffer);
+      } 
+      // br (Brotli) wird hier nicht explizit behandelt, aber axios sollte es ggf. schon tun.
+
+      // Konvertiere den finalen Buffer zu einem String
+      const responseText = responseDataBuffer.toString();
+
+      return {
+        statusCode: response.status,
+        data: responseText,
+        headers: response.headers // Header explizit durchreichen
+      };
+    } catch (error) {
+      if (error.response) {
+        // Auch im Fehlerfall versuchen wir, die Header durchzureichen
+        return {
+          statusCode: error.response.status,
+          data: error.response.data ? error.response.data.toString() : null,
+          error: `HTTP Error ${error.response.status}`,
+          headers: error.response.headers || {}
         };
-
-        const req = client.request(requestOptions, (res) => {
-          let data = '';
-          
-          res.on('data', (chunk) => {
-            data += chunk;
-          });
-          
-          res.on('end', () => {
-            resolve({
-              statusCode: res.statusCode,
-              headers: res.headers,
-              data: data,
-              url: url
-            });
-          });
-        });
-
-        req.on('error', (error) => {
-          reject({
-            error: error.message,
-            url: url,
-            type: 'network_error'
-          });
-        });
-
-        req.on('timeout', () => {
-          req.destroy();
-          reject({
-            error: 'Request timeout',
-            url: url,
-            type: 'timeout_error'
-          });
-        });
-
-        req.end();
-      } catch (error) {
-        reject({
-          error: error.message,
-          url: url,
-          type: 'url_parse_error'
-        });
+      } else if (error.request) {
+        return {
+          statusCode: -1, // Kein Statuscode, da keine Antwort erhalten wurde
+          error: 'Network Error: No response received.',
+          headers: {} // Keine Header im Fehlerfall
+        };
+      } else {
+        return {
+          statusCode: -2, // Anderer Fehler
+          error: `Request Error: ${error.message}`,
+          headers: {} // Keine Header im Fehlerfall
+        };
       }
-    });
+    }
   }
 
   /**
@@ -203,6 +196,64 @@ class WFSHTTPClient {
         finalUrl += `&version=${version}`;
       }
       return finalUrl;
+    }
+  }
+
+  /**
+   * Führt eine GetFeature-Anfrage für einen bestimmten Layer aus.
+   * @param {string} baseUrl - Die Basis-URL des WFS-Dienstes.
+   * @param {string} typeName - Der exakte Name des Layers (FeatureType).
+   * @param {object} options - Zusätzliche Optionen.
+   * @param {number} [options.count=10] - Die maximale Anzahl der abzurufenden Features.
+   * @param {string} [options.outputFormat='application/json'] - Das gewünschte Ausgabeformat.
+   * @param {string} [options.version='2.0.0'] - Die zu verwendende WFS-Version.
+   * @returns {Promise<object>} Ein Objekt mit den abgerufenen Feature-Daten.
+   */
+  async getFeatures(baseUrl, typeName, options = {}) {
+    const { count = 10, outputFormat = 'application/json', version = '2.0.0' } = options;
+    const url = new URL(baseUrl);
+    const params = url.searchParams;
+
+    params.set('service', 'WFS');
+    params.set('request', 'GetFeature');
+    params.set('version', version);
+    
+    // KORREKTUR: WFS 2.0.0 verwendet 'typeNames' (Plural), ältere Versionen 'typeName' (Singular)
+    if (version.startsWith('2')) {
+        params.set('typeNames', typeName);
+    } else {
+        params.set('typeName', typeName);
+    }
+
+    params.set('count', count);
+    params.set('outputFormat', outputFormat);
+
+    const fullUrl = `${url.origin}${url.pathname}?${params.toString()}`;
+    console.log(`   🔍 Requesting Features: ${fullUrl}`);
+
+    try {
+      const response = await this.makeRequest(fullUrl);
+      if (response.statusCode !== 200) {
+        throw new Error(`HTTP ${response.statusCode}: ${response.data}`);
+      }
+
+      // Wenn JSON angefordert wurde, versuche es zu parsen
+      if (outputFormat.toLowerCase().includes('json')) {
+        try {
+          const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+          return { success: true, data };
+        } catch (parseError) {
+          console.error(`   - Fehler beim Parsen der JSON-Antwort. Gebe Rohdaten zurück.`);
+          return { success: false, error: 'Konnte die JSON-Antwort nicht parsen.', data: response.data };
+        }
+      } else {
+        // Bei anderen Formaten (XML/GML), gib die Rohdaten als String zurück
+        return { success: true, data: response.data };
+      }
+
+    } catch (error) {
+      console.error(`   - Fehler bei GetFeature für ${typeName}:`, error.message);
+      return { success: false, error: error.message };
     }
   }
 

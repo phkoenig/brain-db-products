@@ -27,13 +27,15 @@ class WFSCapabilitiesParser {
             const parsedObj = this.parser.parse(xml);
             const serviceIdentification = this._extractServiceIdentification(parsedObj);
             const serviceProvider = this._extractServiceProvider(parsedObj);
+            const operationsMetadata = this._extractOperationsMetadata(parsedObj);
             const layers = this._extractLayers(parsedObj);
 
             return {
                 success: true,
                 service: {
                     ...serviceIdentification,
-                    ...serviceProvider
+                    ...serviceProvider,
+                    ...operationsMetadata
                 },
                 layers: layers,
                 layerCount: layers.length,
@@ -51,11 +53,33 @@ class WFSCapabilitiesParser {
      * @private
      */
     _extractServiceIdentification(parsedObj) {
-        const serviceId = parsedObj?.WFS_Capabilities?.ServiceIdentification || parsedObj?.ServiceIdentification || {};
+        const serviceIdPath = this._findPath(parsedObj, 'ServiceIdentification');
+        if (!serviceIdPath) return {};
+
         return {
-            title: serviceId.Title,
-            abstract: serviceId.Abstract,
-            version: serviceId.ServiceTypeVersion
+            title: serviceIdPath.Title || '',
+            abstract: serviceIdPath.Abstract || '',
+            version: serviceIdPath.ServiceTypeVersion || '',
+        };
+    }
+
+    /**
+     * Extrahiert die OperationsMetadata-Informationen (verfügbare Formate etc.).
+     * @private
+     */
+    _extractOperationsMetadata(parsedObj) {
+        const operationsPath = this._findPath(parsedObj, 'OperationsMetadata');
+        if (!operationsPath) return { outputFormats: [] };
+
+        const getFeatureOp = operationsPath.Operation?.find(op => op['@_name'] === 'GetFeature');
+        if (!getFeatureOp) return { outputFormats: [] };
+
+        const outputFormatParam = getFeatureOp.Parameter?.find(p => p['@_name'] === 'outputFormat');
+        if (!outputFormatParam) return { outputFormats: [] };
+
+        const formats = outputFormatParam.AllowedValues?.Value || outputFormatParam.Value || [];
+        return {
+            outputFormats: Array.isArray(formats) ? formats : [formats]
         };
     }
 
@@ -147,6 +171,27 @@ class WFSCapabilitiesParser {
                 upper: [featureType["@_maxx"], featureType["@_maxy"]],
                 crs: 'EPSG:4326'
              }
+        }
+        return null;
+    }
+
+    /**
+     * Hilfsfunktion zum Finden eines Pfads in einem geparsten XML-Objekt.
+     * @private
+     */
+    _findPath(obj, path) {
+        if (typeof obj === 'object' && obj !== null) {
+            if (obj[path]) {
+                return obj[path];
+            }
+            for (const key in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                    const result = this._findPath(obj[key], path);
+                    if (result) {
+                        return result;
+                    }
+                }
+            }
         }
         return null;
     }

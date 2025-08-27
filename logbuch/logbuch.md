@@ -1,5 +1,25 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-08-28 12:00 - Meilenstein: WFS GetFeature erfolgreich & Client gehärtet
+
+**Aufgaben:**
+- **`GetFeature`-Implementierung:** Ein Test-Skript wurde erstellt, um den Abruf echter Geodaten (`GetFeature`) von WFS-Diensten zu validieren.
+- **Systematisches Debugging:** Eine Kette von Problemen wurde schrittweise identifiziert und gelöst, darunter falsche Endpunkte, serverseitige Gzip-Komprimierung, inkompatible Datenformate (JSON vs. GML) und fehlerhafte Annahmen über Layer-Namen.
+- **Robuster HTTP-Client:** Der `WFSHTTPClient` wurde fundamental überarbeitet. Er basiert nun auf `axios`, kann automatisch Gzip-komprimierte Antworten dekomprimieren und reicht verschiedene Datenformate korrekt durch.
+- **Automatische Layer-Erkennung validiert:** Es wurde bewiesen, dass der `WFSCapabilitiesParser` die Layer-Namen korrekt ausliest, solange die URL des Dienstes erreichbar ist und die Suchlogik die standardisierten Namen (z.B. `cadastralparcel`) berücksichtigt.
+
+**Ergebnis:**
+- Wir können nun zuverlässig Features (Flurstücksdaten) von konformen WFS-Diensten wie Berlin (JSON) und Brandenburg (GML) abrufen.
+- Die Kernkomponenten für die WFS-Interaktion (`WFSHTTPClient`, `WFSCapabilitiesParser`) sind robust und praxiserprobt.
+
+**Best Practice:**
+- **Exakte Endpunkte sind entscheidend:** Die korrekte URL ist die Grundvoraussetzung für jede erfolgreiche WFS-Kommunikation.
+- **Gzip-Handling ist Pflicht:** Moderne Webserver nutzen Komprimierung; der Client muss damit umgehen können.
+- **Niemals Datenformate annehmen:** Ein WFS-Client muss flexibel sein und sowohl JSON als auch verschiedene XML/GML-Formate verarbeiten können.
+- **Standards beachten:** Geodienste nutzen oft internationalisierte, standardisierte Layer-Namen (z.B. INSPIRE-Vorgaben). Die Suchlogik muss dies berücksichtigen.
+
+---
+
 ## 2025-08-28 11:00 - Evaluierung & Bestätigung des eigenen WFS-Parsers
 
 **Aufgaben:**
