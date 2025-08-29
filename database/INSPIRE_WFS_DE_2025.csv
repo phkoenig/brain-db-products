@@ -1,0 +1,35 @@
+Land,Region/Bundesland,Datenthema,Diensttyp,Service-URL (GetCapabilities / Feed),Anmerkungen / Lizenz
+DE,Baden-Württemberg,Flurstücke/Grundstücke,WFS,https://owsproxy.lgl-bw.de/owsproxy/wfs/WFS_INSP_BW_Flst_ALKIS?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Baden-Württemberg,Gebäude,WFS,https://owsproxy.lgl-bw.de/owsproxy/wfs/WFS_INSP_BW_Gebaeude_ALKIS?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Bayern,Flurstücke/Grundstücke,WFS,https://geoservices.bayern.de/inspire-ows/v1/alkis/cp/dls/wfs?service=WFS&request=GetCapabilities,"Beschränkt, Nutzungsbedingungen des LDBV beachten"
+DE,Bayern,Gebäude,WFS,https://geoservices.bayern.de/inspire-ows/v1/alkis/bu/dls/wfs?service=WFS&request=GetCapabilities,"Beschränkt, Nutzungsbedingungen des LDBV beachten"
+DE,Berlin,Flurstücke/Grundstücke,WFS,https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_wfs_alkis_flurstueck?service=WFS&request=GetCapabilities,DL-DE Zero 2.0
+DE,Berlin,Gebäude,WFS,https://fbinter.stadt-berlin.de/fb/wfs/data/senstadt/s_wfs_alkis_gebaeude?service=WFS&request=GetCapabilities,DL-DE Zero 2.0
+DE,Brandenburg,Flurstücke/Grundstücke,WFS,https://inspire.brandenburg.de/services/cp_alkis_wfs?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Brandenburg,Gebäude,WFS,https://inspire.brandenburg.de/services/bu_alkis_wfs?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Bremen,Flurstücke/Gebäude,WFS,https://geodienste.bremen.de/wfs_alkis?service=WFS&request=GetCapabilities,CC BY 4.0 (Kombinierter Dienst)
+DE,Hamburg,Flurstücke/Grundstücke,WFS,https://geodienste.hamburg.de/HH_WFS_INSPIRE_Flurstuecke?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Hamburg,Gebäude,WFS,https://geodienste.hamburg.de/HH_WFS_INSPIRE_Gebaeude_2D_ALKIS?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Hessen,Flurstücke/Grundstücke,WFS,https://inspire-hessen.de/ows/services/org.2.753259a3-2469-4a16-a8a6-f1a02b897b0d_wfs?service=WFS&request=GetCapabilities,DL-DE Zero 2.0
+DE,Hessen,Gebäude,WFS,https://inspire-hessen.de/ows/services/org.2.162ae5d1-e615-42d4-913a-4e207b53a067_wfs?service=WFS&request=GetCapabilities,DL-DE Zero 2.0
+DE,Mecklenburg-Vorpommern,Flurstücke/Grundstücke,WFS,https://www.geodaten-mv.de/dienste/inspire_cp_alkis_download?service=WFS&request=GetCapabilities,CC BY 4.0
+DE,Mecklenburg-Vorpommern,Gebäude,WFS,https://www.geodaten-mv.de/dienste/inspire_bu_core2d_alkis_download?service=WFS&request=GetCapabilities,CC BY 4.0
+DE,Niedersachsen,Flurstücke/Grundstücke,WFS,https://www.inspire.niedersachsen.de/doorman/noauth/alkis-dls-cp?service=WFS&request=GetCapabilities,Open Data
+DE,Niedersachsen,Gebäude,WFS,https://www.inspire.niedersachsen.de/doorman/noauth/alkis-dls-bu-2d?service=WFS&request=GetCapabilities,Open Data
+DE,Nordrhein-Westfalen,Flurstücke/Grundstücke,WFS,https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-flurstuecke_alkis?service=WFS&request=GetCapabilities,DL-DE Zero 2.0
+DE,Nordrhein-Westfalen,Gebäude,WFS,https://www.wfs.nrw.de/geobasis/wfs_nw_inspire-gebaeude-2d_alkis?service=WFS&request=GetCapabilities,DL-DE Zero 2.0
+DE,Rheinland-Pfalz,Flurstücke/Gebäude,WFS,https://geo5.service24.rlp.de/wfs/alkis_rp.fcgi?service=WFS&request=GetCapabilities,"DL-DE BY 2.0 (Vereinfachter, kombinierter Dienst)"
+DE,Saarland,Flurstücke/Grundstücke,WFS,https://geoportal.saarland.de/gdi-sl/inspirewfs_Flurstuecke_Grundstuecke_ALKIS?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Saarland,Gebäude,WFS,https://geoportal.saarland.de/gdi-sl/inspirewfs_Gebaeude_2D_ALKIS?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Sachsen,Flurstücke/Grundstücke,WFS,https://geodienste.sachsen.de/aaa/public_inspire/alkis/cp/dls/wfs?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Sachsen,Flurstücke/Grundstücke,ATOM,https://geodownload.sachsen.de/inspire/cp_atom/Service_cp.xml,DL-DE BY 2.0
+DE,Sachsen,Gebäude,WFS,https://geodienste.sachsen.de/aaa/public_inspire/alkis/bu/dls/wfs?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Sachsen-Anhalt,Flurstücke/Grundstücke,WFS,https://geodatenportal.sachsen-anhalt.de/wss/service/INSPIRE_LVermGeo_WFS_ALKIS_CP/guest?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Sachsen-Anhalt,Gebäude,WFS,https://geodatenportal.sachsen-anhalt.de/ows_INSPIRE_LVermGeo_ALKIS_BU_WFS?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Schleswig-Holstein,Flurstücke/Grundstücke,WFS,https://sgx.geodaten-sh.de/sgx_dienste/wfs/inspire_cp_alkis?service=WFS&request=GetCapabilities,CC BY 4.0
+DE,Schleswig-Holstein,Gebäude,WFS,https://sgx.geodaten-sh.de/sgx_dienste/wfs/inspire_bu_2d_alkis?service=WFS&request=GetCapabilities,CC BY 4.0
+DE,Thüringen,Flurstücke/Grundstücke,WFS,https://www.geoproxy.geoportal-th.de/geoproxy/services/INSPIREcp_wfs?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+DE,Thüringen,Gebäude,WFS,https://www.geoproxy.geoportal-th.de/geoproxy/services/INSPIREbu_wfs?service=WFS&request=GetCapabilities,DL-DE BY 2.0
+AT,Österreich,Flurstücke/Grundstücke,ATOM,https://data.bev.gv.at/geonetwork/srv/atom/describe/service?uuid=68cb9fac-e9ca-4366-b41f-79195fd31360,BEV Nutzungsbedingungen
+AT,Österreich,Gebäude,ATOM,https://data.bev.gv.at/geonetwork/srv/atom/describe/service?uuid=68cb9fac-e9ca-4366-b41f-79195fd31360,BEV Nutzungsbedingungen
+CH,Schweiz (föderiert),Flurstücke/Gebäude,WFS,https://www.geodienste.ch/db/av/deu?service=WFS&request=GetCapabilities,"OGD, kantonale Bedingungen beachten"
