@@ -4,6 +4,7 @@ const http = require('http');
 const { URL } = require('url');
 const path = require('path');
 const { WFSCapabilitiesParser } = require('../../../lib/wfs-parser.js');
+const axios = require('axios'); // Für Portal-Link-Analyse
 
 // Dotenv-Konfiguration - Verwende relativen Pfad zum Projekt-Root
 require('dotenv').config({ path: path.resolve(__dirname, '../../../../.env.local') });
@@ -96,6 +97,202 @@ class WFSHTTPClient {
 }
 
 /**
+ * Prüft ob eine URL ein Portal-Link ist
+ */
+function isPortalLink(url) {
+  const portalIndicators = [
+    'geoportal',
+    'metaver',
+    'spatial-objects',
+    'trefferanzeige',
+    'docuuid',
+    'catalog',
+    'registry'
+  ];
+  
+  const urlLower = url.toLowerCase();
+  return portalIndicators.some(indicator => urlLower.includes(indicator));
+}
+
+/**
+ * Automatische Portal-Link-Erkennung und WFS-URL-Extraktion
+ * Erkennt wenn eine URL auf ein Portal zeigt und extrahiert echte WFS-URLs
+ */
+async function extractWFSURLsFromPortal(portalUrl, streamName) {
+  console.log(`   🔍 Portal-Link erkannt: ${streamName}`);
+  console.log(`   🔗 Analysiere Portal: ${portalUrl}`);
+  
+  try {
+    const response = await axios.get(portalUrl, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    if (response.status !== 200) {
+      console.log(`   ❌ Portal nicht erreichbar: HTTP ${response.status}`);
+      return null;
+    }
+    
+    const content = response.data;
+    const contentType = response.headers['content-type'] || '';
+    
+    // Prüfe ob es JSON ist (wie bei Rheinland-Pfalz)
+    if (contentType.includes('application/json')) {
+      console.log(`   📄 JSON-Response erkannt - versuche WFS-URLs zu extrahieren`);
+      return extractWFSURLsFromJSON(content, streamName);
+    }
+    
+    // HTML-Content analysieren
+    if (contentType.includes('text/html')) {
+      console.log(`   📄 HTML-Response erkannt - suche nach WFS-URLs`);
+      return extractWFSURLsFromHTML(content, streamName);
+    }
+    
+    console.log(`   ❌ Unbekannter Content-Type: ${contentType}`);
+    return null;
+    
+  } catch (error) {
+    console.log(`   ❌ Portal-Analyse fehlgeschlagen: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Extrahiert WFS-URLs aus JSON-Responses (wie Rheinland-Pfalz)
+ */
+function extractWFSURLsFromJSON(jsonContent, streamName) {
+  try {
+    const data = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+    
+    // Suche nach WFS-URLs in JSON-Struktur
+    const wfsUrls = [];
+    const searchInObject = (obj, path = '') => {
+      if (typeof obj === 'string') {
+        // Prüfe ob String eine WFS-URL ist
+        if (obj.includes('wfs') || obj.includes('GetCapabilities') || obj.includes('service=WFS')) {
+          const cleanUrl = obj.replace(/&amp;/g, '&').replace(/<\/?[^>]+(>|$)/g, '');
+          if (cleanUrl.startsWith('http') && !wfsUrls.includes(cleanUrl)) {
+            wfsUrls.push(cleanUrl);
+          }
+        }
+      } else if (typeof obj === 'object' && obj !== null) {
+        for (const [key, value] of Object.entries(obj)) {
+          searchInObject(value, `${path}.${key}`);
+        }
+      }
+    };
+    
+    searchInObject(data);
+    
+    if (wfsUrls.length > 0) {
+      console.log(`   ✅ ${wfsUrls.length} WFS-URLs aus JSON extrahiert`);
+      wfsUrls.forEach((url, index) => {
+        console.log(`      ${index + 1}. ${url}`);
+      });
+      return wfsUrls;
+    }
+    
+    console.log(`   ❌ Keine WFS-URLs in JSON gefunden`);
+    return null;
+    
+  } catch (error) {
+    console.log(`   ❌ JSON-Parsing fehlgeschlagen: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Extrahiert WFS-URLs aus HTML-Content (wie Sachsen-Anhalt Metaver)
+ */
+function extractWFSURLsFromHTML(htmlContent, streamName) {
+  try {
+    // Suche nach WFS-URLs mit verschiedenen Patterns
+    const wfsUrlPatterns = [
+      /https?:\/\/[^"'\s]+wfs[^"'\s]*/gi,
+      /https?:\/\/[^"'\s]+GetCapabilities[^"'\s]*/gi,
+      /https?:\/\/[^"'\s]+service=WFS[^"'\s]*/gi,
+      /https?:\/\/[^"'\s]+ows[^"'\s]*/gi
+    ];
+    
+    let foundUrls = [];
+    wfsUrlPatterns.forEach(pattern => {
+      const matches = htmlContent.match(pattern);
+      if (matches) {
+        foundUrls.push(...matches);
+      }
+    });
+    
+    // Bereinige URLs
+    foundUrls = foundUrls.map(url => 
+      url.replace(/&amp;/g, '&')
+         .replace(/<\/?[^>]+(>|$)/g, '')
+         .replace(/['"]/g, '')
+    );
+    
+    // Entferne Duplikate
+    foundUrls = [...new Set(foundUrls)];
+    
+    if (foundUrls.length > 0) {
+      console.log(`   ✅ ${foundUrls.length} WFS-URLs aus HTML extrahiert`);
+      foundUrls.forEach((url, index) => {
+        console.log(`      ${index + 1}. ${url}`);
+      });
+      return foundUrls;
+    }
+    
+    console.log(`   ❌ Keine WFS-URLs in HTML gefunden`);
+    return null;
+    
+  } catch (error) {
+    console.log(`   ❌ HTML-Analyse fehlgeschlagen: ${error.message}`);
+    return null;
+  }
+}
+
+/**
+ * Standardisiert den Feature-Typ basierend auf dem Layer-Titel
+ */
+function standardizeFeatureType(title) {
+  if (!title) return null;
+  const lowerTitle = title.toLowerCase();
+
+  // Flurstücke
+  const parcelKeywords = ['flurstück', 'liegenschaft', 'alkis', 'kataster'];
+  if (parcelKeywords.some(kw => lowerTitle.includes(kw))) {
+    return 'Flurstücke';
+  }
+
+  // Gebäudeumrisse
+  const buildingKeywords = ['gebäude', 'hausumringe', 'building'];
+  if (buildingKeywords.some(kw => lowerTitle.includes(kw))) {
+    return 'Gebäudeumrisse';
+  }
+  
+  // Adressen
+  const addressKeywords = ['adresse', 'hauskoordinaten', 'address'];
+  if (addressKeywords.some(kw => lowerTitle.includes(kw))) {
+    return 'Adressen';
+  }
+
+  // Straßen
+  const streetKeywords = ['straße', 'strassen', 'verkehr', 'street', 'road'];
+  if (streetKeywords.some(kw => lowerTitle.includes(kw))) {
+    return 'Straßennetz';
+  }
+  
+  // Gewässer
+  const waterKeywords = ['gewässer', 'hydro', 'water'];
+  if (waterKeywords.some(kw => lowerTitle.includes(kw))) {
+    return 'Gewässernetz';
+  }
+
+  return null; // Kein passender Typ gefunden
+}
+
+
+/**
  * Hauptfunktion zum Befüllen der Layer-Tabelle mit dem optimierten Parser
  */
 async function extractWFSLayersOptimized() {
@@ -131,8 +328,25 @@ async function extractWFSLayersOptimized() {
     console.log(`   Bereits vorhandene Layer: ${stream.layer_anzahl || 0}`);
 
     try {
-      // Hole GetCapabilities XML
-      const capabilities = await httpClient.getCapabilities(stream.url);
+      let wfsUrl = stream.url;
+      let extractedUrls = null;
+
+      // Prüfe ob es ein Portal-Link ist
+      if (isPortalLink(stream.url)) {
+        console.log(`   🔍 Portal-Link erkannt - versuche WFS-URLs zu extrahieren`);
+        extractedUrls = await extractWFSURLsFromPortal(stream.url, stream.service_title);
+        
+        if (extractedUrls && extractedUrls.length > 0) {
+          // Verwende die erste gefundene WFS-URL
+          wfsUrl = extractedUrls[0];
+          console.log(`   ✅ Verwende extrahierte WFS-URL: ${wfsUrl}`);
+        } else {
+          console.log(`   ❌ Keine WFS-URLs aus Portal extrahiert - verwende Original-URL`);
+        }
+      }
+
+      // Hole GetCapabilities XML mit der korrigierten URL
+      const capabilities = await httpClient.getCapabilities(wfsUrl);
       
       if (!capabilities.success) {
         console.log(`   ❌ Fehler beim Abrufen der Capabilities: ${capabilities.error}\n`);
@@ -221,17 +435,22 @@ async function extractWFSLayersOptimized() {
       if (serviceData.versions && serviceData.versions.length > 0) {
         updateData.wfs_version = serviceData.versions;
       }
-      if (serviceData.outputFormats && serviceData.outputFormats.length > 0) {
-        updateData.standard_outputformate = serviceData.outputFormats;
-      }
-      if (serviceData.provider_name) {
-        updateData.provider_name = serviceData.provider_name;
-      }
-      if (serviceData.provider_site) {
-        updateData.provider_site = serviceData.provider_site;
-      }
-      if (serviceData.isInspire !== undefined) {
-        updateData.inspire_konform = serviceData.isInspire;
+
+      // Wenn WFS-URLs extrahiert wurden, aktualisiere die URL in der Datenbank
+      if (extractedUrls && extractedUrls.length > 0) {
+        try {
+          await supabase
+            .from('wfs_streams')
+            .update({
+              url: wfsUrl,
+              validation_notes: `Portal-Link automatisch korrigiert. Gefundene URLs: ${extractedUrls.join(', ')}`
+            })
+            .eq('id', stream.id);
+          
+          console.log(`   ✅ URL automatisch von Portal-Link korrigiert`);
+        } catch (urlUpdateError) {
+          console.log(`   ❌ Fehler beim Aktualisieren der URL: ${urlUpdateError.message}`);
+        }
       }
 
       const { error: updateError } = await supabase
@@ -240,17 +459,17 @@ async function extractWFSLayersOptimized() {
         .eq('id', stream.id);
 
       if (updateError) {
-        console.log(`   ⚠️  Fehler beim Aktualisieren der Service-Metadaten: ${updateError.message}`);
+        console.log(`   ⚠️  Fehler beim Aktualisieren der Stream-Metadaten: ${updateError.message}`);
       } else {
         console.log(`   ✅ Service-Metadaten aktualisiert`);
       }
 
-      successCount++;
       totalLayers += parseResult.layerCount;
+      successCount++;
       console.log(`   ✅ Erfolgreich verarbeitet\n`);
 
     } catch (error) {
-      console.log(`   ❌ Unerwarteter Fehler: ${error.message}\n`);
+      console.log(`   ❌ Fehler: ${error.message}\n`);
       errorCount++;
     }
   }
