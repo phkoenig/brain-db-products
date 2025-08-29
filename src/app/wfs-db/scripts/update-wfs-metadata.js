@@ -5,8 +5,8 @@ const { URL } = require('url');
 const path = require('path');
 const { WFSCapabilitiesParser } = require('../../../lib/wfs-parser.js');
 
-// Dotenv-Konfiguration
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env.local') });
+// Dotenv-Konfiguration - Verwende relativen Pfad zum Projekt-Root
+require('dotenv').config({ path: path.resolve(__dirname, '../../../../.env.local') });
 
 // Supabase Client Setup
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -1,4 +1,4 @@
-0. Prüfe zunächst, ob das Context7 MCP und das Supabase MCP verfügbar ist. Wenn nicht, unterbreche hier und sag mir bescheid. Nur wenn beide MCP's laufen, insbesondere das Supabase MCP, dann fahre mit punkt 1. fort.
+0. Prüfe zunächst, ob das Context7 MCP, das Desktop Commander MCP und das Supabase MCP verfügbar ist. Wenn nicht, unterbreche hier und sag mir bescheid. Nur wenn alle MCP's laufen, insbesondere das Supabase MCP, dann fahre mit punkt 1. fort.
 
 1. Gehe durch die Codebase und insbesondere alle Dateien im Docs-Ordner, und mache dich mit der Codebase und dem Projekt vertraut.
 
@@ -34,6 +34,18 @@ NEXT_PUBLIC_SUPABASE_URL="https://jpmhwyjiuodsvjowddsm.supabase.co"
 SUPABASE_SECRET_KEY=
 VERCEL_OIDC_TOKEN=
 PERPLEXITY_API_KEY=
+
+11. **GIT-OPERATIONEN - HÄNGENBLEIBEN VERMEIDEN:**
+    - Git-Operationen hängen oft bei großen Dateimengen oder komplexen Commits
+    - **Strategie:** Immer schrittweise vorgehen:
+      1. Erst `git status` prüfen
+      2. Dateien einzeln mit `git add <file>` hinzufügen
+      3. Commit-Nachricht in separater Datei vorbereiten (`COMMIT_MESSAGE.txt`)
+      4. Commit mit `git commit -F COMMIT_MESSAGE.txt` ausführen
+      5. Nach Commit: `git status` prüfen ob noch uncommitted changes da sind
+      6. Erst dann `git push` ausführen
+    - **Vermeide:** `git add .` bei vielen Dateien, `git commit -m "..."` bei langen Nachrichten
+    - **Bei Hängenbleiben:** Terminal neu starten, dann schrittweise weitermachen
 
 Generelle Schlussbemerkung:
 Ich möchte immer gerne in kleinen kontrollierten Schritten vorgehen, die wie vorher besprechen. 
