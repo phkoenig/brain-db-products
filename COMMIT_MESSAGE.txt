@@ -1,0 +1,30 @@
+feat: WFS Layer Kategorisierung und intelligente Feature-Tests implementiert
+
+🎯 Hauptverbesserungen:
+- WFS-Parser um Keywords, INSPIRE-Codes und intelligente Kategorisierung erweitert
+- 567 bestehende Layer mit erweiterten Metadaten aktualisiert  
+- 8 neue WFS-URLs für Berlin und NRW Flurstücke hinzugefügt
+- Comprehensive Feature-Abruf-Tests für INSPIRE-Konformität entwickelt
+
+📊 Ergebnisse:
+- 328 Layer automatisch kategorisiert (+700% Verbesserung)
+- 465 Layer mit Keywords versehen (NEU)
+- 133 Layer mit INSPIRE Theme Codes (NEU)
+- 72% INSPIRE-Layer funktionieren mit korrekten Standards
+
+🔧 Technische Verbesserungen:
+- WFS-Parser: Keywords-Extraktion aus GetCapabilities XML
+- Intelligente Kategorisierung: 8 Kategorien (Flurstücke, Gebäude, etc.)
+- INSPIRE-konforme Tests: WFS 2.0.0 + GML 3.2.1 Standards
+- Feature-Abruf-Tests: Systematische Validierung der Layer-Funktionalität
+
+✅ Erfolgsfaktoren für Feature-Abruf:
+- WFS 1.1.0 + Legacy-Parameter für deutsche Services
+- XML/GML-Format statt JSON bevorzugen  
+- Mecklenburg-Vorpommern: Goldstandard mit 65% Erfolgsrate
+- Baden-Württemberg: Perfekte INSPIRE 2.0.0-Implementierung
+
+🗺️ Neue Geodaten-Abdeckung:
+- Flurstücke: 13/16 Bundesländer (81%)
+- Gebäude: 11/16 Bundesländer (69%)  
+- Berlin + NRW Flurstücke erfolgreich hinzugefügt

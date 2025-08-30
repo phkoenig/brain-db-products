@@ -398,6 +398,13 @@ async function extractWFSLayersOptimized() {
           continue; // Überspringe bereits vorhandene Layer
         }
 
+        // Intelligente Kategorisierung mit dem erweiterten Parser
+        const smartCategory = parser.categorizeLayer({
+          name: layer.name,
+          title: layer.title,
+          abstract: layer.abstract
+        });
+
         const layerData = {
           wfs_id: stream.id,
           name: layer.name,
@@ -407,6 +414,11 @@ async function extractWFSLayersOptimized() {
           weitere_crs: layer.otherCRS,
           outputformate: layer.outputFormats,
           bbox_wgs84: layer.bbox,
+          // ERWEITERT: Neue Metadaten-Felder
+          schluesselwoerter: layer.keywords && layer.keywords.length > 0 ? layer.keywords : null,
+          inspire_thema_codes: layer.inspireThemeCodes && layer.inspireThemeCodes.length > 0 ? layer.inspireThemeCodes : null,
+          geometrietyp: layer.geometryType,
+          feature_typ: smartCategory || standardizeFeatureType(layer.title), // Fallback auf alte Logik
           ist_abfragbar: true,
           zuletzt_describe_geprueft: new Date().toISOString()
         };
@@ -420,6 +432,17 @@ async function extractWFSLayersOptimized() {
         } else {
           insertedCount++;
           newLayersCount++;
+          
+          // Debug-Logging für neue Features
+          if (layer.keywords && layer.keywords.length > 0) {
+            console.log(`     🏷️  Keywords: ${layer.keywords.join(', ')}`);
+          }
+          if (smartCategory) {
+            console.log(`     📂 Smart Category: ${smartCategory}`);
+          }
+          if (layer.inspireThemeCodes && layer.inspireThemeCodes.length > 0) {
+            console.log(`     🌍 INSPIRE Themes: ${layer.inspireThemeCodes.join(', ')}`);
+          }
         }
       }
 
@@ -431,9 +454,26 @@ async function extractWFSLayersOptimized() {
         zuletzt_geprueft: new Date().toISOString()
       };
 
-      // Service-Metadaten hinzufügen, falls verfügbar
+      // ERWEITERTE Service-Metadaten hinzufügen, falls verfügbar
       if (serviceData.versions && serviceData.versions.length > 0) {
         updateData.wfs_version = serviceData.versions;
+      }
+      
+      if (serviceData.outputFormats && serviceData.outputFormats.length > 0) {
+        updateData.standard_outputformate = serviceData.outputFormats;
+      }
+      
+      if (serviceData.providerName) {
+        updateData.provider_name = serviceData.providerName;
+      }
+      
+      if (serviceData.providerSite) {
+        updateData.provider_site = serviceData.providerSite;
+      }
+      
+      // INSPIRE-Status basierend auf Parser-Ergebnis
+      if (serviceData.isInspire !== undefined) {
+        updateData.inspire_konform = serviceData.isInspire;
       }
 
       // Wenn WFS-URLs extrahiert wurden, aktualisiere die URL in der Datenbank

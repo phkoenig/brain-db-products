@@ -61,8 +61,23 @@ class WFSCapabilitiesParser {
         if (!xmlString || typeof xmlString !== 'string') {
             return false;
         }
-        // INSPIRE-Dienste referenzieren fast immer die Schemas der Europäischen Kommission.
-        return xmlString.includes('inspire.ec.europa.eu');
+        
+        // ERWEITERTE INSPIRE-Erkennung
+        const inspireIndicators = [
+            'inspire.ec.europa.eu',
+            'inspire.jrc.ec.europa.eu',
+            'inspire-directive',
+            'INSPIRE',
+            'xmlns:inspire',
+            'inspire:',
+            'inspire_common',
+            'inspire_vs',
+            'inspire_dls'
+        ];
+        
+        return inspireIndicators.some(indicator => 
+            xmlString.includes(indicator)
+        );
     }
 
     /**
@@ -167,6 +182,10 @@ class WFSCapabilitiesParser {
             // NEU: Extrahiere auch weitere CRS und Output-Formate pro Layer
             otherCRS: this._extractCRSList(ft.OtherCRS),
             outputFormats: this._extractFormatList(ft.OutputFormat),
+            // ERWEITERT: Keywords und INSPIRE-Metadaten extrahieren
+            keywords: this._extractKeywords(ft),
+            inspireThemeCodes: this._extractInspireThemeCodes(ft),
+            geometryType: this._extractGeometryType(ft),
         })).filter(layer => layer.name); // Gib nur Layer mit einem Namen zurück
     }
 
@@ -188,6 +207,141 @@ class WFSCapabilitiesParser {
         if (!formatData) return [];
         if (Array.isArray(formatData)) return formatData;
         return [formatData];
+    }
+
+    /**
+     * Extrahiert Keywords/Schlüsselwörter aus verschiedenen XML-Elementen
+     * @private
+     */
+    _extractKeywords(featureType) {
+        const keywords = [];
+        
+        // Standard Keywords-Element
+        if (featureType.Keywords) {
+            if (Array.isArray(featureType.Keywords)) {
+                keywords.push(...featureType.Keywords);
+            } else if (typeof featureType.Keywords === 'string') {
+                keywords.push(featureType.Keywords);
+            } else if (featureType.Keywords.Keyword) {
+                const keywordData = featureType.Keywords.Keyword;
+                if (Array.isArray(keywordData)) {
+                    keywords.push(...keywordData);
+                } else {
+                    keywords.push(keywordData);
+                }
+            }
+        }
+        
+        // INSPIRE Keywords (oft in MetadataURL oder ExtendedCapabilities)
+        if (featureType.MetadataURL) {
+            const metadataUrls = Array.isArray(featureType.MetadataURL) 
+                ? featureType.MetadataURL 
+                : [featureType.MetadataURL];
+            
+            metadataUrls.forEach(url => {
+                if (url && typeof url === 'string' && url.includes('inspire')) {
+                    keywords.push('INSPIRE');
+                }
+            });
+        }
+        
+        return keywords.filter(k => k && typeof k === 'string' && k.trim().length > 0);
+    }
+
+    /**
+     * Extrahiert INSPIRE Theme Codes aus verschiedenen Quellen
+     * @private
+     */
+    _extractInspireThemeCodes(featureType) {
+        const themeCodes = [];
+        
+        // Suche nach INSPIRE Theme Codes in verschiedenen Elementen
+        const searchPaths = [
+            'inspire_theme',
+            'InspireTheme',
+            'ThemeCode',
+            'inspire:theme',
+            'inspire_theme_code'
+        ];
+        
+        searchPaths.forEach(path => {
+            const value = this._findValueInObject(featureType, path);
+            if (value) {
+                if (Array.isArray(value)) {
+                    themeCodes.push(...value);
+                } else {
+                    themeCodes.push(value);
+                }
+            }
+        });
+        
+        // INSPIRE Standard Theme Codes basierend auf Name/Title ableiten
+        const nameTitle = `${featureType.Name || ''} ${featureType.Title || ''}`.toLowerCase();
+        
+        if (nameTitle.includes('cadastral') || nameTitle.includes('flur')) {
+            themeCodes.push('cp'); // Cadastral Parcels
+        }
+        if (nameTitle.includes('building') || nameTitle.includes('gebäude')) {
+            themeCodes.push('bu'); // Buildings
+        }
+        if (nameTitle.includes('hydr') || nameTitle.includes('wasser') || nameTitle.includes('gewässer')) {
+            themeCodes.push('hy'); // Hydrography
+        }
+        if (nameTitle.includes('transport') || nameTitle.includes('verkehr') || nameTitle.includes('straß')) {
+            themeCodes.push('tn'); // Transport Networks
+        }
+        if (nameTitle.includes('address') || nameTitle.includes('adresse')) {
+            themeCodes.push('ad'); // Addresses
+        }
+        
+        return [...new Set(themeCodes)]; // Duplikate entfernen
+    }
+
+    /**
+     * Extrahiert Geometrietyp aus verschiedenen Quellen
+     * @private
+     */
+    _extractGeometryType(featureType) {
+        // Direkte Geometry-Type Angaben
+        if (featureType.GeometryType) return featureType.GeometryType;
+        if (featureType.geometryType) return featureType.geometryType;
+        
+        // Aus Name/Title ableiten
+        const nameTitle = `${featureType.Name || ''} ${featureType.Title || ''}`.toLowerCase();
+        
+        if (nameTitle.includes('point') || nameTitle.includes('punkt')) return 'Point';
+        if (nameTitle.includes('line') || nameTitle.includes('linie') || nameTitle.includes('straß')) return 'LineString';
+        if (nameTitle.includes('polygon') || nameTitle.includes('fläche') || nameTitle.includes('gebäude') || nameTitle.includes('flur')) return 'Polygon';
+        if (nameTitle.includes('multi')) return 'MultiGeometry';
+        
+        return null;
+    }
+
+    /**
+     * Hilfsfunktion zum Finden von Werten in verschachtelten Objekten
+     * @private
+     */
+    _findValueInObject(obj, searchKey) {
+        if (!obj || typeof obj !== 'object') return null;
+        
+        // Direkte Suche
+        if (obj[searchKey]) return obj[searchKey];
+        
+        // Rekursive Suche
+        for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                if (key.toLowerCase().includes(searchKey.toLowerCase())) {
+                    return obj[key];
+                }
+                
+                if (typeof obj[key] === 'object') {
+                    const result = this._findValueInObject(obj[key], searchKey);
+                    if (result) return result;
+                }
+            }
+        }
+        
+        return null;
     }
 
     /**
@@ -231,6 +385,92 @@ class WFSCapabilitiesParser {
             }
         }
         return null;
+    }
+
+    /**
+     * Intelligente Kategorisierung basierend auf Name, Title und Abstract
+     * @param {object} layer - Layer-Objekt mit name, title, abstract
+     * @returns {string|null} - Kategorisierung
+     */
+    categorizeLayer(layer) {
+        const { name = '', title = '', abstract = '' } = layer;
+        const searchText = `${name} ${title} ${abstract}`.toLowerCase();
+        
+        // Flurstücke / Cadastral Parcels
+        if (this._matchesCategory(searchText, [
+            'flur', 'cadastral', 'parcel', 'grundstück', 'parzell', 
+            'kataster', 'liegenschaft', 'ax_flurstueck'
+        ])) {
+            return 'Flurstücke';
+        }
+        
+        // Gebäudeumrisse / Buildings
+        if (this._matchesCategory(searchText, [
+            'gebäude', 'building', 'bauwerk', 'bau_', 'house', 
+            'construction', 'ax_gebaeude', 'bu_building'
+        ])) {
+            return 'Gebäudeumrisse';
+        }
+        
+        // Adressen / Addresses
+        if (this._matchesCategory(searchText, [
+            'address', 'adresse', 'anschrift', 'hausnummer', 
+            'straße', 'street', 'ad_address'
+        ])) {
+            return 'Adressen';
+        }
+        
+        // Straßennetz / Transport Networks
+        if (this._matchesCategory(searchText, [
+            'straße', 'street', 'road', 'weg', 'verkehr', 'transport', 
+            'autobahn', 'highway', 'tn_', 'verkehrsnetz'
+        ])) {
+            return 'Straßennetz';
+        }
+        
+        // Gewässernetz / Hydrography
+        if (this._matchesCategory(searchText, [
+            'wasser', 'gewässer', 'fluss', 'bach', 'see', 'teich', 
+            'hydro', 'water', 'river', 'lake', 'hy_'
+        ])) {
+            return 'Gewässernetz';
+        }
+        
+        // Verwaltungsgrenzen / Administrative Units
+        if (this._matchesCategory(searchText, [
+            'grenze', 'boundary', 'verwaltung', 'gemeinde', 'kreis', 
+            'bezirk', 'administrative', 'au_'
+        ])) {
+            return 'Verwaltungsgrenzen';
+        }
+        
+        // Schutzgebiete / Protected Sites
+        if (this._matchesCategory(searchText, [
+            'schutz', 'protected', 'natura', 'naturschutz', 'landschaftsschutz', 
+            'ps_', 'conservation'
+        ])) {
+            return 'Schutzgebiete';
+        }
+        
+        // Bodennutzung / Land Use
+        if (this._matchesCategory(searchText, [
+            'nutzung', 'landuse', 'boden', 'fläche', 'usage', 
+            'lu_', 'corine'
+        ])) {
+            return 'Bodennutzung';
+        }
+        
+        return null; // Keine Kategorisierung gefunden
+    }
+    
+    /**
+     * Hilfsfunktion für Kategorie-Matching
+     * @private
+     */
+    _matchesCategory(searchText, keywords) {
+        return keywords.some(keyword => 
+            searchText.includes(keyword.toLowerCase())
+        );
     }
 }
 
