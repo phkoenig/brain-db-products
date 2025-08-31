@@ -1,0 +1,3 @@
+[2025-08-30 13:55:31] error: ❌ GitHub API connection failed during initialization: Bad credentials - https://docs.github.com/rest
+[2025-08-30 13:55:31] error: ❌ Status: 401
+[2025-08-30 13:55:31] error: ❌ Message: Bad credentials - https://docs.github.com/rest

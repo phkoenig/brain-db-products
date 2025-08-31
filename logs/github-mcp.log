@@ -1,0 +1,32 @@
+[2025-08-30 13:55:31] info: ✅ GitHub client initialized with correct configuration
+[2025-08-30 13:55:31] info: 🔑 GitHub token configured: YES
+[2025-08-30 13:55:31] info: 📏 Token length: 40
+[2025-08-30 13:55:31] info: 🔗 Base URL: https://api.github.com
+[2025-08-30 13:55:31] info: 🤖 User-Agent: github-mcp-v2/4.4.0
+[2025-08-30 13:55:31] info: 🔍 Testing GitHub API connectivity...
+[2025-08-30 13:55:31] info: 🎯 Starting GitHub MCP V2 Auto-Owner Edition...
+[2025-08-30 13:55:31] info: 📦 Server version: 4.5.0
+[2025-08-30 13:55:31] info: 🔧 Environment: development
+[2025-08-30 13:55:31] info: ⚡ Features: 16 consolidated tools with automatic owner detection
+[2025-08-30 13:55:31] info: ✅ GitHub MCP V2 Auto-Owner Edition Server is running!
+[2025-08-30 13:55:31] info: 🎯 Auto-Owner Mode: All tools automatically detect your GitHub username
+[2025-08-30 13:55:31] error: ❌ GitHub API connection failed during initialization: Bad credentials - https://docs.github.com/rest
+[2025-08-30 13:55:31] error: ❌ Status: 401
+[2025-08-30 13:55:31] error: ❌ Message: Bad credentials - https://docs.github.com/rest
+[2025-08-30 13:57:56] info: ✅ GitHub client initialized with correct configuration
+[2025-08-30 13:57:56] info: 🔑 GitHub token configured: YES
+[2025-08-30 13:57:56] info: 📏 Token length: 40
+[2025-08-30 13:57:56] info: 🔗 Base URL: https://api.github.com
+[2025-08-30 13:57:56] info: 🤖 User-Agent: github-mcp-v2/4.4.0
+[2025-08-30 13:57:56] info: 🔍 Testing GitHub API connectivity...
+[2025-08-30 13:57:56] info: 🎯 Starting GitHub MCP V2 Auto-Owner Edition...
+[2025-08-30 13:57:56] info: 📦 Server version: 4.5.0
+[2025-08-30 13:57:56] info: 🔧 Environment: development
+[2025-08-30 13:57:56] info: ⚡ Features: 16 consolidated tools with automatic owner detection
+[2025-08-30 13:57:56] info: ✅ GitHub MCP V2 Auto-Owner Edition Server is running!
+[2025-08-30 13:57:56] info: 🎯 Auto-Owner Mode: All tools automatically detect your GitHub username
+[2025-08-30 13:57:57] info: ✅ GitHub API connection successful! Authenticated as: phkoenig
+[2025-08-30 13:57:57] info: 👤 User: Philip König
+[2025-08-30 13:57:57] info: 📧 Email: Private
+[2025-08-30 13:57:57] info: 🏢 Company: None
+[2025-08-30 13:57:57] info: 🎯 Auto-owner mode: All operations will use "phkoenig" as default owner
