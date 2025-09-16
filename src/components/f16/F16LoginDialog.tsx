@@ -100,15 +100,15 @@ export function F16LoginDialog({ isOpen, onClose }: F16LoginDialogProps) {
         </div>
         
         <div className="p-6">
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <span className="text-body font-body text-blue-700">
-              <strong>Verfügbare Benutzer:</strong><br/>
-              phkoenig@gmail.com (Philip König)<br/>
-              philip@zepta.com (Philip Zepta - Admin)<br/>
-              admin@megabrain.cloud (Admin User)<br/>
-              test@megabrain.cloud (Test User)
-            </span>
-          </div>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <span className="text-body font-body text-blue-700">
+                  <strong>Verfügbare Benutzer:</strong><br/>
+                  phkoenig@gmail.com (Philip König)<br/>
+                  philip@zepta.com (Philip König - Admin)<br/>
+                  admin@megabrain.cloud (Admin User)<br/>
+                  test@megabrain.cloud (Test User)
+                </span>
+              </div>
           
           <form onSubmit={handleSubmit} className="flex w-full flex-col items-start gap-6">
             <div className="flex w-full flex-col items-start gap-4">
