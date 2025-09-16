@@ -1,5 +1,34 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-09-16 21:45 - Meilenstein: F16 Portal vollständig implementiert
+
+**Aufgaben:**
+- **F16 Kundenportal:** Unabhängiges Portal für F16-Projekt mit eigenständiger Route `/zepta/f16`
+- **Blog-System:** Vollständiges Blog-System mit Posts und Kommentaren
+- **Google OAuth:** Authentifizierung mit Google OAuth und dynamischen Redirect-URLs
+- **Subframe UI:** Integration aller Subframe-Komponenten für konsistentes Design
+- **Supabase Backend:** F16-spezifische Tabellen und API-Endpunkte
+
+**Ergebnis:**
+- **F16 Portal vollständig funktional:** Blog, Authentifizierung, Kommentare
+- **Google OAuth konfiguriert:** Lokal und Produktion mit korrekten Redirect-URLs
+- **Echte Benutzer-Integration:** Autoren-Namen aus `auth_allowlist` (Philip Zepta, etc.)
+- **Responsive Design:** F16-spezifisches Styling mit "Outfit" Font
+- **Fehlerbehandlung:** Umfassende Error-Handling und Loading-States
+
+**Technische Details:**
+- **Neue Route:** `/zepta/f16` mit eigenständigem Layout
+- **Supabase Tabellen:** `f16_blog_posts`, `f16_blog_comments`, `f16_blog_categories`
+- **API-Endpunkte:** `/api/zepta/f16/blog/posts`, `/api/zepta/f16/blog/comments`
+- **OAuth-Konfiguration:** Google Cloud Console + Supabase Dashboard
+- **Komponenten:** F16BlogPost, F16LoginDialog, F16NewPostModal, useF16Blog Hook
+
+**Best Practices:**
+- **Modulare Architektur:** F16-spezifische Komponenten in separaten Ordnern
+- **Dynamische Redirects:** Automatische URL-Erkennung für OAuth
+- **Echte Daten-Integration:** Allowlist-Lookup für korrekte Autoren-Namen
+- **Benutzerfreundlichkeit:** Intuitive UI mit klaren Fehlermeldungen
+
 ## 2025-08-29 16:30 - Meilenstein: Berliner WFS-Layer hinzugefügt und WFS-UI mit Subframe-Komponenten implementiert
 
 **Aufgaben:**
