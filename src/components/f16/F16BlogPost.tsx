@@ -79,7 +79,7 @@ export function F16BlogPost({ post, onAddComment }: F16BlogPostProps) {
       
       {post.featured_image_url && (
         <img
-          className="h-80 w-full flex-none rounded-md object-cover"
+          className="w-full flex-none rounded-md object-contain"
           src={post.featured_image_url}
           alt={post.title}
         />

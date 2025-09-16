@@ -8,12 +8,12 @@ import { FeatherPlus } from "@subframe/core";
 import { FeatherSearch } from "@subframe/core";
 import { useF16Blog } from "@/hooks/useF16Blog";
 import { F16BlogPost } from "@/components/f16/F16BlogPost";
-import { F16NewPostModal } from "@/components/f16/F16NewPostModal";
+import { F16LivePreviewEditor } from "@/components/f16/F16LivePreviewEditor";
 import { F16LoginDialog } from "@/components/f16/F16LoginDialog";
 
 export default function F16Logbuch() {
   const { posts, loading, error, searchQuery, searchPosts, addComment, createPost, user } = useF16Blog();
-  const [isNewPostModalOpen, setIsNewPostModalOpen] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export default function F16Logbuch() {
 
   const handleNewPost = () => {
     if (user) {
-      setIsNewPostModalOpen(true);
+      setIsCreatingPost(true);
     } else {
       setIsLoginDialogOpen(true);
     }
@@ -47,7 +47,15 @@ export default function F16Logbuch() {
     featured_image_url: string;
     tags: string[];
   }) => {
-    return await createPost(post);
+    const success = await createPost(post);
+    if (success) {
+      setIsCreatingPost(false);
+    }
+    return success;
+  };
+
+  const handleCancelPost = () => {
+    setIsCreatingPost(false);
   };
 
   if (loading) {
@@ -139,33 +147,34 @@ export default function F16Logbuch() {
                   {user ? 'Neuer Beitrag' : 'Anmelden'}
                 </Button>
               </div>
-              <div className="flex w-full flex-col items-start gap-8">
-                {posts.length === 0 ? (
-                  <div className="text-center w-full py-8">
-                    <span className="text-body font-body text-subtext-color">
-                      Keine Posts gefunden.
-                    </span>
+                  <div className="flex w-full flex-col items-start gap-8">
+                    {isCreatingPost && (
+                      <F16LivePreviewEditor
+                        onSave={handleSavePost}
+                        onCancel={handleCancelPost}
+                      />
+                    )}
+                    
+                    {posts.length === 0 && !isCreatingPost ? (
+                      <div className="text-center w-full py-8">
+                        <span className="text-body font-body text-subtext-color">
+                          Keine Posts gefunden.
+                        </span>
+                      </div>
+                    ) : (
+                      posts.map((post) => (
+                        <F16BlogPost
+                          key={post.id}
+                          post={post}
+                          onAddComment={addComment}
+                        />
+                      ))
+                    )}
                   </div>
-                ) : (
-                  posts.map((post) => (
-                    <F16BlogPost
-                      key={post.id}
-                      post={post}
-                      onAddComment={addComment}
-                    />
-                  ))
-                )}
-              </div>
             </div>
           </div>
         </div>
       </DefaultPageLayout>
-      
-          <F16NewPostModal
-            isOpen={isNewPostModalOpen}
-            onClose={() => setIsNewPostModalOpen(false)}
-            onSave={handleSavePost}
-          />
           
           <F16LoginDialog
             isOpen={isLoginDialogOpen}
