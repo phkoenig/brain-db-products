@@ -8,6 +8,7 @@ import { TextField } from '@/ui/components/TextField';
 import { FeatherMoreHorizontal } from '@subframe/core';
 import { FeatherFileText } from '@subframe/core';
 import { F16BlogPost as F16BlogPostType, F16BlogComment } from '@/hooks/useF16Blog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface F16BlogPostProps {
   post: F16BlogPostType;
@@ -15,15 +16,37 @@ interface F16BlogPostProps {
 }
 
 export function F16BlogPost({ post, onAddComment }: F16BlogPostProps) {
+  const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+
+  const getUserDisplayName = async (email: string) => {
+    try {
+      const response = await fetch(`/api/auth/allowlist/user?email=${encodeURIComponent(email)}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.name || email.split('@')[0];
+      }
+    } catch (err) {
+      console.error('Error fetching user name:', err);
+    }
+    return email.split('@')[0];
+  };
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
     setIsSubmittingComment(true);
+    
+    let authorName = 'Gast';
+    if (user?.email) {
+      authorName = await getUserDisplayName(user.email);
+    }
+
     const success = await onAddComment(post.id, {
-      author_name: 'Gast',
+      author_name: authorName,
+      author_email: user?.email || null,
       content: newComment.trim()
     });
 
@@ -112,6 +135,16 @@ export function F16BlogPost({ post, onAddComment }: F16BlogPostProps) {
         ))}
         
         {/* New Comment Input */}
+        {user && (
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar size="small">
+              {user.email?.charAt(0).toUpperCase() || 'U'}
+            </Avatar>
+            <span className="text-body font-body text-subtext-color">
+              Kommentar als {user.email?.split('@')[0]}
+            </span>
+          </div>
+        )}
         <div className="flex w-full gap-2">
           <TextField
             className="flex-1"
@@ -121,12 +154,13 @@ export function F16BlogPost({ post, onAddComment }: F16BlogPostProps) {
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNewComment(event.target.value)}
           >
             <TextField.Input
-              placeholder="Schreibe einen Kommentar..."
+              placeholder={user ? `Schreibe einen Kommentar...` : "Anmelden, um zu kommentieren..."}
+              disabled={!user}
             />
           </TextField>
           <Button
             onClick={handleAddComment}
-            disabled={!newComment.trim() || isSubmittingComment}
+            disabled={!newComment.trim() || isSubmittingComment || !user}
             size="small"
           >
             {isSubmittingComment ? '...' : 'Senden'}

@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Create Supabase client with service role for admin operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +26,6 @@ export async function GET(request: NextRequest) {
       .from('f16_blog_comments')
       .select('*')
       .eq('post_id', postId)
-      .eq('status', 'approved')
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -44,7 +54,7 @@ export async function POST(request: NextRequest) {
         author_email: author_email || null,
         author_avatar_url: author_avatar_url || null,
         content,
-        status: 'pending',
+        status: 'approved',
         parent_id: parent_id || null
       })
       .select()

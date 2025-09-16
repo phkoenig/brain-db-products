@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+// Create Supabase client with service role for admin operations
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +22,17 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('f16_blog_posts')
-      .select('*')
+      .select(`
+        *,
+        f16_blog_comments (
+          id,
+          author_name,
+          author_email,
+          content,
+          created_at,
+          status
+        )
+      `)
       .eq('status', 'published')
       .eq('project_id', 'F16')
       .order('published_at', { ascending: false })

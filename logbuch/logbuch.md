@@ -1,5 +1,36 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-09-16 22:30 - F16 Live Preview Editor: Inline Blog-Editor implementiert
+
+**Aufgaben:**
+- **Live Preview Editor:** Blog-Posts werden direkt in der Seite erstellt, kein Pop-up Modal mehr
+- **Real-time Updates:** Post wird live aktualisiert beim Tippen, sieht aus wie echter Blog-Post
+- **Dummy-Text ohne Labels:** Titel und Inhalt mit Placeholder-Text, keine kursive Schrift
+- **Bild-Placeholder:** 2:1 Landscape Format mit Upload-Funktion, flexible Höhe
+- **UI-Vereinfachung:** User-Info, Excerpt, Tags und Galerie-Funktionen entfernt
+- **Konsistente Darstellung:** Editor und fertige Posts sehen identisch aus
+
+**Technische Details:**
+- **F16LivePreviewEditor:** Neue Komponente für inline Blog-Erstellung
+- **F16NewPostModal:** Alte Modal-Komponente entfernt
+- **Bildanzeige:** `object-contain` statt `object-cover` für natürliche Darstellung
+- **Abstände:** `gap-4` und `text-heading-2` synchronisiert mit fertigen Posts
+- **Upload-System:** Nur noch lokaler Upload, keine Galerie-Auswahl
+
+**Ergebnis:**
+- **Bessere UX:** Direkte Bearbeitung ohne störende Pop-ups
+- **Real-time Preview:** Sofortige Visualisierung des Ergebnisses
+- **Saubere UI:** Vereinfachte Bedienung ohne überflüssige Features
+- **Konsistente Darstellung:** Editor und fertige Posts sind visuell identisch
+
+**Best Practices:**
+- Inline-Editoren für bessere User Experience
+- Real-time Preview für sofortiges Feedback
+- Konsistente Abstände und Schriftgrößen
+- Flexible Bildanzeige ohne Verzerrung
+
+---
+
 ## 2025-09-16 21:45 - Meilenstein: F16 Portal vollständig implementiert
 
 **Aufgaben:**

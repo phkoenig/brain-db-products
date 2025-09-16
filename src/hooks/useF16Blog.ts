@@ -100,8 +100,30 @@ export function useF16Blog() {
         throw new Error('Failed to add comment');
       }
 
-      // Refresh posts to get updated comments
-      await fetchPosts(searchQuery);
+      // Add comment to local state instead of refreshing all posts
+      const newComment = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        post_id: postId,
+        author_name: authorName,
+        author_email: user?.email || comment.author_email || null,
+        author_avatar_url: null,
+        content: comment.content,
+        status: 'approved',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Update local state
+      setPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId 
+            ? { 
+                ...post, 
+                f16_blog_comments: [...(post.f16_blog_comments || []), newComment]
+              }
+            : post
+        )
+      );
       
       return true;
     } catch (err) {
