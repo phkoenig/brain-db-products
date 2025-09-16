@@ -1,23 +1,23 @@
 "use client";
 /*
  * Documentation:
- * Default Page Layout — https://app.subframe.com/269cf10fcebb/library?component=Default+Page+Layout_a57b1c43-310a-493f-b807-8cc88e2452cf
- * Sidebar rail with labels — https://app.subframe.com/269cf10fcebb/library?component=Sidebar+rail+with+labels_3296372a-ba83-4ca9-b291-10dc2aa86fdd
+ * Default Page Layout — https://app.subframe.com/779d69811fbb/library?component=Default+Page+Layout_a57b1c43-310a-493f-b807-8cc88e2452cf
+ * Sidebar rail with labels — https://app.subframe.com/779d69811fbb/library?component=Sidebar+rail+with+labels_3296372a-ba83-4ca9-b291-10dc2aa86fdd
  */
 
 import React from "react";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
-import * as SubframeUtils from "../utils";
-import { SidebarRailWithLabels } from "../components/SidebarRailWithLabels";
-import { FeatherDatabase } from "@subframe/core";
-import { FeatherPlus } from "@subframe/core";
+import { FeatherArmchair } from "@subframe/core";
+import { FeatherBox } from "@subframe/core";
+import { FeatherCalendarDays } from "@subframe/core";
+import { FeatherCamera } from "@subframe/core";
+import { FeatherDoorClosed } from "@subframe/core";
+import { FeatherImage } from "@subframe/core";
+import { FeatherMap } from "@subframe/core";
 import { FeatherSettings } from "@subframe/core";
-import { FeatherUserCircle } from "@subframe/core";
-import { FeatherFolder } from "@subframe/core";
-import { FeatherCloud } from "@subframe/core";
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/ui/components/Button';
+import { FeatherStamp } from "@subframe/core";
+import { FeatherUsers } from "@subframe/core";
+import { SidebarRailWithLabels } from "../components/SidebarRailWithLabels";
+import * as SubframeUtils from "../utils";
 
 interface DefaultPageLayoutRootProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -32,17 +32,6 @@ const DefaultPageLayoutRoot = React.forwardRef<
   { children, className, ...otherProps }: DefaultPageLayoutRootProps,
   ref
 ) {
-  const pathname = usePathname();
-  
-  // Determine which nav item should be selected based on current path
-  const isDatabasePage = pathname === "/database";
-  const isCapturePage = pathname === "/capture";
-  const isSettingsPage = pathname === "/settings";
-  const isPlanPage = pathname === "/plan";
-  const isACCBrowserPage = pathname === "/acc";
-  const isNextcloudPage = pathname === "/plan";
-  const { user, signOut } = useAuth();
-
   return (
     <div
       className={SubframeUtils.twClassNames(
@@ -53,88 +42,48 @@ const DefaultPageLayoutRoot = React.forwardRef<
       {...otherProps}
     >
       <SidebarRailWithLabels
-        className="overflow-auto"
+        className="h-auto w-28 flex-none self-stretch"
         header={
           <div className="flex flex-col items-center justify-center gap-2 px-1 py-1">
-            <span className="text-title font-title text-default-font">M</span>
+            <span className="text-heading-1 font-heading-1 text-default-font">
+              F16
+            </span>
           </div>
         }
-        footer={
-          <>
-            <Link href="/settings">
-              <SidebarRailWithLabels.NavItem 
-                icon={<FeatherSettings />}
-                selected={isSettingsPage}
-                className="w-16 h-16"
-              >
-                Settings
-              </SidebarRailWithLabels.NavItem>
-            </Link>
-            <Link href="/logout">
-              <SidebarRailWithLabels.NavItem 
-                icon={<FeatherUserCircle />}
-                className="w-16 h-16"
-              >
-                Logout
-              </SidebarRailWithLabels.NavItem>
-            </Link>
-          </>
-        }
+        footer={<SidebarRailWithLabels.NavItem icon={<FeatherSettings />} />}
       >
-        <Link href="/database">
+        <div className="flex w-full grow shrink-0 basis-0 flex-col items-start">
           <SidebarRailWithLabels.NavItem
-            icon={<FeatherDatabase />}
-            selected={isDatabasePage}
-            className="w-16 h-16"
+            icon={<FeatherCalendarDays />}
+            selected={true}
           >
-            DB
+            Logbuch
           </SidebarRailWithLabels.NavItem>
-        </Link>
-        <Link href="/capture">
-          <SidebarRailWithLabels.NavItem 
-            icon={<FeatherPlus />}
-            selected={isCapturePage}
-            className="w-16 h-16"
-          >
-            Neu
+          <SidebarRailWithLabels.NavItem icon={<FeatherBox />}>
+            3D
           </SidebarRailWithLabels.NavItem>
-        </Link>
-        <Link href="/plan">
-          <SidebarRailWithLabels.NavItem 
-            icon={<FeatherFolder />}
-            selected={isPlanPage}
-            className="w-16 h-16"
-          >
-            NC
+          <SidebarRailWithLabels.NavItem icon={<FeatherMap />}>
+            Pläne
           </SidebarRailWithLabels.NavItem>
-        </Link>
-        <Link href="/acc">
-          <SidebarRailWithLabels.NavItem 
-            icon={<FeatherCloud />}
-            selected={isACCBrowserPage}
-            className="w-16 h-16"
-          >
-            ACC
+          <SidebarRailWithLabels.NavItem icon={<FeatherArmchair />}>
+            Bemusterung
           </SidebarRailWithLabels.NavItem>
-        </Link>
-        <Link href="/plan">
-          <SidebarRailWithLabels.NavItem 
-            icon={<FeatherFolder />}
-            selected={isNextcloudPage}
-            className="w-16 h-16"
-          >
-            NC
+          <SidebarRailWithLabels.NavItem icon={<FeatherDoorClosed />}>
+            Raumbuch
           </SidebarRailWithLabels.NavItem>
-        </Link>
-        <Link href="/aps-test" className="w-16 h-16">
-          <SidebarRailWithLabels.NavItem 
-            icon={<FeatherFolder />}
-            selected={false}
-            className="w-16 h-16"
-          >
-            APS Test
+          <SidebarRailWithLabels.NavItem icon={<FeatherCamera />}>
+            Fotos
           </SidebarRailWithLabels.NavItem>
-        </Link>
+          <SidebarRailWithLabels.NavItem icon={<FeatherImage />}>
+            Visualisierung
+          </SidebarRailWithLabels.NavItem>
+          <SidebarRailWithLabels.NavItem icon={<FeatherUsers />}>
+            Beteiligte
+          </SidebarRailWithLabels.NavItem>
+          <SidebarRailWithLabels.NavItem icon={<FeatherStamp />}>
+            Dokumente
+          </SidebarRailWithLabels.NavItem>
+        </div>
       </SidebarRailWithLabels>
       {children ? (
         <div className="flex grow shrink-0 basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background">

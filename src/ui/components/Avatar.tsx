@@ -1,7 +1,7 @@
 "use client";
 /*
  * Documentation:
- * Avatar — https://app.subframe.com/269cf10fcebb/library?component=Avatar_bec25ae6-5010-4485-b46b-cf79e3943ab2
+ * Avatar — https://app.subframe.com/779d69811fbb/library?component=Avatar_bec25ae6-5010-4485-b46b-cf79e3943ab2
  */
 
 import React from "react";

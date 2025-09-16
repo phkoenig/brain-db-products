@@ -85,9 +85,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     async signInWithGoogle() {
       try {
-        // Use the Supabase default callback URL that matches the Google OAuth configuration
-        const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const redirectTo = `${projectUrl}/auth/v1/callback`;
+        // Dynamische Redirect-URL basierend auf der aktuellen Domain
+        const getRedirectUrl = () => {
+          if (typeof window !== 'undefined') {
+            const origin = window.location.origin;
+            if (origin.includes('localhost:3000')) {
+              return 'http://localhost:3000/zepta/f16';
+            } else if (origin.includes('megabrain.cloud')) {
+              return 'https://megabrain.cloud/zepta/f16';
+            }
+          }
+          // Fallback für Server-Side
+          return process.env.NODE_ENV === 'development' 
+            ? 'http://localhost:3000/zepta/f16' 
+            : 'https://megabrain.cloud/zepta/f16';
+        };
+
+        const redirectTo = getRedirectUrl();
         
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",

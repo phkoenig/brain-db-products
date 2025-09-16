@@ -1,13 +1,13 @@
 "use client";
 /*
  * Documentation:
- * Icon Button — https://app.subframe.com/269cf10fcebb/library?component=Icon+Button_af9405b1-8c54-4e01-9786-5aad308224f6
+ * Icon Button — https://app.subframe.com/779d69811fbb/library?component=Icon+Button_af9405b1-8c54-4e01-9786-5aad308224f6
  */
 
 import React from "react";
-import * as SubframeUtils from "../utils";
-import * as SubframeCore from "@subframe/core";
 import { FeatherPlus } from "@subframe/core";
+import * as SubframeCore from "@subframe/core";
+import * as SubframeUtils from "../utils";
 
 interface IconButtonRootProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -56,7 +56,7 @@ const IconButtonRoot = React.forwardRef<HTMLButtonElement, IconButtonRootProps>(
               variant === "destructive-secondary",
             "bg-error-600 hover:bg-error-500 active:bg-error-600":
               variant === "destructive-primary",
-            "border border-solid border-neutral-border bg-white hover:bg-neutral-100 active:bg-white":
+            "border-2 border-solid border-neutral-border bg-white hover:bg-neutral-100 active:bg-white":
               variant === "neutral-secondary",
             "bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-100":
               variant === "neutral-primary",

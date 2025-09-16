@@ -5,6 +5,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* F16 Portal spezifische Variablen */
+  --f16-background: #fafaf9;
+  --f16-foreground: #1c1917;
+  --f16-subtext: #78716c;
+  --f16-border: #e7e5e4;
+  --f16-brand: #db2777;
 }
 
 body {
@@ -30,6 +37,69 @@ body {
   
   .subframe-textarea textarea {
     @apply text-sm text-gray-600;
+  }
+}
+
+/* F16 Portal spezifische Styles */
+@layer components {
+  .f16-portal {
+    font-family: 'Outfit', 'Inter', Arial, Helvetica, sans-serif;
+  }
+  
+  .f16-portal .text-heading-1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 36px;
+    letter-spacing: 0em;
+  }
+  
+  .f16-portal .text-heading-2 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 24px;
+    letter-spacing: 0em;
+  }
+  
+  .f16-portal .text-body {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0em;
+  }
+  
+  .f16-portal .text-body-bold {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0em;
+  }
+  
+  .f16-portal .text-subtext-color {
+    color: #78716c;
+  }
+  
+  .f16-portal .text-default-font {
+    color: #1c1917;
+  }
+  
+  .f16-portal .bg-neutral-50 {
+    background-color: #fafaf9;
+  }
+  
+  .f16-portal .bg-default-background {
+    background-color: #ffffff;
+  }
+  
+  .f16-portal .border-neutral-border {
+    border-color: #e7e5e4;
+  }
+  
+  .f16-portal .text-brand-600 {
+    color: #db2777;
   }
 }
 

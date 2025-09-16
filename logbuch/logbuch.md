@@ -1,5 +1,37 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-08-29 16:30 - Meilenstein: Berliner WFS-Layer hinzugefügt und WFS-UI mit Subframe-Komponenten implementiert
+
+**Aufgaben:**
+- **Berliner WFS-Layer fehlten:** In der WFS-UI waren keine Berliner Layer sichtbar, obwohl sie in der Dokumentation existierten
+- **WFS-UI mit Subframe-Komponenten:** Implementierung der WFS-Layer-Tabelle mit Subframe UI-Komponenten (DefaultPageLayout, Table, Select, Badge, IconButton)
+- **Supabase-Integration:** API-Endpunkt `/api/wfs-layers` für echte Daten aus der Datenbank
+- **Filter-Funktionalität:** Bundesland, Feature-Typ, INSPIRE-Konformität und Suchfunktion
+
+**Ergebnis:**
+- **19 neue Berliner Layer** erfolgreich hinzugefügt:
+  - Berlin ALKIS Flurstücke WFS: 17 Layer
+  - Berlin ALKIS Gebäude WFS: 1 Layer
+  - Berlin ALKIS Ortsteile WFS: 1 Layer
+- **WFS-UI vollständig funktional:** Alle Filter funktionieren korrekt
+- **Supabase-Integration abgeschlossen:** Echte Daten werden geladen
+- **Subframe-Komponenten korrekt implementiert:** Keine Linter-Fehler mehr
+
+**Technische Details:**
+- **Berliner WFS-URLs:** Direkt in Datenbank eingefügt (GDI Berlin + FIS-Broker)
+- **Parser-Script:** `update-wfs-metadata.js` erfolgreich 19 Layer extrahiert
+- **API-Route:** `/api/wfs-layers` lädt Daten mit JOIN zu `wfs_streams` für Bundesland-Information
+- **Filter-Logik:** Korrekte Behandlung von "all" statt leerem String für INSPIRE-Filter
+
+**Best Practice:**
+- **Radix UI Constraints beachten:** Select.Item darf keine leeren String-Werte haben
+- **Subframe-Komponenten korrekt verwenden:** APIs der Wrapper-Komponenten befolgen
+- **Dev-Server-Probleme:** Bei EINVAL-Fehlern .next-Ordner löschen und neu starten
+
+**Nächster Schritt:** Weitere Bundesländer prüfen und fehlende WFS-Services identifizieren
+
+---
+
 ## 2025-08-29 15:00 - Meilenstein: WFS Layer Extraktion optimiert & Test-Skripte bereinigt
 
 **Aufgaben:**

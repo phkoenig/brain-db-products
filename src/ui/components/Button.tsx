@@ -1,12 +1,12 @@
 "use client";
 /*
  * Documentation:
- * Button — https://app.subframe.com/269cf10fcebb/library?component=Button_3b777358-b86b-40af-9327-891efc6826fe
+ * Button — https://app.subframe.com/779d69811fbb/library?component=Button_3b777358-b86b-40af-9327-891efc6826fe
  */
 
 import React from "react";
-import * as SubframeUtils from "../utils";
 import * as SubframeCore from "@subframe/core";
+import * as SubframeUtils from "../utils";
 
 interface ButtonRootProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -48,7 +48,7 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
     return (
       <button
         className={SubframeUtils.twClassNames(
-          "group/3b777358 flex h-8 cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-brand-600 px-3 hover:bg-brand-500 active:bg-brand-600 disabled:cursor-default disabled:bg-neutral-200 hover:disabled:cursor-default hover:disabled:bg-neutral-200 active:disabled:cursor-default active:disabled:bg-neutral-200",
+          "group/3b777358 flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md border-none bg-brand-600 px-3 hover:bg-brand-500 active:bg-brand-600 disabled:cursor-default disabled:bg-neutral-200 hover:disabled:cursor-default hover:disabled:bg-neutral-200 active:disabled:cursor-default active:disabled:bg-neutral-200",
           {
             "h-6 w-auto flex-row flex-nowrap gap-1 px-2 py-0": size === "small",
             "h-10 w-auto px-4 py-0": size === "large",
@@ -62,7 +62,7 @@ const ButtonRoot = React.forwardRef<HTMLButtonElement, ButtonRootProps>(
               variant === "destructive-primary",
             "bg-transparent hover:bg-neutral-100 active:bg-neutral-200":
               variant === "neutral-tertiary",
-            "border border-solid border-neutral-border bg-default-background hover:bg-neutral-50 active:bg-default-background":
+            "border-2 border-solid border-neutral-border bg-default-background hover:bg-neutral-50 active:bg-default-background":
               variant === "neutral-secondary",
             "bg-neutral-100 hover:bg-neutral-200 active:bg-neutral-100":
               variant === "neutral-primary",

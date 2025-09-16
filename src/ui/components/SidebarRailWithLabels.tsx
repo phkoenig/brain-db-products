@@ -1,14 +1,14 @@
 "use client";
 /*
  * Documentation:
- * Sidebar rail with labels — https://app.subframe.com/269cf10fcebb/library?component=Sidebar+rail+with+labels_3296372a-ba83-4ca9-b291-10dc2aa86fdd
- * Avatar — https://app.subframe.com/269cf10fcebb/library?component=Avatar_bec25ae6-5010-4485-b46b-cf79e3943ab2
+ * Sidebar rail with labels — https://app.subframe.com/779d69811fbb/library?component=Sidebar+rail+with+labels_3296372a-ba83-4ca9-b291-10dc2aa86fdd
+ * Tooltip — https://app.subframe.com/779d69811fbb/library?component=Tooltip_ccebd1e9-f6ac-4737-8376-0dfacd90c9f3
  */
 
 import React from "react";
-import * as SubframeUtils from "../utils";
-import * as SubframeCore from "@subframe/core";
 import { FeatherCircleDashed } from "@subframe/core";
+import * as SubframeCore from "@subframe/core";
+import * as SubframeUtils from "../utils";
 import { Tooltip } from "./Tooltip";
 
 interface NavItemProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -36,7 +36,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
             className={SubframeUtils.twClassNames(
               "group/8815d632 flex min-h-[48px] w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md px-2 pt-3 pb-2 active:bg-neutral-50",
               {
-                "bg-neutral-100 hover:bg-neutral-100 active:bg-neutral-50":
+                "bg-transparent hover:bg-neutral-100 active:bg-neutral-50":
                   selected,
               },
               className
@@ -48,7 +48,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
               <SubframeCore.IconWrapper
                 className={SubframeUtils.twClassNames(
                   "text-heading-2 font-heading-2 text-subtext-color group-hover/8815d632:text-default-font group-active/8815d632:text-default-font",
-                  { "text-default-font": selected }
+                  { "text-brand-primary": selected }
                 )}
               >
                 {icon}
@@ -58,7 +58,7 @@ const NavItem = React.forwardRef<HTMLDivElement, NavItemProps>(function NavItem(
               <span
                 className={SubframeUtils.twClassNames(
                   "line-clamp-1 w-full text-caption-bold font-caption-bold text-subtext-color text-center group-hover/8815d632:text-default-font group-active/8815d632:text-default-font",
-                  { "text-default-font": selected }
+                  { "text-brand-primary": selected }
                 )}
               >
                 {children}
