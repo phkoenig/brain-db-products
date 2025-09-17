@@ -168,3 +168,11 @@ getAccessToken: (onGetAccessToken) => {
 **Letzte Aktualisierung:** Dezember 2024  
 **Quelle:** [Autodesk APS Viewer v7 Documentation](https://aps.autodesk.com/en/docs/viewer/v7/developers_guide/overview/)  
 **Status:** Vollständig implementiert in `/aps-test`
+
+## ⚠️ Wichtige Projekt-Spezifika (Next.js + ACC)
+
+- SDK immer als CDN-Script im `<head>` laden (nicht importieren, nicht dynamisch injecten). In `app/layout.tsx` platzieren.
+- Vor `Initializer` prüfen: `window.Autodesk && window.Autodesk.Viewing` (Retry bis vorhanden).
+- ACC: Verwende `derivatives.data.id` direkt (bereits Base64). Bei `Document.load` mit `urn:`-Präfix aufrufen: `Document.load('urn:' + base64Urn, ...)`.
+- Keine Proxy/Rewrite-Regeln für URNs in Next.js; sonst leitet der Viewer gegen `http://localhost:3000/<URN>`.
+- Loader erst schließen, wenn `GEOMETRY_LOADED_EVENT` feuert; beim Umschalten auf Views (z. B. „Nachnutzung“) erneut auf Fertig-Event warten.

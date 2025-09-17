@@ -33,6 +33,19 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com/css2?family=monospace:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+        
+        {/* Autodesk APS Viewer SDK - MUST be loaded statically in HTML */}
+        <script 
+          src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"
+          crossOrigin="anonymous"
+          defer
+        ></script>
+        <link 
+          rel="stylesheet" 
+          type="text/css" 
+          href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.css"
+          crossOrigin="anonymous"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

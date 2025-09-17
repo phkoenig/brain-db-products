@@ -477,18 +477,62 @@ export class ACCService {
   static async getVersionURN(itemId: string, projectId?: string): Promise<string> {
     console.log(`🔍 ACC getVersionURN: Called with itemId=${itemId}, projectId=${projectId}`);
     
-    // For ACC files, we need to return the VERSION URN (fs.file:vf.) for APS Viewer
-    // According to Perplexity AI, both Viewer and Translation need Version-URN, not Lineage-URN!
+    // For ACC files, we need to return the LINEAGE URN (dm.lineage:) for APS Viewer
+    // The lineage URN is automatically translated and ready for viewing
     try {
-      // If we have a projectId and it's already a lineage URN, get the version URN
-      if (projectId && itemId.includes('dm.lineage:')) {
-        console.log(`🔍 ACC getVersionURN: Processing lineage URN with projectId`);
+      // If it's already a lineage URN, add version query for Model Derivative API
+      if (itemId.includes('dm.lineage:')) {
+        console.log(`🔍 ACC getVersionURN: Processing lineage URN for viewer: ${itemId}`);
+        
+        // For Model Derivative API, we need lineage URN with ?version=N
+        // Get version number from projectId if available
+        let lineageUrnWithVersion = itemId;
+        if (projectId) {
+          try {
+            const token = await ACCOAuthService.getAccessToken();
+            const itemDetailsUrl = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/items/${itemId}`;
+            
+            const itemResponse = await fetch(itemDetailsUrl, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+              }
+            });
+            
+            if (itemResponse.ok) {
+              const itemData = await itemResponse.json();
+              const tipVersion = itemData.data?.relationships?.tip?.data;
+              if (tipVersion && tipVersion.id) {
+                const versionMatch = tipVersion.id.match(/\?version=(\d+)/);
+                const versionNumber = versionMatch ? versionMatch[1] : '1';
+                lineageUrnWithVersion = `${itemId}?version=${versionNumber}`;
+                console.log(`🔍 ACC: Added version query: ${lineageUrnWithVersion}`);
+              }
+            }
+          } catch (error) {
+            console.log(`🔍 ACC: Could not get version number, using default: ${error}`);
+            lineageUrnWithVersion = `${itemId}?version=1`;
+          }
+        } else {
+          // Default to version 1 if no projectId
+          lineageUrnWithVersion = `${itemId}?version=1`;
+        }
+        
+        console.log(`🔍 ACC getVersionURN: Calling UrnProcessor.processDerivativeUrn with: ${lineageUrnWithVersion}`);
+        const apsUrn = UrnProcessor.processDerivativeUrn(lineageUrnWithVersion);
+        console.log(`🔍 ACC: APS-compatible URN: ${apsUrn}`);
+        return apsUrn;
+      }
+      
+      // If we have a projectId and it's a version URN, we need to get the lineage URN
+      if (projectId && itemId.includes('fs.file:vf.')) {
+        console.log(`🔍 ACC getVersionURN: Processing version URN to get lineage URN`);
         const token = await ACCOAuthService.getAccessToken();
         
-        // Get item details to find the version URN
+        // Get item details to find the lineage URN
         const itemDetailsUrl = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/items/${itemId}`;
         
-        console.log(`🔍 ACC: Getting item details for viewer URN: ${itemDetailsUrl}`);
+        console.log(`🔍 ACC: Getting item details for lineage URN: ${itemDetailsUrl}`);
         
         const itemResponse = await fetch(itemDetailsUrl, {
           headers: {
@@ -502,38 +546,25 @@ export class ACCService {
         }
 
         const itemData = await itemResponse.json();
-        console.log(`🔍 ACC: Item details received for viewer:`, itemData);
+        console.log(`🔍 ACC: Item details received for lineage:`, itemData);
 
-        // Get the tip version URN from the included versions
-        if (itemData.included && itemData.included.length > 0) {
-          const tipVersion = itemData.included.find((version: any) => 
-            version.type === 'versions' && version.id.includes('fs.file:vf.')
-          );
+        // Get the lineage URN from the main data object
+        if (itemData.data && itemData.data.id && itemData.data.id.includes('dm.lineage:')) {
+          const lineageUrn = itemData.data.id;
+          console.log(`🔍 ACC: Using lineage URN for viewer: ${lineageUrn}`);
           
-          if (tipVersion) {
-            const versionUrn = tipVersion.id;
-            console.log(`🔍 ACC: Using tip version URN for viewer: ${versionUrn}`);
-            
-            // Use UrnProcessor to get the correct APS-compatible URN
-            console.log(`🔍 ACC getVersionURN: Calling UrnProcessor.processDerivativeUrn with: ${versionUrn}`);
-            const apsUrn = UrnProcessor.processDerivativeUrn(versionUrn);
-            console.log(`🔍 ACC: APS-compatible URN: ${apsUrn}`);
-            
-            return apsUrn;
-          }
+          // Use UrnProcessor to get the correct APS-compatible URN
+          console.log(`🔍 ACC getVersionURN: Calling UrnProcessor.processDerivativeUrn with: ${lineageUrn}`);
+          const apsUrn = UrnProcessor.processDerivativeUrn(lineageUrn);
+          console.log(`🔍 ACC: APS-compatible URN: ${apsUrn}`);
+          
+          return apsUrn;
         }
       }
       
-      // Fallback: if it's already a version URN, process it directly
-      if (itemId.includes('fs.file:vf.')) {
-        console.log(`🔍 ACC getVersionURN: Processing existing version URN: ${itemId}`);
-        console.log(`🔍 ACC getVersionURN: Calling UrnProcessor.processDerivativeUrn with: ${itemId}`);
-        return UrnProcessor.processDerivativeUrn(itemId);
-      }
-      
-      // Final fallback: return the original itemId
+      // Fallback: process the original itemId
       console.log(`🔍 ACC getVersionURN: Using original itemId as fallback: ${itemId}`);
-      return itemId;
+      return UrnProcessor.processDerivativeUrn(itemId);
       
     } catch (error) {
       console.error('🔍 ACC: Error getting version URN:', error);

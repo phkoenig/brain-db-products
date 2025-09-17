@@ -23,9 +23,10 @@ export async function GET(request: NextRequest) {
     
     // Check if itemId is already a URN
     if (itemId && itemId.startsWith('urn:')) {
-      console.log("🔍 ACC URN API: itemId is already a URN, using directly");
-      const urn = itemId;
-      console.log("🔍 ACC URN API: URN obtained successfully:", urn);
+      console.log("🔍 ACC URN API: itemId is already a URN, processing with getVersionURN");
+      // Even if it's already a URN, we need to ensure it's the correct version URN
+      const urn = await ACCService.getVersionURN(itemId, projectId);
+      console.log("🔍 ACC URN API: URN processed successfully:", urn);
       
       return NextResponse.json({
         success: true,

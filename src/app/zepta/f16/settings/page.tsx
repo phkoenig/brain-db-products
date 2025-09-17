@@ -4,14 +4,10 @@ import React, { useState, useEffect } from "react";
 import { F16Sidebar } from "@/components/f16/F16Sidebar";
 import { Button } from "@/ui/components/Button";
 import { TextField } from "@/ui/components/TextField";
-import { FeatherMapPin } from "@subframe/core";
-import { FeatherSave } from "@subframe/core";
-import { FeatherFolder } from "@subframe/core";
-import { FeatherFile } from "@subframe/core";
-import { FeatherChevronLeft } from "@subframe/core";
 import { useF16Settings } from "@/hooks/useF16Settings";
 import { ACCService } from "@/lib/acc";
 import { ACCOAuthService } from "@/lib/acc-oauth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FolderItem {
   id: string;
@@ -30,6 +26,7 @@ export default function F16SettingsPage() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<'checking' | 'authenticated' | 'not_authenticated'>('checking');
   const [tokenInfo, setTokenInfo] = useState<any>(null);
+  const { signOut } = useAuth();
 
   useEffect(() => {
     if (settings?.model_path) {
@@ -76,6 +73,35 @@ export default function F16SettingsPage() {
 
     checkAuthStatus();
   }, []);
+
+  const handleRenewToken = async () => {
+    try {
+      const res = await fetch('/api/acc/token/renew', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to renew ACC token');
+      // Re-check status
+      setAuthStatus('checking');
+      const testResponse = await fetch('/api/acc/projects');
+      setAuthStatus(testResponse.ok ? 'authenticated' : 'not_authenticated');
+    } catch (err) {
+      console.error('🔍 F16 Settings: Renew token error:', err);
+      setAuthStatus('not_authenticated');
+      alert('ACC-Token konnte nicht erneuert werden. Bitte neu authentifizieren.');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // Hard clear local/session storage and ACC tokens
+      localStorage.clear();
+      sessionStorage.clear();
+      await fetch('/api/acc/token/renew');
+      window.location.href = '/';
+    } catch (err) {
+      console.error('🔍 F16 Settings: Logout error:', err);
+      window.location.href = '/';
+    }
+  };
 
   // Auto-start folder browser after authentication
   useEffect(() => {
@@ -310,10 +336,26 @@ export default function F16SettingsPage() {
                                'Admin-Token nicht verfügbar'}
                             </span>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              onClick={handleRenewToken}
+                              variant="neutral-primary"
+                              size="small"
+                            >
+                              Renew Token
+                            </Button>
+                            <Button 
+                              onClick={handleLogout}
+                              variant="destructive-primary"
+                              size="small"
+                            >
+                              Logout
+                            </Button>
+                          </div>
                           {authStatus === 'not_authenticated' && (
                             <Button 
                               onClick={() => window.location.href = '/auth/acc-authorize'}
-                              variant="primary"
+                              variant="brand-primary"
                               size="small"
                             >
                               Admin-Authentifizierung
@@ -365,9 +407,8 @@ export default function F16SettingsPage() {
 
                         <div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center">
                           <Button
-                            variant="brand"
+                            variant="brand-primary"
                             size="medium"
-                            icon={<FeatherMapPin />}
                             onClick={handleLocateClick}
                             disabled={browsing || authStatus === 'checking'}
                           >
@@ -378,9 +419,8 @@ export default function F16SettingsPage() {
                           </Button>
                           
                           <Button
-                            variant="neutral"
+                            variant="neutral-primary"
                             size="medium"
-                            icon={<FeatherSave />}
                             onClick={handleSave}
                             disabled={!tempPath}
                           >
@@ -419,9 +459,8 @@ export default function F16SettingsPage() {
                     <div className="w-full rounded-lg border border-gray-200 bg-gray-50 p-4">
                       <div className="flex w-full items-center gap-4 mb-4">
                         <Button
-                          variant="neutral"
+                          variant="neutral-primary"
                           size="small"
-                          icon={<FeatherChevronLeft />}
                           onClick={handleBackClick}
                           disabled={currentPath.length === 0}
                         >
@@ -442,11 +481,7 @@ export default function F16SettingsPage() {
                               }`}
                               onClick={() => handleFolderClick(item)}
                             >
-                              {item.type === 'folders' ? (
-                                <FeatherFolder className="h-5 w-5 text-blue-500" />
-                              ) : (
-                                <FeatherFile className="h-5 w-5 text-gray-500" />
-                              )}
+                              <div className="h-5 w-5 rounded-full bg-neutral-200" />
                               <div className="flex flex-col">
                                 <span className="text-body font-body text-default-font">
                                   {item.name}

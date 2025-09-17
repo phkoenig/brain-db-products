@@ -6,7 +6,7 @@
 export class UrnProcessor {
   /**
    * Process ACC URN for APS Model Derivative API
-   * Converts region, fixes query parameters, and Base64 encodes
+   * Converts region and Base64 encodes (no query parameters for lineage URNs)
    */
   static processDerivativeUrn(accUrn: string): string {
     console.log(`🔍 URN Processor: Processing ACC URN: ${accUrn}`);
@@ -15,9 +15,10 @@ export class UrnProcessor {
     const regionConverted = this.convertRegion(accUrn);
     console.log(`🔍 URN Processor: Region converted: ${regionConverted}`);
     
-    // Step 2: Fix query parameters (?version=1 -> _version=1)
-    const queryFixed = this.fixQueryParameters(regionConverted);
-    console.log(`🔍 URN Processor: Query parameters fixed: ${queryFixed}`);
+    // Step 2: For lineage URNs, no query parameters needed
+    // Lineage URNs are automatically translated and ready for viewing
+    const queryFixed = regionConverted;
+    console.log(`🔍 URN Processor: Query parameters preserved: ${queryFixed}`);
     
     // Step 3: Base64 encode
     const base64Encoded = this.base64Encode(queryFixed);
@@ -36,10 +37,11 @@ export class UrnProcessor {
 
   /**
    * Fix query parameters for APS compatibility
-   * ?version=1 -> _version=1
+   * Keep ?version= format for Model Derivative API
    */
   private static fixQueryParameters(urn: string): string {
-    return urn.replace('?version=', '_version=');
+    // Keep the original ?version= format - Model Derivative API requires it
+    return urn;
   }
 
   /**
@@ -54,7 +56,7 @@ export class UrnProcessor {
    */
   static validateUrn(urn: string): boolean {
     const validPatterns = [
-      /^urn:adsk\.wipprod:fs\.file:vf\..*_version=\d+$/,
+      /^urn:adsk\.wipprod:fs\.file:vf\..*\?version=\d+$/,
       /^urn:adsk\.wipprod:fs\.file:vf\..*$/
     ];
     
@@ -65,6 +67,6 @@ export class UrnProcessor {
    * Get clean URN without query parameters (for backward compatibility)
    */
   static getCleanUrn(urn: string): string {
-    return urn.split('?')[0].split('_version=')[0];
+    return urn.split('?')[0];
   }
 }

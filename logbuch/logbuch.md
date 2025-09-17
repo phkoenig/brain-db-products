@@ -1,5 +1,48 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-09-17 01:32 - F16 Portal: ACC 3D-Viewer Integration - URN Formatierung Problem
+
+**AKTUELLES PROJEKT: F16 Portal (www.megabrain.cloud/zepta/f16)**
+**HAUPTPROBLEM: Autodesk Viewer URN-Formatierung**
+
+**Was funktioniert:**
+✅ **3-legged OAuth:** Korrekt implementiert mit `viewables:read` scope
+✅ **Token-Sharing:** Admin-Authentifizierung funktioniert
+✅ **Viewer SDK:** Lädt und initialisiert korrekt
+✅ **URNs:** Werden korrekt aus ACC extrahiert und Base64-encodiert
+✅ **F16Viewer:** Komplett nach funktionierendem APSViewer umgeschrieben
+
+**Was NICHT funktioniert:**
+❌ **URN-Loading:** Viewer interpretiert Base64-URN als URL (404-Fehler)
+❌ **Document.load:** `window.Autodesk.Viewing.Document.load()` schlägt fehl
+❌ **3D-Modell:** Wird nicht angezeigt
+
+**Technische Details:**
+- **Original URN:** `urn:adsk.wipemea:dm.lineage:-iaOMC-4R_qP3q9hAfX54g`
+- **Base64 URN:** `YWRzay53aXBlbWVhOmRtLmxpbmVhZ2U6LWlhT01DLTRSX3FQM3E5aEFmWDU0Zw`
+- **Fehler:** `GET /YWRzay53aXBlbWVhOmRtLmxpbmVhZ2U6LWlhT01DLTRSX3FQM3E5aEFmWDU0Zw?domain=http%3A%2F%2Flocalhost%3A3000 404`
+
+**Nächste Schritte (morgen):**
+1. **URN-Formatierung prüfen:** Autodesk Viewer API Dokumentation konsultieren
+2. **Urprojekt analysieren:** Wie wird die URN im funktionierenden APSViewer verwendet?
+3. **Alternative Ansätze:** 
+   - URN mit "urn:" prefix testen
+   - Direkte URN ohne Base64-Encoding testen
+   - ACCDerivativeFinder für korrekte URN-Generierung verwenden
+4. **Debugging:** Mehr Logs für URN-Processing hinzufügen
+
+**Schwierigkeiten:**
+- **URN-Format:** Unklar, welches Format der Autodesk Viewer erwartet
+- **Dokumentation:** Autodesk API-Docs sind nicht eindeutig bezüglich URN-Format
+- **Urprojekt:** Muss genauer analysiert werden für korrekte URN-Verwendung
+
+**Dateien geändert:**
+- `src/components/f16/F16Viewer.tsx` - Komplett neu geschrieben
+- `src/lib/acc-oauth.ts` - `viewables:read` scope hinzugefügt
+- `src/app/api/acc/token/route.ts` - Token-API erstellt
+- `src/app/api/acc/urn/route.ts` - URN-API erstellt
+- `src/app/api/acc/derivatives/route.ts` - Derivatives-API erstellt
+
 ## 2025-09-17 00:35 - F16 Portal: Token-Sharing für Kundenfreundlichkeit implementiert
 
 **WICHTIGER HINWEIS: 2-LEGGED OAUTH FUNKTIONIERT NICHT FÜR ACC! 🚨**

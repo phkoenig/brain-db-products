@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/ui/components/Button';
 
 export default function ACCAuthorizePage() {
   const [authorizationUrl, setAuthorizationUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     const generateAuthUrl = async () => {
@@ -37,14 +38,17 @@ export default function ACCAuthorizePage() {
     generateAuthUrl();
   }, []);
 
-  const handleAuthorize = () => {
-    if (authorizationUrl) {
+  const handleAuthorize = useCallback(() => {
+    if (authorizationUrl && !loading && !redirecting) {
       console.log('🔍 ACC OAuth: Redirecting to authorization URL:', authorizationUrl);
       console.log('🔍 ACC OAuth: Current origin:', window.location.origin);
+      // Prevent multiple redirects
+      setRedirecting(true);
+      setLoading(true);
       // Redirect to Autodesk OAuth authorization page
       window.location.href = authorizationUrl;
     }
-  };
+  }, [authorizationUrl, loading, redirecting]);
 
   if (loading) {
     return (
@@ -116,10 +120,10 @@ export default function ACCAuthorizePage() {
           <div className="flex justify-center">
             <Button
               onClick={handleAuthorize}
-              disabled={!authorizationUrl}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold"
+              disabled={!authorizationUrl || loading || redirecting}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              🔐 Mit Autodesk autorisieren
+              {redirecting ? '🔄 Weiterleitung...' : '🔐 Mit Autodesk autorisieren'}
             </Button>
           </div>
         </div>
