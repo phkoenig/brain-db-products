@@ -1,30 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { ACCOAuthService } from '@/lib/acc-oauth';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams, origin } = new URL(request.url);
     const code = searchParams.get('code');
-    const next = searchParams.get('next') ?? '/zepta/f16';
+    const state = searchParams.get('state');
+
+    console.log('🔍 ACC OAuth Callback: Processing callback...');
+    console.log('🔍 ACC OAuth Callback: Code:', code ? 'present' : 'missing');
+    console.log('🔍 ACC OAuth Callback: State:', state);
+    console.log('🔍 ACC OAuth Callback: Origin:', origin);
 
     if (code) {
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      
-      if (error) {
-        console.error('Auth callback error:', error);
-        return NextResponse.redirect(`${origin}/zepta/f16?error=auth_callback_error`);
-      }
-
-      if (data.session) {
-        // Erfolgreiche Authentifizierung - weiterleiten zur F16 Seite
-        return NextResponse.redirect(`${origin}${next}`);
+      try {
+        // Exchange authorization code for tokens
+        const tokens = await ACCOAuthService.exchangeCodeForTokens(code);
+        
+        console.log('🔍 ACC OAuth Callback: Tokens received successfully');
+        console.log('🔍 ACC OAuth Callback: Access token length:', tokens.access_token?.length || 0);
+        console.log('🔍 ACC OAuth Callback: Refresh token length:', tokens.refresh_token?.length || 0);
+        
+        // Erfolgreiche Authentifizierung - weiterleiten zur Settings-Seite
+        return NextResponse.redirect(`${origin}/zepta/f16/settings?auth=success`);
+      } catch (error) {
+        console.error('🔍 ACC OAuth Callback: Token exchange failed:', error);
+        return NextResponse.redirect(`${origin}/zepta/f16/settings?error=auth_callback_error`);
       }
     }
 
-    // Fehler oder kein Code - zur F16 Seite mit Fehler
-    return NextResponse.redirect(`${origin}/zepta/f16?error=auth_failed`);
+    // Fehler oder kein Code - zur Settings-Seite mit Fehler
+    console.log('🔍 ACC OAuth Callback: No code provided');
+    return NextResponse.redirect(`${origin}/zepta/f16/settings?error=auth_failed`);
   } catch (error) {
-    console.error('Unexpected error in auth callback:', error);
-    return NextResponse.redirect(`${origin}/zepta/f16?error=unexpected_error`);
+    console.error('🔍 ACC OAuth Callback: Unexpected error:', error);
+    return NextResponse.redirect(`${origin}/zepta/f16/settings?error=unexpected_error`);
   }
 }

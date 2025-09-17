@@ -2,6 +2,7 @@
 // Verwendet die gleiche OAuth2-Authentifizierung wie APS
 
 import { ACCOAuthService } from './acc-oauth';
+import { supabase } from './supabase';
 import { ACCProject } from '../types/products';
 import { UrnProcessor } from './urn-processor';
 
@@ -75,13 +76,15 @@ export class ACCService {
 
   static async getToken(): Promise<string> {
     try {
-      // Use 3-legged OAuth for Data Management API
-      return await ACCOAuthService.getAccessToken();
+      // Use 3-legged OAuth for Data Management API (like the working system)
+      const token = await ACCOAuthService.getAccessToken();
+      console.log('🔍 ACC: 3-legged OAuth token obtained successfully');
+      return token;
     } catch (error) {
-      console.error('🔍 ACC: 3-legged OAuth failed, falling back to 2-legged:', error);
+      console.error('🔍 ACC: 3-legged OAuth failed:', error);
       
-      // Fallback to 2-legged OAuth for admin operations
-      return await this.get2LeggedToken();
+      // For F16, we need 3-legged OAuth - no fallback to 2-legged
+      throw new Error('3-legged OAuth required for ACC access. Please authenticate first.');
     }
   }
 
@@ -100,10 +103,10 @@ export class ACCService {
         'x-ads-region': 'EMEA'
       },
       body: new URLSearchParams({
-        client_id: process.env.APS_WEB_APP_CLIENT_ID!,
-        client_secret: process.env.APS_WEB_APP_CLIENT_SECRET!,
+        client_id: process.env.NEXT_PUBLIC_ACC_CLIENT_ID!,
+        client_secret: process.env.ACC_CLIENT_SECRET!,
         grant_type: 'client_credentials',
-        scope: 'data:read data:write bucket:create bucket:read bucket:delete account:read user-profile:read'
+        scope: 'data:read data:write bucket:create bucket:read bucket:delete viewables:read account:read'
       })
     });
 
@@ -127,7 +130,7 @@ export class ACCService {
   }
 
   static async getProjects(): Promise<ACCProject[]> {
-    const token = await this.getToken();
+    const token = await ACCOAuthService.getAccessToken();
     console.log('🔍 ACC: Fetching projects...');
 
     let allProjects: ACCProject[] = [];
@@ -212,7 +215,7 @@ export class ACCService {
   }
 
   static async getProject(projectId: string): Promise<ACCProject> {
-    const token = await this.getToken();
+    const token = await ACCOAuthService.getAccessToken();
     console.log('🔍 ACC: Fetching project details...');
 
     const url = `${this.ACC_BASE_URL}/accounts/${this.ACC_ACCOUNT_ID}/projects/${projectId}`;
@@ -238,7 +241,7 @@ export class ACCService {
   }
 
   static async getProjectContents(projectId: string, folderId?: string): Promise<{ folders: ACCFolder[], items: ACCItem[] }> {
-    const token = await this.getToken();
+    const token = await ACCOAuthService.getAccessToken();
     
     // KORREKTE API: Data Management API v1 (nicht v2!)
     // Perplexity-Lösung: Nur Data Management API erlaubt Zugriff auf ACC-Projektinhalte
@@ -341,7 +344,7 @@ export class ACCService {
   }
 
   static async getItemDetails(projectId: string, itemId: string): Promise<ACCItem> {
-    const token = await this.getToken();
+    const token = await ACCOAuthService.getAccessToken();
     console.log('🔍 ACC: Fetching item details...');
 
     const url = `${this.ACC_BASE_URL}/accounts/${this.ACC_ACCOUNT_ID}/projects/${projectId}/items/${itemId}`;
@@ -417,7 +420,7 @@ export class ACCService {
       // If we have a projectId and it's already a lineage URN, get the version URN
       if (projectId && itemId.includes('dm.lineage:')) {
         console.log(`🔍 ACC getVersionURN: Processing lineage URN with projectId`);
-        const token = await this.getToken();
+        const token = await ACCOAuthService.getAccessToken();
         
         // Get item details to find the version URN
         const itemDetailsUrl = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/items/${itemId}`;
@@ -482,7 +485,7 @@ export class ACCService {
     try {
       // If we have a projectId and it's already a lineage URN, get the version URN
       if (projectId && itemId.includes('dm.lineage:')) {
-        const token = await this.getToken();
+        const token = await ACCOAuthService.getAccessToken();
         
         // Get item details to find the version URN
         const itemDetailsUrl = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/items/${itemId}`;
@@ -599,7 +602,7 @@ export class ACCService {
 
   // Get top-level folders for a project
   static async getProjectTopFolders(projectId: string): Promise<any[]> {
-    const token = await this.getToken();
+    const token = await ACCOAuthService.getAccessToken();
     console.log(`🔍 ACC: Fetching top-level folders for project ${projectId}...`);
 
     // Convert Account ID to Hub ID (b. + accountId)
@@ -630,12 +633,65 @@ export class ACCService {
 
   // Get folder contents
   static async getFolderContents(projectId: string, folderId: string): Promise<any[]> {
-    const token = await this.getToken();
+    const token = await ACCOAuthService.getAccessToken();
     console.log(`🔍 ACC: Fetching folder contents for project ${projectId}, folder ${folderId}...`);
 
-    const url = `https://developer.api.autodesk.com/data/v1/projects/${projectId}/folders/${folderId}/contents`;
+    // Ensure projectId has the correct format for Data Management API
+    const formattedProjectId = projectId.startsWith('b.') ? projectId : `b.${projectId}`;
+    let targetFolderId = folderId;
+    
+    // Wenn folderId 'root' ist, versuche zuerst die echte Root-Folder-ID zu bekommen
+    if (targetFolderId === 'root') {
+      try {
+        console.log('🔍 ACC: Getting project details to find root folder ID...');
+        
+        // Versuche alle Hubs durchzugehen um das Projekt zu finden
+        const hubsResponse = await fetch('https://developer.api.autodesk.com/project/v1/hubs', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (hubsResponse.ok) {
+          const hubsData = await hubsResponse.json();
+          
+          for (const hub of hubsData.data || []) {
+            const projectUrl = `https://developer.api.autodesk.com/project/v1/hubs/${hub.id}/projects/${formattedProjectId}`;
+            console.log('🔍 ACC: Trying hub:', hub.attributes?.name, 'URL:', projectUrl);
+            
+            const projectResponse = await fetch(projectUrl, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (projectResponse.ok) {
+              const projectData = await projectResponse.json();
+              const rootFolderId = projectData.data?.relationships?.rootFolder?.data?.id;
+              if (rootFolderId) {
+                console.log('🔍 ACC: Found root folder ID:', rootFolderId);
+                targetFolderId = rootFolderId;
+                break; // Projekt gefunden, Schleife beenden
+              }
+            }
+          }
+        }
+        
+        if (targetFolderId === 'root') {
+          console.log('⚠️ ACC: No root folder ID found, using "root"');
+        }
+      } catch (error) {
+        console.log('⚠️ ACC: Could not get project details, using "root"');
+      }
+    }
+    
+    const url = `https://developer.api.autodesk.com/data/v1/projects/${formattedProjectId}/folders/${targetFolderId}/contents`;
     
     console.log(`🔍 ACC: URL: ${url}`);
+    console.log(`🔍 ACC: Project ID (with b. prefix): ${formattedProjectId}`);
+    console.log(`🔍 ACC: Folder ID: ${targetFolderId}`);
     
     const response = await fetch(url, {
       headers: {
@@ -647,6 +703,19 @@ export class ACCService {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('🔍 ACC: Folder contents request failed:', errorText);
+      
+      if (response.status === 400) {
+        console.error('🔍 ACC: 400 Error - Mögliche Ursachen:');
+        console.error('🔍 ACC: 1. Falsches Projekt-ID-Format (sollte b.{GUID} sein)');
+        console.error('🔍 ACC: 2. Projekt-ID nicht korrekt');
+        console.error('🔍 ACC: 3. Kein Zugriff auf das Projekt');
+      } else if (response.status === 404) {
+        console.error('🔍 ACC: 404 Error - Mögliche Ursachen:');
+        console.error('🔍 ACC: 1. Projekt nicht gefunden');
+        console.error('🔍 ACC: 2. Kein Zugriff auf "Docs"-Modul im Projekt');
+        console.error('🔍 ACC: 3. Falsche Folder-ID - versuche /topFolders zuerst');
+      }
+      
       throw new Error(`ACC Folder contents request failed: ${response.status} - ${errorText}`);
     }
 
@@ -656,9 +725,255 @@ export class ACCService {
     return data.data || [];
   }
 
+  // Get specific BIM model file from F16 project
+  static async getF16BIMModel(): Promise<{ file: ACCItem; urn: string; token: string } | null> {
+    try {
+      console.log('🔍 ACC: Getting F16 BIM model...');
+      console.log('🔍 ACC: Step 1: Getting access token...');
+      
+      const token = await ACCOAuthService.getAccessToken();
+      console.log('🔍 ACC: Step 1 ✅: Access token obtained successfully');
+      
+      // Check if we have a saved model path in settings
+      console.log('🔍 ACC: Step 1.5: Checking for saved model path...');
+      try {
+        const { data: settings } = await supabase
+          .from('f16_settings')
+          .select('model_path')
+          .eq('project_id', 'f16')
+          .single();
+        
+        if (settings?.model_path) {
+          console.log('🔍 ACC: Step 1.5 ✅: Found saved model path:', settings.model_path);
+          // TODO: Use saved path to directly load the model
+          // For now, continue with the existing search logic
+        } else {
+          console.log('🔍 ACC: Step 1.5 ⚠️: No saved model path found, using search logic');
+        }
+      } catch (settingsError) {
+        console.log('🔍 ACC: Step 1.5 ⚠️: Could not load settings, using search logic');
+      }
+      
+      // First, get all projects to find F16 project
+      console.log('🔍 ACC: Step 2: Getting projects via Data Management API...');
+      const projects = await this.getProjectsDataManagement();
+      console.log('🔍 ACC: Step 2 ✅: Projects loaded successfully');
+      console.log('🔍 ACC: Available projects:', projects.map(p => p.name));
+      
+      const f16Project = projects.find(p => p.name.includes('F16') || p.name.includes('Fontaneallee'));
+      
+      if (!f16Project) {
+        console.error('🔍 ACC: Step 2 ❌: F16 project not found. Available projects:', projects.map(p => p.name));
+        return null;
+      }
+      
+      console.log('🔍 ACC: Step 2 ✅: Found F16 project:', f16Project.name);
+      console.log('🔍 ACC: F16 Project ID:', f16Project.id);
+      
+      // First, let's explore the root folder to see what's available
+      console.log('🔍 ACC: Step 3: Exploring root folder...');
+      const rootContents = await this.getFolderContents(f16Project.id, 'root');
+      console.log('🔍 ACC: Step 3 ✅: Root folder contents loaded');
+      console.log('🔍 ACC: Root folder contents:', rootContents.map(item => ({
+        type: item.type,
+        name: item.attributes?.name || item.attributes?.displayName,
+        id: item.id
+      })));
+      
+          // Try to find any folder that might contain BIM models
+          console.log('🔍 ACC: Step 4: Searching for BIM model files...');
+          let modelFiles: any[] = [];
+          let searchPaths = [
+            // Start with Project Files and explore recursively
+            ['Project Files'],
+            // Try the actual structure from the logs
+            ['Project Files', 'BIM-Modell', '010 Architektur', 'Model'],
+            ['Project Files', 'BIM-Modell'],
+            // Try with ACCDocs prefix
+            ['ACCDocs', 'ZEPTA', 'F16 Fontaneallee 16', 'Project Files', 'BIM-Modell', '010 Architektur', 'Model'],
+            ['ACCDocs', 'ZEPTA', 'F16 Fontaneallee 16', 'Project Files', 'BIM-Modell'],
+            ['ACCDocs', 'ZEPTA', 'F16 Fontaneallee 16', 'Project Files'],
+            ['ACCDocs', 'ZEPTA', 'F16 Fontaneallee 16'],
+            ['ACCDocs', 'ZEPTA'],
+            ['ACCDocs'],
+            // Try without ACCDocs prefix
+            ['ZEPTA', 'F16 Fontaneallee 16', 'Project Files', 'BIM-Modell', '010 Architektur', 'Model'],
+            ['ZEPTA', 'F16 Fontaneallee 16', 'Project Files', 'BIM-Modell'],
+            ['ZEPTA', 'F16 Fontaneallee 16', 'Project Files'],
+            ['ZEPTA', 'F16 Fontaneallee 16'],
+            ['ZEPTA'],
+            // Try direct search in root
+            []
+          ];
+      console.log('🔍 ACC: Will search in', searchPaths.length, 'different paths');
+      
+      for (const pathSegments of searchPaths) {
+        console.log(`🔍 ACC: Trying path: ${pathSegments.join(' > ') || 'root'}`);
+        
+        try {
+          let currentFolderId = 'root';
+          let found = true;
+          
+          // Navigate through each path segment
+          for (const segment of pathSegments) {
+            console.log(`🔍 ACC: Looking for folder: ${segment}`);
+            
+            const contents = await this.getFolderContents(f16Project.id, currentFolderId);
+            console.log(`🔍 ACC: Contents in ${currentFolderId}:`, contents.map(item => ({
+              type: item.type,
+              name: item.attributes?.name || item.attributes?.displayName,
+              id: item.id
+            })));
+            
+            const folder = contents.find(item => 
+              item.type === 'folders' && 
+              (item.attributes?.name === segment || item.attributes?.displayName === segment)
+            );
+            
+            if (!folder) {
+              console.log(`🔍 ACC: Folder not found: ${segment}`);
+              found = false;
+              break;
+            }
+            
+            currentFolderId = folder.id;
+            console.log(`🔍 ACC: Found folder: ${segment} (ID: ${folder.id})`);
+          }
+          
+          if (found) {
+            // Get contents of the current folder
+            const folderContents = await this.getFolderContents(f16Project.id, currentFolderId);
+            console.log(`🔍 ACC: Contents of ${pathSegments.join(' > ') || 'root'}:`, folderContents.map(item => ({
+              type: item.type,
+              name: item.attributes?.name || item.attributes?.displayName,
+              extension: item.attributes?.extension?.type,
+              id: item.id
+            })));
+            
+            // Filter for 3D model files (RVT, IFC, etc.)
+            const files = folderContents.filter(item => 
+              item.type === 'items' && 
+              (item.attributes?.extension?.type?.includes('Revit') || 
+               item.attributes?.extension?.type?.includes('IFC') ||
+               item.attributes?.name?.toLowerCase().includes('.rvt') ||
+               item.attributes?.name?.toLowerCase().includes('.ifc'))
+            );
+            
+            if (files.length > 0) {
+              console.log(`🔍 ACC: Found ${files.length} 3D model files in ${pathSegments.join(' > ') || 'root'}`);
+              modelFiles = files;
+              break;
+            }
+            
+            // If this is Project Files, also search recursively in subfolders
+            if (pathSegments.length === 1 && pathSegments[0] === 'Project Files') {
+              console.log(`🔍 ACC: Searching recursively in Project Files subfolders...`);
+              
+              for (const subfolder of folderContents.filter(item => item.type === 'folders')) {
+                console.log(`🔍 ACC: Searching in subfolder: ${subfolder.attributes?.name || subfolder.attributes?.displayName}`);
+                
+                try {
+                  const subfolderContents = await this.getFolderContents(f16Project.id, subfolder.id);
+                  console.log(`🔍 ACC: Subfolder contents:`, subfolderContents.map(item => ({
+                    type: item.type,
+                    name: item.attributes?.name || item.attributes?.displayName,
+                    extension: item.attributes?.extension?.type,
+                    id: item.id
+                  })));
+                  
+                  const subfolderFiles = subfolderContents.filter(item => 
+                    item.type === 'items' && 
+                    (item.attributes?.extension?.type?.includes('Revit') || 
+                     item.attributes?.extension?.type?.includes('IFC') ||
+                     item.attributes?.name?.toLowerCase().includes('.rvt') ||
+                     item.attributes?.name?.toLowerCase().includes('.ifc'))
+                  );
+                  
+                  if (subfolderFiles.length > 0) {
+                    console.log(`🔍 ACC: Found ${subfolderFiles.length} 3D model files in subfolder ${subfolder.attributes?.name || subfolder.attributes?.displayName}`);
+                    modelFiles = subfolderFiles;
+                    break;
+                  }
+                  
+                  // Search one level deeper in subfolders
+                  for (const subsubfolder of subfolderContents.filter(item => item.type === 'folders')) {
+                    console.log(`🔍 ACC: Searching in sub-subfolder: ${subsubfolder.attributes?.name || subsubfolder.attributes?.displayName}`);
+                    
+                    try {
+                      const subsubfolderContents = await this.getFolderContents(f16Project.id, subsubfolder.id);
+                      const subsubfolderFiles = subsubfolderContents.filter(item => 
+                        item.type === 'items' && 
+                        (item.attributes?.extension?.type?.includes('Revit') || 
+                         item.attributes?.extension?.type?.includes('IFC') ||
+                         item.attributes?.name?.toLowerCase().includes('.rvt') ||
+                         item.attributes?.name?.toLowerCase().includes('.ifc'))
+                      );
+                      
+                      if (subsubfolderFiles.length > 0) {
+                        console.log(`🔍 ACC: Found ${subsubfolderFiles.length} 3D model files in sub-subfolder ${subsubfolder.attributes?.name || subsubfolder.attributes?.displayName}`);
+                        modelFiles = subsubfolderFiles;
+                        break;
+                      }
+                    } catch (error) {
+                      console.log(`🔍 ACC: Error searching sub-subfolder:`, error);
+                    }
+                  }
+                  
+                  if (modelFiles.length > 0) break;
+                } catch (error) {
+                  console.log(`🔍 ACC: Error searching subfolder:`, error);
+                }
+              }
+              
+              if (modelFiles.length > 0) break;
+            }
+          }
+        } catch (error) {
+          console.log(`🔍 ACC: Error exploring path ${pathSegments.join(' > ') || 'root'}:`, error);
+          continue;
+        }
+      }
+      
+      if (modelFiles.length === 0) {
+        console.error('🔍 ACC: Step 4 ❌: No 3D model files found in any explored path');
+        return null;
+      }
+      
+      console.log('🔍 ACC: Step 4 ✅: Found', modelFiles.length, '3D model files');
+      
+      // Sort by lastModifiedTime to get the newest file
+      const newestFile = modelFiles.sort((a, b) => 
+        new Date(b.attributes.lastModifiedTime).getTime() - new Date(a.attributes.lastModifiedTime).getTime()
+      )[0];
+      
+      console.log('🔍 ACC: Step 5 ✅: Found newest 3D model file:', newestFile.attributes.name);
+      console.log('🔍 ACC: File details:', {
+        name: newestFile.attributes.name,
+        type: newestFile.attributes.extension?.type,
+        lastModified: newestFile.attributes.lastModifiedTime,
+        id: newestFile.id
+      });
+      
+      // Generate URN for the file
+      const urn = `urn:adsk.wipprod:dm.lineage:${newestFile.id}`;
+      console.log('🔍 ACC: Step 6 ✅: Generated URN:', urn);
+      
+      console.log('🔍 ACC: Step 7 ✅: Returning BIM model data');
+      return {
+        file: newestFile,
+        urn: urn,
+        token: token
+      };
+      
+    } catch (error) {
+      console.error('🔍 ACC: Error getting F16 BIM model:', error);
+      return null;
+    }
+  }
+
   // Get projects using Data Management API (returns correct project IDs for folder API)
   static async getProjectsDataManagement(): Promise<ACCProject[]> {
-    const token = await this.getToken();
+    const token = await ACCOAuthService.getAccessToken();
     console.log('🔍 ACC: Fetching projects via Data Management API...');
 
     // Convert Account ID to Hub ID (b. + accountId)

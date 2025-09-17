@@ -1,5 +1,30 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-09-16 22:35 - F16 Portal: Kommentarfunktion vollständig implementiert
+
+**Aufgaben:**
+- **Kommentar-System:** Eingeloggte Benutzer können Kommentare zu Blog-Posts schreiben
+- **Benutzer-Zuordnung:** Kommentare werden korrekt dem eingeloggten Benutzer zugeordnet
+- **RLS-Policies:** Korrigiert für Kommentare - alle Kommentare werden angezeigt
+- **Service Role Key:** API-Routes verwenden Admin-Berechtigungen für Datenbank-Operationen
+- **JOIN-Query:** Posts-API lädt Kommentare direkt mit Posts
+- **Scroll-Position:** Bleibt nach Kommentar-Absenden erhalten, keine Seiten-Sprünge
+- **Lokale State-Updates:** Kommentare werden sofort zur UI hinzugefügt, kein Neuladen
+- **Echtzeit-Anzeige:** Kommentare erscheinen sofort nach dem Absenden
+
+**Technische Details:**
+- RLS-Policy "Anyone can view F16 comments" erstellt
+- Kommentar-Status auf "approved" für sofortige Sichtbarkeit
+- useF16Blog Hook mit lokaler State-Verwaltung
+- F16BlogPost Komponente mit Benutzer-Authentifizierung
+- Optimierte UX ohne unnötige API-Calls
+
+**Ergebnis:**
+- Vollständig funktionsfähiges Kommentar-System
+- Smooth UX ohne Seiten-Sprünge
+- Korrekte Benutzer-Zuordnung
+- Echtzeit-Updates der Kommentare
+
 ## 2025-09-16 22:30 - F16 Live Preview Editor: Inline Blog-Editor implementiert
 
 **Aufgaben:**

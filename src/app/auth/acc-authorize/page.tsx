@@ -12,12 +12,10 @@ export default function ACCAuthorizePage() {
     const generateAuthUrl = async () => {
       try {
         console.log('🔍 ACC OAuth: Generating authorization URL...');
-        console.log('🔍 ACC OAuth: Current origin:', window.location.origin);
         
         const response = await fetch('/api/auth/acc-authorize-url', {
           headers: {
-            'Origin': window.location.origin,
-            'Referer': window.location.href
+            'Cache-Control': 'no-cache'
           }
         });
         
@@ -28,7 +26,6 @@ export default function ACCAuthorizePage() {
         const data = await response.json();
         setAuthorizationUrl(data.authorizationUrl);
         console.log('🔍 ACC OAuth: Authorization URL received:', data.authorizationUrl);
-        console.log('🔍 ACC OAuth: Origin detected:', data.origin);
       } catch (error) {
         console.error('Error generating authorization URL:', error);
         setError(error instanceof Error ? error.message : 'Unknown error');

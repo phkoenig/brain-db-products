@@ -8,6 +8,7 @@ interface APSViewerProps {
   onClose: () => void;
   fileName: string;
   base64Urn?: string; // Add base64 URN prop
+  viewName?: string; // Add view name prop for specific view
 }
 
 declare global {
@@ -16,7 +17,7 @@ declare global {
   }
 }
 
-export default function APSViewer({ urn, token, onClose, fileName, base64Urn }: APSViewerProps) {
+export default function APSViewer({ urn, token, onClose, fileName, base64Urn, viewName }: APSViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   // State management
   const [loading, setLoading] = useState(true);
@@ -443,6 +444,26 @@ export default function APSViewer({ urn, token, onClose, fileName, base64Urn }: 
                       // Mark viewer as ready after extension is loaded
                       setIsViewerReady(true);
                       console.log('✅ APS Viewer: Viewer is now ready');
+                      
+                      // Auto-load specific view if viewName is provided
+                      if (viewName) {
+                        console.log('🔍 APS Viewer: Looking for specific view:', viewName);
+                        const targetView = views.find(v => 
+                          v.name === viewName || 
+                          v.name.toLowerCase().includes(viewName.toLowerCase()) ||
+                          v.name.toLowerCase().includes('kp-axo-zz')
+                        );
+                        
+                        if (targetView) {
+                          console.log('✅ APS Viewer: Found target view:', targetView.name);
+                          setTimeout(() => {
+                            loadView(targetView);
+                          }, 1000); // Wait 1 second for viewer to be fully ready
+                        } else {
+                          console.log('⚠️ APS Viewer: Target view not found:', viewName);
+                          console.log('Available views:', views.map(v => v.name));
+                        }
+                      }
                     })
                     .catch((err: any) => {
                       console.error('⚠️ APS Viewer: ModelStructure Extension could not be loaded:', err);
