@@ -76,15 +76,78 @@ export class ACCService {
 
   static async getToken(): Promise<string> {
     try {
-      // Use 3-legged OAuth for Data Management API (like the working system)
+      // First try to get shared token from database
+      const sharedToken = await this.getSharedToken();
+      if (sharedToken) {
+        console.log('🔍 ACC: Using shared token from database');
+        return sharedToken;
+      }
+      
+      // Fallback to 3-legged OAuth if no shared token
       const token = await ACCOAuthService.getAccessToken();
       console.log('🔍 ACC: 3-legged OAuth token obtained successfully');
       return token;
     } catch (error) {
-      console.error('🔍 ACC: 3-legged OAuth failed:', error);
+      console.error('🔍 ACC: Token retrieval failed:', error);
+      throw new Error('ACC authentication failed. Please authenticate first.');
+    }
+  }
+
+  /**
+   * Get shared token from database (admin token for all users)
+   */
+  private static async getSharedToken(): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('acc_shared_tokens')
+        .select('access_token, expires_at')
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        console.log('🔍 ACC: No shared token found in database');
+        return null;
+      }
+
+      // Check if token is still valid
+      if (Date.now() < new Date(data.expires_at).getTime()) {
+        console.log('🔍 ACC: Shared token is valid');
+        return data.access_token;
+      } else {
+        console.log('🔍 ACC: Shared token expired');
+        return null;
+      }
+    } catch (error) {
+      console.error('🔍 ACC: Error getting shared token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Store shared token in database (admin token for all users)
+   */
+  static async storeSharedToken(tokens: any): Promise<void> {
+    try {
+      const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000));
       
-      // For F16, we need 3-legged OAuth - no fallback to 2-legged
-      throw new Error('3-legged OAuth required for ACC access. Please authenticate first.');
+      const { error } = await supabase
+        .from('acc_shared_tokens')
+        .upsert({
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_at: expiresAt.toISOString(),
+          is_active: true,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('🔍 ACC: Shared token stored in database');
+    } catch (error) {
+      console.error('🔍 ACC: Error storing shared token:', error);
+      throw error;
     }
   }
 

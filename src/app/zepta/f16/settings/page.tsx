@@ -41,36 +41,21 @@ export default function F16SettingsPage() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        console.log('🔍 F16 Settings: Checking authentication status...');
+        console.log('🔍 F16 Settings: Checking shared token status...');
         
-        // First check token status via API
-        const tokenStatusResponse = await fetch('/api/acc/token-status');
-        const tokenStatusData = await tokenStatusResponse.json();
-        console.log('🔍 F16 Settings: Token status API response:', tokenStatusData);
-        setTokenInfo(tokenStatusData);
-        
-        console.log('🔍 F16 Settings: Token status check:', {
-          success: tokenStatusData.success,
-          tokenStatus: tokenStatusData.tokenStatus,
-          tokenLength: tokenStatusData.tokenLength
-        });
-        
-        // Simplified condition - if we have a valid token, we're authenticated
-        if (tokenStatusData.tokenStatus === 'valid' && tokenStatusData.tokenLength > 0) {
-          console.log('🔍 F16 Settings: Authentication status: AUTHENTICATED');
+        // Test if we can get a token (shared token from database)
+        const testResponse = await fetch('/api/acc/projects');
+        if (testResponse.ok) {
+          console.log('🔍 F16 Settings: Shared token authentication: SUCCESS');
           setAuthStatus('authenticated');
         } else {
-          console.log('🔍 F16 Settings: Authentication status: NOT AUTHENTICATED');
-          console.log('🔍 F16 Settings: Reason:', tokenStatusData.error || 'Token not valid');
+          console.log('🔍 F16 Settings: Shared token authentication: FAILED');
           setAuthStatus('not_authenticated');
         }
       } catch (error) {
-        console.log('🔍 F16 Settings: Authentication status: NOT AUTHENTICATED (error)');
+        console.log('🔍 F16 Settings: Shared token authentication: ERROR');
         console.log('🔍 F16 Settings: Error details:', error);
         setAuthStatus('not_authenticated');
-        
-        // Don't auto-redirect, let user click manually
-        console.log('🔍 F16 Settings: Authentication failed, but not auto-redirecting');
       }
     };
 
@@ -274,9 +259,9 @@ export default function F16SettingsPage() {
                               'bg-red-400'
                             }`}></div>
                             <span className="text-body font-body text-default-font">
-                              {authStatus === 'checking' ? 'Prüfe Authentifizierung...' :
-                               authStatus === 'authenticated' ? 'Autodesk authentifiziert' :
-                               'Nicht authentifiziert'}
+                              {authStatus === 'checking' ? 'Prüfe Admin-Token...' :
+                               authStatus === 'authenticated' ? 'Admin-Token aktiv (für alle Benutzer)' :
+                               'Admin-Token nicht verfügbar'}
                             </span>
                           </div>
                           {authStatus === 'not_authenticated' && (
@@ -285,7 +270,7 @@ export default function F16SettingsPage() {
                               variant="primary"
                               size="small"
                             >
-                              Authentifizieren
+                              Admin-Authentifizierung
                             </Button>
                           )}
                         </div>
@@ -340,10 +325,10 @@ export default function F16SettingsPage() {
                             onClick={handleLocateClick}
                             disabled={browsing || authStatus === 'checking'}
                           >
-                            {browsing ? 'Lädt...' : 
-                             authStatus === 'checking' ? 'Prüfe Auth...' :
-                             authStatus === 'not_authenticated' ? 'Authentifizieren & Durchsuchen' :
-                             'Ordner durchsuchen'}
+                                    {browsing ? 'Lädt...' : 
+                                     authStatus === 'checking' ? 'Prüfe Token...' :
+                                     authStatus === 'not_authenticated' ? 'Admin-Authentifizierung erforderlich' :
+                                     'Ordner durchsuchen'}
                           </Button>
                           
                           <Button
@@ -363,14 +348,14 @@ export default function F16SettingsPage() {
                           <p className={`text-body font-body ${
                             authStatus === 'authenticated' ? 'text-green-700' : 'text-blue-700'
                           }`}>
-                            <strong>
-                              {authStatus === 'authenticated' ? 'Bereit:' : 'Hinweis:'}
-                            </strong> {
-                              authStatus === 'authenticated' ? 
-                              'Du bist authentifiziert. Klicke auf "Ordner durchsuchen" um das ACC-Projekt zu durchbrowsen.' :
-                              'Beim ersten Klick auf "Ordner durchsuchen" wirst du zur Autodesk-Authentifizierung weitergeleitet. ' +
-                              'Nach der Anmeldung kehrst du automatisch zu dieser Seite zurück und der Ordner-Browser startet automatisch.'
-                            }
+                                    <strong>
+                                      {authStatus === 'authenticated' ? 'Bereit:' : 'Hinweis:'}
+                                    </strong> {
+                                      authStatus === 'authenticated' ? 
+                                      'Admin-Token ist aktiv. Alle Benutzer können das ACC-Projekt durchbrowsen.' :
+                                      'Admin-Authentifizierung erforderlich. Nur der Administrator muss sich bei Autodesk anmelden. ' +
+                                      'Nach der Authentifizierung können alle Benutzer das System nutzen.'
+                                    }
                           </p>
                         </div>
 

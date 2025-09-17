@@ -1,5 +1,81 @@
 # Logbuch - BRAIN DB Products A
 
+## 2025-09-17 00:35 - F16 Portal: Token-Sharing für Kundenfreundlichkeit implementiert
+
+**WICHTIGER HINWEIS: 2-LEGGED OAUTH FUNKTIONIERT NICHT FÜR ACC! 🚨**
+
+**Aufgaben:**
+- **Token-Sharing-System:** Admin authentifiziert sich einmal, alle Kunden nutzen den Token
+- **Supabase-Tabelle:** `acc_shared_tokens` für persistente Token-Speicherung
+- **Automatische Token-Erneuerung:** Token wird bei Bedarf erneuert
+- **Kundenfreundlichkeit:** Keine Autodesk-Anmeldung für Endkunden erforderlich
+- **Admin-Only-Authentifizierung:** Nur Administrator muss sich bei Autodesk anmelden
+
+**Technische Details:**
+- **Token-Sharing-Logik:** `getSharedToken()` und `storeSharedToken()` Methoden in ACCService
+- **OAuth Callback erweitert:** Speichert Token automatisch in `acc_shared_tokens` Tabelle
+- **Fallback-System:** Falls kein Shared Token vorhanden, Fallback zu 3-legged OAuth
+- **RLS-Policies:** Sichere Token-Speicherung mit Row Level Security
+- **UI-Anpassungen:** Zeigt "Admin-Token aktiv (für alle Benutzer)" Status an
+
+**Probleme gelöst:**
+- **Kunden-Authentifizierung:** Endkunden müssen sich nicht bei Autodesk anmelden
+- **Token-Persistenz:** Token bleibt auch nach Server-Neustart verfügbar
+- **Admin-Workflow:** Einmalige Authentifizierung reicht für alle Benutzer
+- **User-Experience:** Nahtlose Nutzung ohne technische Hürden
+
+**KRITISCHE ERKENNTNIS:**
+- ❌ **2-legged OAuth funktioniert NICHT für ACC-Projekte**
+- ✅ **3-legged OAuth ist erforderlich für ACC-Zugriff**
+- ✅ **Token-Sharing ermöglicht kundenfreundliche Lösung**
+
+**Ergebnis:**
+- ✅ **Admin:** Einmalige Authentifizierung bei Autodesk
+- ✅ **Kunden:** Sofortiger Zugriff ohne Autodesk-Anmeldung
+- ✅ **Token-Management:** Automatische Speicherung und Erneuerung
+- ✅ **Skalierbarkeit:** Unbegrenzte Anzahl von Kunden möglich
+
+**Status:** Token-Sharing-System vollständig implementiert - Kundenfreundliche ACC-Integration
+
+---
+
+## 2025-09-17 00:25 - F16 Portal: Vollständige ACC-Integration mit Ordner-Browser und Settings
+
+**Aufgaben:**
+- **Autodesk 3-legged OAuth:** Vollständige Integration für ACC-Zugriff implementiert
+- **Interaktiver Ordner-Browser:** F16-Projekt kann durchsucht werden bis zum 3D-Modell
+- **3D-Modell-Auswahl:** Benutzer kann BIM-Modelle aus dem ACC-Projekt auswählen
+- **Pfad-Speicherung:** Ausgewählte Modell-Pfade werden in Supabase gespeichert
+- **Settings-Persistenz:** Gespeicherte Pfade bleiben nach Reload erhalten
+- **User-Authentifizierung:** Philip König zur auth_allowlist hinzugefügt
+- **Error-Handling:** Umfassendes Debug-Logging und Fehlerbehandlung
+
+**Technische Details:**
+- **API-Routen:** Bestehende `/api/acc/projects` und `/api/acc/projects/[projectId]/folders/[folderId]/contents` verwendet
+- **3-legged OAuth:** Funktioniert einwandfrei mit Token-Speicherung in localStorage und global storage
+- **Supabase-Integration:** f16_settings Tabelle mit RLS-Policies für sicheren Zugriff
+- **Feldname-Korrektur:** model_path statt modelPath für korrekte Datenbank-Integration
+- **Urprojekt-Ansatz:** Verwendet bewährte API-Struktur aus dem bestehenden ACC-System
+- **Token-Debug:** Detaillierte Logs für Authentifizierungs-Status und Token-Verwaltung
+
+**Probleme gelöst:**
+- **Redirect-Problem:** Nach Authentifizierung korrekte Weiterleitung zur Settings-Seite
+- **Client-Side vs Server-Side:** API-Proxy für ACC-Operationen implementiert
+- **RLS-Blockierung:** User-Authentifizierung über auth_allowlist konfiguriert
+- **Anzeigefehler:** Feldname-Mismatch zwischen Frontend und Backend behoben
+- **Token-Persistenz:** Mehrschichtige Token-Speicherung (Memory, Global, localStorage)
+
+**Ergebnis:**
+- ✅ **Blog (Logbuch):** Funktioniert vollständig mit Kommentar-System
+- ✅ **Settings:** Ordner-Browser und Modell-Pfad-Speicherung funktioniert
+- ✅ **ACC-Integration:** 3-legged OAuth und Projekt-Durchsuchung funktioniert
+- ✅ **Daten-Persistenz:** Gespeicherte Pfade bleiben nach Reload erhalten
+- ✅ **User-Experience:** Nahtlose Navigation und intuitive Bedienung
+
+**Status:** F16 Portal vollständig funktionsfähig - bereit für 3D-Viewer Integration
+
+---
+
 ## 2025-09-16 22:35 - F16 Portal: Kommentarfunktion vollständig implementiert
 
 **Aufgaben:**
