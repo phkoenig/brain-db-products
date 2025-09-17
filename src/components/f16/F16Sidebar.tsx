@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SidebarRailWithLabels } from '@/ui/components/SidebarRailWithLabels';
 import { FeatherArmchair } from "@subframe/core";
 import { FeatherBox } from "@subframe/core";
@@ -12,40 +12,62 @@ import { FeatherMap } from "@subframe/core";
 import { FeatherSettings } from "@subframe/core";
 import { FeatherStamp } from "@subframe/core";
 import { FeatherUsers } from "@subframe/core";
-import { useF16ACC } from '@/hooks/useF16ACC';
+import F16Viewer from './F16Viewer';
 
 interface F16SidebarProps {
   currentPage: 'logbuch' | '3d' | 'plaene' | 'bemusterung' | 'raumbuch' | 'fotos' | 'visualisierung' | 'beteiligte' | 'dokumente' | 'settings';
 }
 
 export function F16Sidebar({ currentPage }: F16SidebarProps) {
-  const { loadBIMModel, openViewer, loading, error } = useF16ACC();
+  const [showViewer, setShowViewer] = useState(false);
+  const [modelPath, setModelPath] = useState<string>('');
+  const [loading, setLoading] = useState(false);
 
   const handle3DClick = async () => {
     console.log('🔍 F16 Sidebar: 3D button clicked');
     
     try {
-      // Load BIM model first
-      const success = await loadBIMModel();
+      setLoading(true);
       
-      if (success) {
-        // Open viewer with specific view
-        openViewer('KP-AXO-ZZ');
-      } else {
-        console.error('🔍 F16 Sidebar: Failed to load BIM model');
-        alert('Fehler beim Laden des 3D-Modells. Bitte versuchen Sie es erneut.');
+      // Get the model path from settings
+      const settingsResponse = await fetch('/api/f16/settings');
+      if (!settingsResponse.ok) {
+        throw new Error('Failed to load settings');
       }
+      
+      const settings = await settingsResponse.json();
+      if (!settings.model_path) {
+        alert('Kein 3D-Modell-Pfad konfiguriert. Bitte gehen Sie zu den Einstellungen und wählen Sie ein Modell aus.');
+        return;
+      }
+      
+      console.log('🔍 F16 Sidebar: Model path found:', settings.model_path);
+      
+      // Check if we have a valid token by testing the projects API
+      const projectsResponse = await fetch('/api/acc/projects');
+      if (!projectsResponse.ok) {
+        throw new Error('No valid ACC token available. Please authenticate first.');
+      }
+      
+      console.log('🔍 F16 Sidebar: Token validated, opening viewer...');
+      
+      // Set model path and open viewer
+      setModelPath(settings.model_path);
+      setShowViewer(true);
+      
     } catch (err) {
       console.error('🔍 F16 Sidebar: Error opening 3D viewer:', err);
       
-      // If 3-legged OAuth is required, redirect to auth
-      if (err instanceof Error && err.message.includes('3-legged OAuth required')) {
+      // If authentication is required, redirect to auth
+      if (err instanceof Error && err.message.includes('No valid ACC token')) {
         console.log('🔍 F16 Sidebar: Redirecting to ACC authorization...');
         window.location.href = '/auth/acc-authorize';
         return;
       }
       
-      alert('Fehler beim Öffnen des 3D-Viewers. Bitte versuchen Sie es erneut.');
+      alert(`Fehler beim Öffnen des 3D-Viewers: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,6 +158,15 @@ export function F16Sidebar({ currentPage }: F16SidebarProps) {
           Dokumente
         </SidebarRailWithLabels.NavItem>
       </div>
+      
+      {/* F16 Viewer Modal */}
+      {showViewer && modelPath && (
+        <F16Viewer
+          onClose={() => setShowViewer(false)}
+          modelPath={modelPath}
+          viewName="KP-AXO-ZZ"
+        />
+      )}
     </SidebarRailWithLabels>
   );
 }

@@ -18,14 +18,15 @@ export class ACCOAuthService {
   // Static redirect URI as per documentation
   private static readonly REDIRECT_URI = 'http://localhost:3000/auth/callback';
   
-  // Scopes for Data Management API
+  // Scopes for Data Management API + Viewer
   private static readonly SCOPES = [
     'data:read',           // Read project files and folders
     'data:write',          // Write project files (if needed)
     'bucket:read',         // Read buckets
     'bucket:create',       // Create buckets
     'account:read',        // Read account info
-    'user-profile:read'    // Read user profile
+    'user-profile:read',   // Read user profile
+    'viewables:read'       // CRITICAL: Required for APS Viewer!
   ].join(' ');
 
   /**

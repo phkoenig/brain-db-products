@@ -33,7 +33,22 @@ export default function F16SettingsPage() {
 
   useEffect(() => {
     if (settings?.model_path) {
-      setTempPath(settings.model_path);
+      // Check if it's already in ACC format (b.{projectId}/items/{itemId})
+      if (settings.model_path.includes('/items/')) {
+        // Convert ACC format to display format for the UI
+        const pathParts = settings.model_path.split('/');
+        if (pathParts.length >= 3) {
+          const projectId = pathParts[0];
+          const itemId = pathParts[2];
+          // For now, just show the ACC format in the input field
+          setTempPath(settings.model_path);
+        } else {
+          setTempPath(settings.model_path);
+        }
+      } else {
+        // It's already in display format
+        setTempPath(settings.model_path);
+      }
     }
   }, [settings]);
 
@@ -157,7 +172,7 @@ export default function F16SettingsPage() {
     window.location.href = '/auth/acc-authorize';
   };
 
-  const handleFolderClick = (item: FolderItem) => {
+  const handleFolderClick = async (item: FolderItem) => {
     if (item.type === 'folders') {
       setCurrentPath([...currentPath, item.name]);
       setCurrentFolderId(item.id);
@@ -172,10 +187,41 @@ export default function F16SettingsPage() {
       
       if (is3DModel) {
         setSelectedFile(item.name);
-        const fullPath = currentPath.length > 0 
-          ? `${currentPath.join(' > ')} > ${item.name}`
-          : item.name;
-        setTempPath(fullPath);
+        
+        // Get the F16 project ID for the ACC format
+        try {
+          const projectsResponse = await fetch('/api/acc/projects');
+          if (projectsResponse.ok) {
+            const projectsData = await projectsResponse.json();
+            const f16Project = projectsData.data?.find((p: any) => p.name.includes('F16') || p.name.includes('Fontaneallee'));
+            
+            if (f16Project) {
+              // Create ACC format path: b.{projectId}/items/{itemId}
+              const accPath = `${f16Project.id}/items/${item.id}`;
+              setTempPath(accPath);
+              console.log('🔍 F16 Settings: ACC path set:', accPath);
+            } else {
+              // Fallback to display path
+              const fullPath = currentPath.length > 0 
+                ? `${currentPath.join(' > ')} > ${item.name}`
+                : item.name;
+              setTempPath(fullPath);
+            }
+          } else {
+            // Fallback to display path
+            const fullPath = currentPath.length > 0 
+              ? `${currentPath.join(' > ')} > ${item.name}`
+              : item.name;
+            setTempPath(fullPath);
+          }
+        } catch (error) {
+          console.error('🔍 F16 Settings: Error getting project ID:', error);
+          // Fallback to display path
+          const fullPath = currentPath.length > 0 
+            ? `${currentPath.join(' > ')} > ${item.name}`
+            : item.name;
+          setTempPath(fullPath);
+        }
       } else {
         alert('Bitte wähle eine 3D-Modell-Datei (.rvt, .ifc) aus.');
       }

@@ -788,6 +788,36 @@ export class ACCService {
     return data.data || [];
   }
 
+  // Get URN for a specific model path
+  static async getModelURN(modelPath: string): Promise<string | null> {
+    try {
+      console.log('🔍 ACC: Getting URN for model path:', modelPath);
+      
+      // Parse the model path to extract project ID and item ID
+      // Model path format: "b.{projectId}/items/{itemId}"
+      const pathParts = modelPath.split('/');
+      if (pathParts.length < 3 || pathParts[1] !== 'items') {
+        throw new Error('Invalid model path format. Expected: b.{projectId}/items/{itemId}');
+      }
+      
+      const projectId = pathParts[0];
+      const itemId = pathParts[2];
+      
+      console.log('🔍 ACC: Parsed project ID:', projectId);
+      console.log('🔍 ACC: Parsed item ID:', itemId);
+      
+      // Get the version URN for the item
+      const versionUrn = await this.getVersionURN(itemId, projectId);
+      console.log('🔍 ACC: Generated version URN:', versionUrn);
+      
+      return versionUrn;
+      
+    } catch (error) {
+      console.error('🔍 ACC: Error getting model URN:', error);
+      return null;
+    }
+  }
+
   // Get specific BIM model file from F16 project
   static async getF16BIMModel(): Promise<{ file: ACCItem; urn: string; token: string } | null> {
     try {
